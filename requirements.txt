@@ -1,0 +1,17 @@
+# Core vision
+opencv-python>=4.8.0
+mediapipe==0.10.9
+numpy>=1.24
+
+# GUI (Qt)
+PySide6>=6.6.0
+
+# System control
+pynput>=1.7.6
+
+# Tray icon
+pystray>=0.19.5
+Pillow>=10.0.0
+
+# Utils
+python-dotenv>=1.0.0
