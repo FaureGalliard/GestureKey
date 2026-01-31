@@ -9,6 +9,7 @@ from hand_logger import HandLogger
 # ========================
 logger = HandLogger()
 frame_id = 0
+gesture_state = "PALM"
 
 # ========================
 # Configuración FPS
@@ -119,18 +120,33 @@ while True:
             if side not in hands_data:
                 hands_data[side] = [(-1.0, -1.0)] * 21
 
-        logger.log(frame_id, hands_data)
+        logger.log(frame_id, hands_data, gesture_state)
 
     # ========================
     # UI (flip visual)
     # ========================
     frame = cv2.flip(frame, 1)
     cv2.line(frame, (w // 2, 0), (w // 2, h), (255, 255, 255), 2)
+
+    cv2.putText(
+        frame,
+        f"STATE: {gesture_state}",
+        (20, 40),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        1,
+        (0, 255, 0),
+        2
+    )
+
     cv2.imshow("Webcam + Hand Tracking", frame)
 
-    if cv2.waitKey(1) & 0xFF == 27:
-        break
+    key = cv2.waitKey(1) & 0xFF
 
+    if key == ord('e'):
+        gesture_state = "FIST" if gesture_state == "PALM" else "PALM"
+
+    if key == 27:
+        break
 # ========================
 # Cleanup
 # ========================

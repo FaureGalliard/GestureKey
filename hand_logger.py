@@ -15,7 +15,8 @@ class HandLogger:
         self.file = open(filename, "w", newline="")
         self.writer = csv.writer(self.file)
 
-        header = ["frame", "time"]
+        header = ["frame", "time", "state"]
+
 
         for hand in ["left", "right"]:
             for finger in FINGERS:
@@ -51,9 +52,9 @@ class HandLogger:
     # ========================
     # LOG
     # ========================
-    def log(self, frame_id, hands_data):
+    def log(self, frame_id, hands_data, state):
         timestamp = datetime.now().strftime("%H:%M:%S")
-        row = [frame_id, timestamp]
+        row = [frame_id, timestamp, state]
 
         for side in ["Left", "Right"]:
             landmarks = hands_data.get(side)
