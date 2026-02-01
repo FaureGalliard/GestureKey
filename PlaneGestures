@@ -1,0 +1,94 @@
+ESTADOS DE MANO (BASE)
+
+IDLE
+Mano no reconocida o gesto ambiguo. No ejecuta ninguna acción.
+
+PALM
+Mano abierta con los cinco dedos extendidos. Estado neutro y base para gestos globales.
+
+FIST
+Mano cerrada, ningún dedo extendido. Usado para acciones fuertes y de control.
+
+PINCH
+Pulgar e índice juntos, distancia menor a un umbral. Usado para selección, zoom y clicks.
+
+TWO_FINGERS
+Índice y medio levantados, anular y meñique cerrados. Usado para scroll.
+
+THREE_FINGERS
+Índice, medio y anular levantados, meñique cerrado. Usado para control de volumen.
+
+FOUR_FINGERS
+Índice, medio, anular y meñique levantados, pulgar cerrado. Usado para cambio de ventanas.
+
+GESTOS MONO-MANO (EVENTOS)
+
+Scroll
+Estado: TWO_FINGERS
+Movimiento: vertical
+Acción: scroll arriba o abajo
+Notas: usar zona muerta y suavizado para evitar micro-scrolls.
+
+Zoom / Unzoom
+Estado: PINCH
+Movimiento: cambio de distancia entre pulgar e índice
+Acción: zoom in o zoom out
+Notas: usar distancia relativa y suavizado.
+
+Volumen
+Estado: THREE_FINGERS
+Movimiento: vertical
+Acción: subir o bajar volumen
+Notas: sensibilidad ajustable y zona muerta.
+
+Screenshot
+Estado: PALM
+Movimiento: acercar la mano a la cámara
+Acción: captura de pantalla
+Notas: detectar cambio rápido de escala.
+
+GESTOS MULTI-MANO
+
+Vista de tareas
+Estado: DOUBLE_PALM (dos manos en PALM)
+Movimiento: acercar las palmas
+Condiciones: palmas enfrentadas y ángulo válido
+Acción: abrir vista de tareas.
+
+GESTOS DE TRANSICIÓN
+
+Pausar / reanudar sistema
+Transición: PALM a FIST
+Tiempo mínimo: 200 ms
+Acción: toggle del sistema de gestos
+Notas: no continuo, con cooldown.
+
+Mute
+Transición: PALM a FIST a PALM
+Tiempo total: menor a 1 segundo
+Acción: mute o unmute del volumen.
+
+Cerrar ventana
+Estado: FIST
+Movimiento: swipe hacia abajo
+Acción: cerrar la ventana activa.
+
+
+
+REGLAS GLOBALES
+
+Prioridad de estados (de mayor a menor):
+FIST
+PINCH
+FOUR_FINGERS
+THREE_FINGERS
+TWO_FINGERS
+PALM
+IDLE
+
+Reglas de estabilidad:
+Todo gesto debe durar un tiempo mínimo, usar zona muerta y tener cooldown.
+Los estados describen la forma de la mano, las acciones se disparan por eventos o transiciones.
+
+Flujo lógico recomendado:
+Detectar estado -> detectar transición -> detectar gesto -> ejecutar acción.
