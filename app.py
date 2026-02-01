@@ -9,7 +9,7 @@ from hand_logger import HandLogger
 # ========================
 logger = HandLogger()
 frame_id = 0
-gesture_state = "PALM"
+gesture_state = "0"
 
 # ========================
 # Configuración FPS
@@ -143,7 +143,8 @@ while True:
     key = cv2.waitKey(1) & 0xFF
 
     if key == ord('e'):
-        gesture_state = "FIST" if gesture_state == "PALM" else "PALM"
+        #fist=1    palm = 0
+        gesture_state = "1" if gesture_state == "0" else "0"
 
     if key == 27:
         break
