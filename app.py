@@ -9,7 +9,9 @@ from hand_logger import HandLogger
 # ========================
 logger = HandLogger()
 frame_id = 0
-gesture_state = "0"
+currentstate="PALM"
+
+grabar= False
 
 # ========================
 # Configuración FPS
@@ -37,6 +39,7 @@ hands = mp_hands.Hands(
 cap = cv2.VideoCapture(0)
 
 while True:
+
     now = time.time()
     if now - prev_time < FRAME_TIME:
         continue
@@ -115,12 +118,13 @@ while True:
     # ========================
     # LOG
     # ========================
-    if hands_data:
-        for side in ["Left", "Right"]:
-            if side not in hands_data:
-                hands_data[side] = [(-1.0, -1.0)] * 21
+    if grabar:
+        if hands_data:
+            for side in ["Left", "Right"]:
+                if side not in hands_data:
+                    hands_data[side] = [(-1.0, -1.0)] * 21
 
-        logger.log(frame_id, hands_data, gesture_state)
+            logger.log(frame_id, hands_data, currentstate)
 
     # ========================
     # UI (flip visual)
@@ -130,8 +134,17 @@ while True:
 
     cv2.putText(
         frame,
-        f"STATE: {gesture_state}",
+        f"STATE: {currentstate}",
         (20, 40),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        1,
+        (0, 255, 0),
+        2
+    )
+    cv2.putText(
+        frame,
+        f"GRABAR: {'ON' if grabar else 'OFF'}",
+        (20, 80),
         cv2.FONT_HERSHEY_SIMPLEX,
         1,
         (0, 255, 0),
@@ -142,11 +155,21 @@ while True:
 
     key = cv2.waitKey(1) & 0xFF
 
-    if key == ord('e'):
-        #fist=1    palm = 0
-        gesture_state = "1" if gesture_state == "0" else "0"
-
-    if key == 27:
+    if key == ord('1'):
+        currentstate = "PALM"
+    elif key == ord('2'):
+        currentstate = "FIST"
+    elif key == ord('3'):
+        currentstate = "PINCH"
+    elif key == ord('4'):
+        currentstate = "TWO_FINGERS"
+    elif key == ord('5'):
+        currentstate = "THREE_FINGERS"
+    elif key == ord('6'):
+        currentstate = "FOUR_FINGERS"
+    elif key == ord('g'):
+        grabar = not grabar
+    elif key == 27:
         break
 # ========================
 # Cleanup
