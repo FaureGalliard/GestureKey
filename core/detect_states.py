@@ -4,19 +4,46 @@ import time
 import math
 import joblib
 import numpy as np
+import pandas as pd
+import sys
+from pathlib import Path
+
+# Agregar la raíz del proyecto al path
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
+
+# Importar el motor de gestos desde el mismo paquete
+from core.gesture_engine import GestureEngine
+
+gesture_engine = GestureEngine()
 
 # ========================
 # Configuración
 # ========================
-MODEL_PATH = "hand_state_rf.pkl"
+# Ruta al modelo (relativa a la raíz del proyecto)
+MODEL_PATH = project_root / "models" / "hand_state_rf.pkl"
 FPS_LIMIT = 30
 FRAME_TIME = 1 / FPS_LIMIT
 prev_time = 0
+
+FEATURE_NAMES = [
+    # LEFT
+    "left_THUMB_dist", "left_INDEX_dist", "left_MIDDLE_dist",
+    "left_RING_dist", "left_PINKY_dist",
+    "left_THUMB_angle", "left_INDEX_angle", "left_MIDDLE_angle",
+    "left_RING_angle", "left_PINKY_angle",
+    # RIGHT
+    "right_THUMB_dist", "right_INDEX_dist", "right_MIDDLE_dist",
+    "right_RING_dist", "right_PINKY_dist",
+    "right_THUMB_angle", "right_INDEX_angle", "right_MIDDLE_angle",
+    "right_RING_angle", "right_PINKY_angle",
+]
 
 # ========================
 # Cargar modelo
 # ========================
 model = joblib.load(MODEL_PATH)
+model.verbose = 0   # 🔕 silenciar joblib
 print("✓ Modelo cargado")
 
 # ========================
@@ -24,11 +51,10 @@ print("✓ Modelo cargado")
 # ========================
 mp_hands = mp.solutions.hands
 mp_draw = mp.solutions.drawing_utils
-
 hands = mp_hands.Hands(
     static_image_mode=False,
     max_num_hands=2,
-    min_detection_confidence=0.2,
+    min_detection_confidence=0.1,
     min_tracking_confidence=0.1
 )
 
@@ -90,22 +116,14 @@ def extract_features(landmarks):
     
     return features
 
-def predict_gesture(hands_data):
-    """
-    Predice el gesto usando el modelo.
-    Formato: [left_features(10), right_features(10)]
-    """
+def predict_state(hands_data):
     left_features = extract_features(hands_data.get("Left"))
     right_features = extract_features(hands_data.get("Right"))
-    
-    # Combinar en vector de 20 features
-    full_features = np.array(left_features + right_features).reshape(1, -1)
-    
-    # Predicción
-    prediction = model.predict(full_features)[0]
-    probabilities = model.predict_proba(full_features)[0]
+    full_features = left_features + right_features
+    X = pd.DataFrame([full_features], columns=FEATURE_NAMES)
+    prediction = model.predict(X)[0]
+    probabilities = model.predict_proba(X)[0]
     confidence = max(probabilities)
-    
     return prediction, confidence
 
 # ========================
@@ -127,7 +145,7 @@ cap = cv2.VideoCapture(0)
 frame_id = 0
 
 print("\n" + "="*50)
-print("DETECCIÓN DE GESTOS EN TIEMPO REAL")
+print("DETECCIÓN DE ESTADOS EN TIEMPO REAL")
 print("="*50)
 print("Presiona ESC para salir")
 print("="*50 + "\n")
@@ -149,8 +167,8 @@ while True:
     # ========================
     rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     results = hands.process(rgb)
-
     frame_id += 1
+
     hands_data = {}
     detected_hands = []
 
@@ -164,9 +182,7 @@ while True:
                 x = lm.x * w
                 y = lm.y * h
                 coords.append((x, y))
-
             detected_hands.append(coords)
-
             mp_draw.draw_landmarks(
                 frame,
                 hand_landmarks,
@@ -180,7 +196,6 @@ while True:
         wrist_x = detected_hands[0][0][0]
         side = "Right" if wrist_x < w // 2 else "Left"
         hands_data[side] = detected_hands[0]
-
     elif len(detected_hands) == 2:
         detected_hands.sort(key=lambda c: c[0][0])
         hands_data["Right"] = detected_hands[0]
@@ -192,17 +207,14 @@ while True:
     for side, landmarks in hands_data.items():
         if landmarks[0] == (-1, -1):
             continue
-
         # muñeca como origen
         x0, y0 = landmarks[0]
         centered = [(x - x0, y - y0) for x, y in landmarks]
-
         # escala: muñeca -> dedo medio MCP (landmark 9)
         sx, sy = centered[9]
         scale = math.hypot(sx, sy)
         if scale < 1e-6:
             scale = 1.0
-
         normalized = [(x / scale, y / scale) for x, y in centered]
         hands_data[side] = normalized
 
@@ -210,12 +222,16 @@ while True:
     # PREDICCIÓN
     # ========================
     if hands_data:
-        predicted_state, confidence = predict_gesture(hands_data)
+        predicted_state, confidence = predict_state(hands_data)
         state_color = STATE_COLORS.get(predicted_state, (255, 255, 255))
     else:
         predicted_state = "NO HANDS"
         confidence = 0.0
         state_color = (128, 128, 128)
+
+    events = gesture_engine.update(predicted_state, hands_data)
+    for e in events:
+        print("EVENT:", e)
 
     # ========================
     # UI (flip visual)
@@ -224,33 +240,32 @@ while True:
     
     # Línea divisoria
     cv2.line(frame, (w // 2, 0), (w // 2, h), (255, 255, 255), 2)
-
+    
     # Panel de información
-    cv2.rectangle(frame, (10, 10), (450, 140), (0, 0, 0), -1)
-    cv2.rectangle(frame, (10, 10), (450, 140), state_color, 3)
-
+  
+    
     # Estado predicho
     cv2.putText(
         frame,
-        f"GESTO: {predicted_state}",
+        f"State: {predicted_state}",
         (20, 50),
         cv2.FONT_HERSHEY_SIMPLEX,
         1.2,
         state_color,
         3
     )
-
+    
     # Confianza
     cv2.putText(
         frame,
         f"Confianza: {confidence*100:.1f}%",
         (20, 90),
         cv2.FONT_HERSHEY_SIMPLEX,
-        0.8,
+        0.6,
         (255, 255, 255),
         2
     )
-
+    
     # Manos detectadas
     hands_detected = []
     if "Left" in hands_data:
@@ -265,11 +280,11 @@ while True:
         f"Manos: {hands_text}",
         (20, 125),
         cv2.FONT_HERSHEY_SIMPLEX,
-        0.7,
+        0.6,
         (200, 200, 200),
         2
     )
-
+    
     # Instrucciones
     cv2.putText(
         frame,
@@ -281,7 +296,7 @@ while True:
         1
     )
 
-    cv2.imshow("Deteccion de Gestos", frame)
+    cv2.imshow("Deteccion de estados", frame)
 
     key = cv2.waitKey(1) & 0xFF
     if key == 27:  # ESC
