@@ -44,8 +44,15 @@ class GestureEngine:
             return True
         return False
 
-    def update(self, state, hands):
-        """Actualiza el motor de gestos con el estado actual"""
+    def update(self, state, hands, hands_raw=None):
+        """
+        Actualiza el motor de gestos con el estado actual
+        
+        Parámetros:
+        - state: Estado predicho de la mano
+        - hands: Diccionario con landmarks normalizados
+        - hands_raw: Diccionario con objetos raw de MediaPipe (para profundidad)
+        """
         now = time.time()
         events = []
 
@@ -80,10 +87,15 @@ class GestureEngine:
         # GESTOS MONO-MANO
         # ---------------------
         main_hand = hands.get("Right") or hands.get("Left")
+        main_hand_raw = None
+        
+        # Obtener el hand_landmarks raw correspondiente
+        if hands_raw is not None:
+            main_hand_raw = hands_raw.get("Right") or hands_raw.get("Left")
         
         if main_hand:
-            # Scroll
-            events.extend(self.scroll.detect(state, main_hand))
+            # Scroll (con datos raw para profundidad)
+            events.extend(self.scroll.detect(state, main_hand, main_hand_raw))
             
             # Volume
             events.extend(self.volume.detect(state, main_hand))

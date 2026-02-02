@@ -170,10 +170,12 @@ while True:
     frame_id += 1
 
     hands_data = {}
+    hands_raw = {}  # ← NUEVO: guardar datos raw para profundidad
     detected_hands = []
+    detected_hands_raw = []  # ← NUEVO
 
     # ========================
-    # Extraer landmarks (px)
+    # Extraer landmarks (px) + RAW
     # ========================
     if results.multi_hand_landmarks:
         for hand_landmarks in results.multi_hand_landmarks:
@@ -183,6 +185,8 @@ while True:
                 y = lm.y * h
                 coords.append((x, y))
             detected_hands.append(coords)
+            detected_hands_raw.append(hand_landmarks)  # ← NUEVO: guardar objeto raw
+            
             mp_draw.draw_landmarks(
                 frame,
                 hand_landmarks,
@@ -196,10 +200,16 @@ while True:
         wrist_x = detected_hands[0][0][0]
         side = "Right" if wrist_x < w // 2 else "Left"
         hands_data[side] = detected_hands[0]
+        hands_raw[side] = detected_hands_raw[0]  # ← NUEVO
     elif len(detected_hands) == 2:
-        detected_hands.sort(key=lambda c: c[0][0])
-        hands_data["Right"] = detected_hands[0]
-        hands_data["Left"] = detected_hands[1]
+        # Ordenar por posición X
+        paired = list(zip(detected_hands, detected_hands_raw))
+        paired.sort(key=lambda p: p[0][0][0])
+        
+        hands_data["Right"] = paired[0][0]
+        hands_data["Left"] = paired[1][0]
+        hands_raw["Right"] = paired[0][1]  # ← NUEVO
+        hands_raw["Left"] = paired[1][1]   # ← NUEVO
 
     # ========================
     # NORMALIZACIÓN GEOMÉTRICA
@@ -229,7 +239,10 @@ while True:
         confidence = 0.0
         state_color = (128, 128, 128)
 
-    events = gesture_engine.update(predicted_state, hands_data)
+    # ========================
+    # GESTURE ENGINE (con datos raw)
+    # ========================
+    events = gesture_engine.update(predicted_state, hands_data, hands_raw)  # ← MODIFICADO
     for e in events:
         print("EVENT:", e)
 
@@ -241,9 +254,7 @@ while True:
     # Línea divisoria
     cv2.line(frame, (w // 2, 0), (w // 2, h), (255, 255, 255), 2)
     
-    # Panel de información
   
-    
     # Estado predicho
     cv2.putText(
         frame,
@@ -261,29 +272,11 @@ while True:
         f"Confianza: {confidence*100:.1f}%",
         (20, 90),
         cv2.FONT_HERSHEY_SIMPLEX,
-        0.6,
+        0.8,
         (255, 255, 255),
         2
     )
-    
-    # Manos detectadas
-    hands_detected = []
-    if "Left" in hands_data:
-        hands_detected.append("Izq")
-    if "Right" in hands_data:
-        hands_detected.append("Der")
-    
-    hands_text = " + ".join(hands_detected) if hands_detected else "Ninguna"
-    
-    cv2.putText(
-        frame,
-        f"Manos: {hands_text}",
-        (20, 125),
-        cv2.FONT_HERSHEY_SIMPLEX,
-        0.6,
-        (200, 200, 200),
-        2
-    )
+   
     
     # Instrucciones
     cv2.putText(
