@@ -15,7 +15,7 @@ from utils.utils import hand_center
 # =====================
 BASE_GAIN = 10000          # ganancia mínima
 ACCEL_FACTOR = 15000       # cuánto acelera al alejarte del punto inicial
-MAX_SCROLL_STEP = 1400     # límite de seguridad
+MAX_SCROLL_STEP = 8000     # límite de seguridad
 MIN_SCROLL_STEP = 10       # evita micro-scroll
 
 # 🎯 COMPENSACIÓN DE DISTANCIA
