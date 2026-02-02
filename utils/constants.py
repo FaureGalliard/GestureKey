@@ -28,7 +28,7 @@ SCROLL_CENTER_Y = 0.45      # centro vertical aceptable
 SCROLL_CENTER_TOL = 0.18    # tolerancia arriba/abajo
 
 # Profundidad para intención (depth gate)
-INTENT_Z_NEAR = -0.08       # mano cerca → intencional
-INTENT_Z_FAR = -0.02        # mano lejos → ignorar
-INTENT_Z_ENTER = -0.11      # umbral estricto para entrar
-INTENT_Z_EXIT = -0.07       # umbral permisivo para salir
+INTENT_Z_NEAR  = -0.035    # mano relativamente lejos ya cuenta
+INTENT_Z_FAR   =  0.00     # casi fuera de cámara → ignorar
+INTENT_Z_ENTER = -0.045    # entra fácil
+INTENT_Z_EXIT  = -0.005    # sale solo cuando te alejas mucho
