@@ -136,6 +136,7 @@ STATE_COLORS = {
     'TWO_FINGERS': (255, 255, 0),  # Cyan
     'THREE_FINGERS': (0, 255, 255),# Amarillo
     'FOUR_FINGERS': (255, 165, 0), # Naranja
+    'UNKNOWN': (255, 255, 255),    # Blanco
 }
 
 # ========================

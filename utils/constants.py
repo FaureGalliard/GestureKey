@@ -27,7 +27,7 @@ SCROLL_CENTER_TOL = 0.18    # tolerancia arriba/abajo
 # =========================
 # VOLUMEN MEJORADO
 # =========================
-VOLUME_DEADZONE = 0.1     # deadzone ligeramente mayor que scroll (más deliberado)
+VOLUME_DEADZONE = 0.015     # deadzone ligeramente mayor que scroll (más deliberado)
 VOLUME_ARM_TIME = 0.20      # tiempo mínimo para activar volumen
 VOLUME_MAX_TIME = 3.0       # después de esto se desarma solo
 

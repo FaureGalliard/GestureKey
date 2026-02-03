@@ -15,11 +15,11 @@ from utils.utils import hand_center
 # =====================
 BASE_GAIN = 100            # ganancia mínima (menor que scroll, volumen es más sensible)
 ACCEL_FACTOR = 200        # cuánto acelera al alejarte del punto inicial
-MAX_VOLUME_STEP = 8        # límite de seguridad (steps de volumen)
+MAX_VOLUME_STEP = 30        # límite de seguridad (steps de volumen)
 MIN_VOLUME_STEP = 1        # mínimo cambio perceptible
 
 # 🎯 COMPENSACIÓN DE DISTANCIA
-DISTANCE_MULTIPLIER = 2.5  # cuánto amplificar cuando estás lejos
+DISTANCE_MULTIPLIER = 2.3  # cuánto amplificar cuando estás lejos
 REFERENCE_DISTANCE = 0.15  # distancia de referencia (z típico cercano)
 
 # 🎯 NORMALIZACIÓN POR TAMAÑO DE MANO
