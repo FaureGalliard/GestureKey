@@ -11,6 +11,13 @@ MUTE_MAX_TIME = 1.0
 COOLDOWN = 0.6
 
 # =========================
+# STATE STABILIZER (🏗️ ARQUITECTURA NUEVA)
+# =========================
+STATE_CONFIRM_TIME = 0.15      # 150ms - tiempo para confirmar un estado nuevo
+UNKNOWN_GRACE_TIME = 0.3       # 300ms - tiempo de gracia para UNKNOWN
+STATE_LOSS_TIMEOUT = 0.5       # 500ms - timeout para declarar pérdida de estado
+
+# =========================
 # SCROLL MEJORADO
 # =========================
 SCROLL_DEADZONE = 0.02
@@ -51,3 +58,10 @@ INTENT_Z_NEAR  = -0.035    # mano relativamente lejos ya cuenta
 INTENT_Z_FAR   =  0.00     # casi fuera de cámara → ignorar
 INTENT_Z_ENTER = -0.045    # entra fácil
 INTENT_Z_EXIT  = -0.005    # sale solo cuando te alejas mucho
+
+# =========================
+# TASK VIEW (Vista de tareas)
+# =========================
+TASK_VIEW_ARM_TIME = 0.15          # tiempo de estabilidad antes de armar (150ms)
+TASK_VIEW_MIN_APPROACH = 0.15      # acercamiento mínimo total (15% de pantalla)
+TASK_VIEW_COOLDOWN = 1.5  
