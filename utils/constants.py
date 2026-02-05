@@ -37,6 +37,13 @@ VOLUME_MAX_TIME = 3.0       # después de esto se desarma solo
 ZOOM_ARM_TIME = 0.18        # tiempo mínimo para activar zoom (similar a scroll)
 
 # =========================
+# PAUSE/RESUME (transición PALM→FIST)
+# =========================
+PAUSE_MIN_TIME = 0.2      # 200ms mínimo en PALM antes de poder hacer FIST
+PAUSE_MAX_TIME = 1.5      # Máximo 1.5s para completar transición (opcional)
+PAUSE_COOLDOWN = 0.5      # 500ms entre toggles (evita doble activación)
+
+# =========================
 # PROFUNDIDAD PARA INTENCIÓN (DEPTH GATE)
 # =========================
 # Usado tanto por scroll como volumen
