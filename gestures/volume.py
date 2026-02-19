@@ -1,9 +1,7 @@
 """
-ScrollGesture — two-finger vertical scroll with depth-gating,
-outlier protection, and temporal integration.
+VolumeGesture — three-finger vertical movement to change system volume.
 """
 from __future__ import annotations
-import time
 from typing import List
 
 import pyautogui
@@ -16,34 +14,33 @@ from utils.geometry import hand_center
 pyautogui.PAUSE = 0.01
 
 # ---- tuning -----------------------------------------------------------
-BASE_GAIN              = 10_000
-ACCEL_FACTOR           = 15_000
-MAX_SCROLL_STEP        = 100_000
-MIN_SCROLL_STEP        = 10
+BASE_GAIN              = 100
+ACCEL_FACTOR           = 200
+MAX_VOLUME_STEP        = 30
+MIN_VOLUME_STEP        = 1
 
 SIZE_COMPENSATION      = True
 SIZE_RATIO_MIN         = 0.7
 SIZE_RATIO_MAX         = 1.4
 SIZE_ALPHA             = 0.6
-
 POSITION_ALPHA         = 0.7
 MAX_POSITION_JUMP      = 0.15
 MAX_SIZE_CHANGE        = 0.30
 OUTLIER_RECOVERY_FRAMES = 2
 
-VELOCITY_DEADZONE      = 0.002
+VELOCITY_DEADZONE      = 0.0025
 TEMPORAL_FRAMES        = 3
-MOTION_THRESHOLD       = 0.003
+MOTION_THRESHOLD       = 0.0035
 STILLNESS_TIMEOUT      = 0.1
 
 INTENT_Z_ENTER         = -0.045
 INTENT_Z_EXIT          = -0.005
 
 
-class ScrollGesture(Gesture):
-    NAME = "SCROLL"
+class VolumeGesture(Gesture):
+    NAME = "VOLUME"
 
-    def __init__(self, arm_time: float = 0.18) -> None:
+    def __init__(self, arm_time: float = 0.20) -> None:
         self._arm_time = arm_time
         self.reset()
 
@@ -51,30 +48,26 @@ class ScrollGesture(Gesture):
     def detect(self, frame_data: FrameData) -> List[GestureEvent]:
         events: List[GestureEvent] = []
 
-        if frame_data.state != HandState.TWO_FINGERS:
+        if frame_data.state != HandState.THREE_FINGERS:
             self.reset()
             return events
 
-        main_hand     = frame_data.main_hand
-        hand_raw      = frame_data.main_hand_raw
-        now           = frame_data.timestamp
+        main_hand = frame_data.main_hand
+        hand_raw  = frame_data.main_hand_raw
+        now       = frame_data.timestamp
 
         if main_hand is None:
             return events
 
-        center_raw = hand_center(main_hand)
+        center_raw        = hand_center(main_hand)
         current_hand_size = self._calc_hand_size(hand_raw) if hand_raw else None
 
-        # Smooth hand size for normalisation
         if self._smoothed_hand_size is None:
             self._smoothed_hand_size = current_hand_size
         elif current_hand_size is not None:
-            self._smoothed_hand_size = (
-                SIZE_ALPHA * current_hand_size
-                + (1 - SIZE_ALPHA) * self._smoothed_hand_size
-            )
+            self._smoothed_hand_size = (SIZE_ALPHA * current_hand_size
+                                        + (1 - SIZE_ALPHA) * self._smoothed_hand_size)
 
-        # Smooth center for outlier validation only
         if self._smoothed_center is None:
             self._smoothed_center = center_raw
         else:
@@ -83,44 +76,37 @@ class ScrollGesture(Gesture):
                 POSITION_ALPHA * center_raw[1] + (1 - POSITION_ALPHA) * self._smoothed_center[1],
             )
 
-        # Pre-arm outlier rejection
         if not self._active:
             if not self._valid_detection(self._smoothed_center, self._smoothed_hand_size):
                 self._outlier_count += 1
                 if self._outlier_count > OUTLIER_RECOVERY_FRAMES:
                     self.reset()
                 return events
-            self._outlier_count = 0
-            self._last_valid_center = self._smoothed_center
-            self._last_valid_size   = self._smoothed_hand_size
+            self._outlier_count      = 0
+            self._last_valid_center  = self._smoothed_center
+            self._last_valid_size    = self._smoothed_hand_size
 
-        # Depth intent gate
         if hand_raw is not None and not self._depth_intent_ok(hand_raw):
             self.reset()
             return events
 
-        # Arm by time
         if not self._active:
             if self._start_time is None:
-                self._start_time          = now
-                self._prev_center_raw     = center_raw
-                self._anchor_y            = center_raw[1]
-                self._ref_hand_size       = self._smoothed_hand_size
+                self._start_time      = now
+                self._prev_center_raw = center_raw
+                self._anchor_y        = center_raw[1]
+                self._ref_hand_size   = self._smoothed_hand_size
                 return events
             if now - self._start_time < self._arm_time:
                 self._prev_center_raw = center_raw
                 return events
             self._active = True
 
-        # ---- compute scroll ------------------------------------------
         if self._prev_center_raw is not None:
             dy_raw = center_raw[1] - self._prev_center_raw[1]
 
-            # Size-compensated dy
-            if (SIZE_COMPENSATION
-                    and self._smoothed_hand_size
-                    and self._ref_hand_size
-                    and self._ref_hand_size > 0):
+            if (SIZE_COMPENSATION and self._smoothed_hand_size
+                    and self._ref_hand_size and self._ref_hand_size > 0):
                 ratio = max(SIZE_RATIO_MIN, min(SIZE_RATIO_MAX,
                             self._ref_hand_size / self._smoothed_hand_size))
                 dy = dy_raw * ratio
@@ -130,14 +116,12 @@ class ScrollGesture(Gesture):
             if abs(dy) < VELOCITY_DEADZONE:
                 dy = 0.0
 
-            # Stillness detection
             if abs(dy) > MOTION_THRESHOLD:
                 self._last_motion_time = now
             elif self._last_motion_time and now - self._last_motion_time > STILLNESS_TIMEOUT:
                 self._prev_center_raw = center_raw
                 return events
 
-            # 100 ms displacement check
             if self._pos_100ms is None or self._t_100ms is None:
                 self._pos_100ms = center_raw[1]
                 self._t_100ms   = now
@@ -148,7 +132,6 @@ class ScrollGesture(Gesture):
                 self._pos_100ms = center_raw[1]
                 self._t_100ms   = now
 
-            # Temporal buffer
             if dy != 0.0:
                 self._dy_buffer.append(dy)
                 if len(self._dy_buffer) > TEMPORAL_FRAMES:
@@ -158,36 +141,42 @@ class ScrollGesture(Gesture):
                 self._prev_center_raw = center_raw
                 return events
 
-            dy_eff = sum(self._dy_buffer) / len(self._dy_buffer)
+            dy_eff      = sum(self._dy_buffer) / len(self._dy_buffer)
             dist_anchor = abs(center_raw[1] - self._anchor_y)
-            gain   = BASE_GAIN + dist_anchor * ACCEL_FACTOR
-            amount = int(dy_eff * gain)
+            gain        = BASE_GAIN + dist_anchor * ACCEL_FACTOR
+            steps       = int(dy_eff * gain)
 
-            if abs(amount) >= MIN_SCROLL_STEP:
-                amount = max(-MAX_SCROLL_STEP, min(MAX_SCROLL_STEP, amount))
-                pyautogui.scroll(-amount)
-                events.append(GestureEvent.SCROLL)
+            if abs(steps) >= MIN_VOLUME_STEP:
+                steps = max(-MAX_VOLUME_STEP, min(MAX_VOLUME_STEP, steps))
+                if dy_eff < 0:
+                    for _ in range(abs(steps)):
+                        pyautogui.press("volumeup")
+                    events.append(GestureEvent.VOLUME_UP)
+                else:
+                    for _ in range(abs(steps)):
+                        pyautogui.press("volumedown")
+                    events.append(GestureEvent.VOLUME_DOWN)
 
         self._prev_center_raw = center_raw
         return events
 
     # ------------------------------------------------------------------
     def reset(self) -> None:
-        self._prev_center_raw:   object = None
-        self._active:            bool   = False
-        self._start_time:        object = None
-        self._anchor_y:          object = None
-        self._ref_hand_size:     object = None
-        self._smoothed_hand_size: object = None
-        self._outlier_count:     int    = 0
-        self._last_valid_center: object = None
-        self._last_valid_size:   object = None
-        self._smoothed_center:   object = None
-        self._dy_buffer:         list   = []
-        self._last_motion_time:  object = None
-        self._pos_100ms:         object = None
-        self._t_100ms:           object = None
-        self._intent_active:     bool   = False
+        self._prev_center_raw    = None
+        self._active             = False
+        self._start_time         = None
+        self._anchor_y           = None
+        self._ref_hand_size      = None
+        self._smoothed_hand_size = None
+        self._outlier_count      = 0
+        self._last_valid_center  = None
+        self._last_valid_size    = None
+        self._smoothed_center    = None
+        self._dy_buffer: list    = []
+        self._last_motion_time   = None
+        self._pos_100ms          = None
+        self._t_100ms            = None
+        self._intent_active      = False
 
     # ------------------------------------------------------------------
     def _valid_detection(self, center, hand_size) -> bool:

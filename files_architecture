@@ -1,0 +1,37 @@
+gesture_project/
+│
+├── app/
+│   ├── __init__.py
+│   ├── config.py          # AppConfig dataclass — toda la configuración centralizada
+│   ├── main.py            # Entry point — pipeline orquestado limpio
+│   └── ui.py              # OpenCVUI — renderizado aislado del resto
+│
+├── core/
+│   ├── __init__.py
+│   ├── camera.py          # Camera — wrapper de OpenCV con FPS limiter
+│   ├── cooldown_manager.py # CooldownManager — cooldowns centralizados
+│   ├── gesture_manager.py  # GestureManager — orquesta todos los gestos
+│   ├── hand_tracker.py    # HandTracker — encapsula MediaPipe completamente
+│   ├── state_classifier.py # StateClassifier — wrappea el modelo RF
+│   └── state_stabilizer.py # StateStabilizer — filtro temporal, sin globals
+│
+├── domain/
+│   ├── __init__.py
+│   ├── enums.py           # HandState, GestureEvent — sin magic strings
+│   └── models.py          # FrameData — value object que reemplaza arg soup
+│
+├── gestures/
+│   ├── __init__.py
+│   ├── base.py            # Gesture (ABC) — contrato formal para todos los gestos
+│   ├── close_window.py    # CloseWindowGesture
+│   ├── mute.py            # MuteToggleGesture
+│   ├── pause.py           # PauseResumeGesture
+│   ├── screenshot.py      # ScreenshotGesture
+│   ├── scroll.py          # ScrollGesture
+│   ├── task_view.py       # TaskViewGesture
+│   ├── volume.py          # VolumeGesture
+│   └── zoom.py            # PinchZoomGesture
+│
+└── utils/
+    ├── __init__.py
+    └── geometry.py        # dist, hand_center, angle — funciones puras sin dependencias

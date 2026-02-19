@@ -1,25 +1,43 @@
-from utils.utils import hand_center
+"""
+CloseWindowGesture — swipe fist downward to close the active window.
+"""
+from __future__ import annotations
+from typing import List
 
-class CloseWindowGesture:
-    """Gesto de cerrar ventana (puño hacia abajo)"""
-    
-    def __init__(self):
-        self.prev_center = None
-    
-    def detect(self, state, main_hand, cooldown_ok_func):
-        """Detecta y procesa el gesto de cerrar ventana"""
-        events = []
-        
-        if state != "FIST":
-            self.prev_center = None
+from domain.enums import GestureEvent, HandState
+from domain.models import FrameData
+from gestures.base import Gesture
+from core.cooldown_manager import CooldownManager
+from utils.geometry import hand_center
+
+
+class CloseWindowGesture(Gesture):
+    NAME = "CLOSE_WINDOW"
+
+    def __init__(self, cooldown: CooldownManager) -> None:
+        self._cooldown = cooldown
+        self.reset()
+
+    def detect(self, frame_data: FrameData) -> List[GestureEvent]:
+        events: List[GestureEvent] = []
+
+        if frame_data.state != HandState.FIST:
+            self.reset()
             return events
-        
+
+        main_hand = frame_data.main_hand
+        if main_hand is None:
+            return events
+
         center = hand_center(main_hand)
-        
-        if self.prev_center:
-            dy = center[1] - self.prev_center[1]
-            if dy > 0.12 and cooldown_ok_func("CLOSE"):
-                events.append("CLOSE_WINDOW")
-        
-        self.prev_center = center
+
+        if self._prev_center is not None:
+            dy = center[1] - self._prev_center[1]
+            if dy > 0.12 and self._cooldown.ok(self.NAME):
+                events.append(GestureEvent.CLOSE_WINDOW)
+
+        self._prev_center = center
         return events
+
+    def reset(self) -> None:
+        self._prev_center = None

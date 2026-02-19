@@ -1,23 +1,21 @@
-"""
-Módulos de gestos individuales
-"""
-
-from .scroll import ScrollGesture
-from .volumen import VolumeGesture
-from .zoom import PinchZoomGesture
-from .screenshot import ScreenshotGesture
-from .close_window import CloseWindowGesture
-from .pause import PauseResumeGesture
-from .mute import MuteToggleGesture
-from .view_tasks import TaskViewGesture
+from gestures.base import Gesture
+from gestures.scroll import ScrollGesture
+from gestures.volume import VolumeGesture
+from gestures.zoom import PinchZoomGesture
+from gestures.screenshot import ScreenshotGesture
+from gestures.close_window import CloseWindowGesture
+from gestures.pause import PauseResumeGesture
+from gestures.mute import MuteToggleGesture
+from gestures.task_view import TaskViewGesture
 
 __all__ = [
-    'ScrollGesture',
-    'VolumeGesture',
-    'PinchZoomGesture',
-    'ScreenshotGesture',
-    'CloseWindowGesture',
-    'PauseResumeGesture',
-    'MuteToggleGesture',
-    'TaskViewGesture',
+    "Gesture",
+    "ScrollGesture",
+    "VolumeGesture",
+    "PinchZoomGesture",
+    "ScreenshotGesture",
+    "CloseWindowGesture",
+    "PauseResumeGesture",
+    "MuteToggleGesture",
+    "TaskViewGesture",
 ]
