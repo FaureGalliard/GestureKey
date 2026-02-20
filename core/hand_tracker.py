@@ -28,8 +28,8 @@ class HandTracker:
     def __init__(
         self,
         max_num_hands: int = 2,
-        min_detection_confidence: float = 0.1,
-        min_tracking_confidence: float = 0.1,
+        min_detection_confidence: float = 0.2,
+        min_tracking_confidence: float = 0.2,
     ) -> None:
         self._mp_hands = mp.solutions.hands
         self._mp_draw  = mp.solutions.drawing_utils

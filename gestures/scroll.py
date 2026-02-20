@@ -17,8 +17,8 @@ pyautogui.PAUSE = 0.01
 
 # ---- tuning -----------------------------------------------------------
 BASE_GAIN              = 10_000
-ACCEL_FACTOR           = 15_000
-MAX_SCROLL_STEP        = 100_000
+ACCEL_FACTOR           = 12_000
+MAX_SCROLL_STEP        = 80_000
 MIN_SCROLL_STEP        = 10
 
 SIZE_COMPENSATION      = True
