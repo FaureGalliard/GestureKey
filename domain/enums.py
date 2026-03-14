@@ -2,7 +2,6 @@ from enum import Enum
 
 
 class HandState(str, Enum):
-    """Possible hand gesture states detected by the classifier."""
     PALM          = "PALM"
     FIST          = "FIST"
     PINCH         = "PINCH"
@@ -14,7 +13,6 @@ class HandState(str, Enum):
 
 
 class GestureEvent(str, Enum):
-    """Events emitted by gesture detectors."""
     SCROLL        = "SCROLL"
     VOLUME_UP     = "VOLUME_UP"
     VOLUME_DOWN   = "VOLUME_DOWN"
