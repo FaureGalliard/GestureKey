@@ -1,6 +1,3 @@
-"""
-MuteToggleGesture — PALM → FIST → PALM quickly to toggle mute.
-"""
 from __future__ import annotations
 from typing import List
 
@@ -19,10 +16,7 @@ class MuteToggleGesture(Gesture):
         self._history: list = []  # list of (HandState, float)
 
     def detect(self, frame_data: FrameData) -> List[GestureEvent]:
-        """
-        Looks at the frame_data state and maintains its own compact state history
-        (does not depend on the engine's deque directly).
-        """
+
         events: List[GestureEvent] = []
         self._history.append((frame_data.state, frame_data.timestamp))
 

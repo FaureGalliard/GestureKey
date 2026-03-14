@@ -1,6 +1,3 @@
-"""
-TaskViewGesture — bring both palms together to open Win+Tab Task View.
-"""
 from __future__ import annotations
 import time
 from typing import List
@@ -42,7 +39,6 @@ class TaskViewGesture(Gesture):
         self._last_activation   = 0.0
         self.reset()
 
-    # ------------------------------------------------------------------
     def detect(self, frame_data: FrameData) -> List[GestureEvent]:
         events: List[GestureEvent] = []
         now = frame_data.timestamp
@@ -61,7 +57,6 @@ class TaskViewGesture(Gesture):
             self._smoothed_distance = (DISTANCE_ALPHA * distance_raw
                                        + (1 - DISTANCE_ALPHA) * self._smoothed_distance)
 
-        # Stability validation (pre-arm only)
         if not self._armed:
             if self._stable(center_left, center_right):
                 self._stable_count += 1
@@ -96,7 +91,6 @@ class TaskViewGesture(Gesture):
 
             self._armed = True
 
-        # Accumulate approach
         if self._prev_dist_raw is not None:
             delta = self._prev_dist_raw - distance_raw
             if delta > MAX_APPROACH_SPEED:
@@ -114,7 +108,6 @@ class TaskViewGesture(Gesture):
         self._prev_dist_raw = distance_raw
         return events
 
-    # ------------------------------------------------------------------
     def reset(self) -> None:
         self._both_start      = None
         self._armed           = False

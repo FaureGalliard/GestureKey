@@ -1,6 +1,4 @@
-"""
-CloseWindowGesture — swipe fist downward to close the active window.
-"""
+
 from __future__ import annotations
 from typing import List
 

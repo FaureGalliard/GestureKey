@@ -1,6 +1,3 @@
-"""
-PauseResumeGesture — stable PALM then FIST transition to toggle media play/pause.
-"""
 from __future__ import annotations
 import time
 from typing import List, Optional

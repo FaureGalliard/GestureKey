@@ -1,6 +1,3 @@
-"""
-ScreenshotGesture — push palm toward camera to take a screenshot.
-"""
 from __future__ import annotations
 from typing import List
 
