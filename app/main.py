@@ -1,21 +1,7 @@
-"""
-main.py — Entry point de Gesture Control como aplicación de system tray.
-
-Uso:
-    python app/main.py
-
-La aplicación:
-  1. Arranca sin ventana visible.
-  2. Muestra ícono en la bandeja del sistema.
-  3. Corre el pipeline de visión en un hilo de fondo.
-  4. Al hacer click en el ícono → muestra/oculta la ventana de cámara.
-  5. Click derecho en el ícono → menú de control.
-"""
 from __future__ import annotations
 import sys
 from pathlib import Path
 
-# Asegurar que el root del proyecto esté en el path
 _ROOT = Path(__file__).parent.parent
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
@@ -27,7 +13,6 @@ from app.tray_app import TrayApp
 
 
 def main() -> None:
-    # Necesario para que QSystemTrayIcon funcione sin ventana principal
     QApplication.setQuitOnLastWindowClosed(False)
 
     app = QApplication(sys.argv)

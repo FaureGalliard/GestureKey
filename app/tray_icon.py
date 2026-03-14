@@ -1,23 +1,18 @@
-"""
-tray_icon.py — genera el ícono del system tray programáticamente.
-No depende de archivos de imagen externos.
-"""
 from __future__ import annotations
 
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QIcon, QPixmap, QPainter, QColor, QBrush, QPen, QFont
+from PyQt6.QtGui import QIcon, QPixmap, QPainter, QColor, QBrush, QPen
 
 
 def make_tray_icon(active: bool = True) -> QIcon:
     size = 64
-    pix = QPixmap(size, size)
+    pix  = QPixmap(size, size)
     pix.fill(Qt.GlobalColor.transparent)
 
     p = QPainter(pix)
     p.setRenderHint(QPainter.RenderHint.Antialiasing)
 
-    bg_color = QColor("#1a1a1a")
-    p.setBrush(QBrush(bg_color))
+    p.setBrush(QBrush(QColor("#1a1a1a")))
     p.setPen(Qt.PenStyle.NoPen)
     p.drawEllipse(0, 0, size, size)
 

@@ -1,8 +1,3 @@
-"""
-CameraWindow — ventana flotante que muestra el feed de la cámara.
-El panel de info vive al lado derecho sobre fondo blanco.
-No hay overlays sobre el frame. No hay botón de close.
-"""
 from __future__ import annotations
 from collections import deque
 
@@ -92,7 +87,6 @@ class CameraWindow(QWidget):
         root.setContentsMargins(0, 0, 0, 0)
         root.setSpacing(0)
 
-        # ---- cámara (sin márgenes, ocupa todo el alto) ---------------
         self._camera_label = QLabel()
         self._camera_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._camera_label.setSizePolicy(
@@ -101,7 +95,6 @@ class CameraWindow(QWidget):
         self._camera_label.setStyleSheet("background:#f0f0f0;")
         root.addWidget(self._camera_label, stretch=1)
 
-        # ---- panel derecho -------------------------------------------
         panel = QWidget()
         panel.setFixedWidth(200)
         panel.setStyleSheet("background:#ffffff; border-left: 1px solid #e0e0e0;")
@@ -109,7 +102,6 @@ class CameraWindow(QWidget):
         right.setContentsMargins(12, 14, 12, 14)
         right.setSpacing(10)
 
-        # Estado
         t1 = QLabel("STATE")
         t1.setObjectName("section_title")
         right.addWidget(t1)
@@ -131,7 +123,6 @@ class CameraWindow(QWidget):
         sep1.setStyleSheet("background:#e0e0e0; border:none; max-height:1px;")
         right.addWidget(sep1)
 
-        # Buffer
         t2 = QLabel("BUFFER")
         t2.setObjectName("section_title")
         right.addWidget(t2)
@@ -156,7 +147,6 @@ class CameraWindow(QWidget):
         sep2.setStyleSheet("background:#e0e0e0; border:none; max-height:1px;")
         right.addWidget(sep2)
 
-        # Log
         t3 = QLabel("CONSOLE")
         t3.setObjectName("section_title")
         right.addWidget(t3)
@@ -168,7 +158,6 @@ class CameraWindow(QWidget):
 
         root.addWidget(panel)
 
-    # ------------------------------------------------------------------
     def on_frame(self, frame: np.ndarray) -> None:
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         frame_rgb = cv2.flip(frame_rgb, 1)
@@ -208,7 +197,7 @@ class CameraWindow(QWidget):
         buf_list = list(self._state_buffer)
         for i, lbl in enumerate(self._buf_labels):
             if i < len(buf_list):
-                s = buf_list[i]
+                s  = buf_list[i]
                 sv = _STATE_BRIGHTNESS.get(s, _DEFAULT_BRIGHTNESS)
                 lbl.setText(s.value[:3])
                 lbl.setStyleSheet(

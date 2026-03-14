@@ -1,9 +1,3 @@
-"""
-CameraWorker — corre el pipeline completo en un hilo de QThread y emite
-señales con la información necesaria para actualizar la UI.
-
-Separa completamente el procesamiento de la interfaz gráfica.
-"""
 from __future__ import annotations
 import time
 from typing import Optional
@@ -23,28 +17,22 @@ from domain.models import FrameData
 
 
 class CameraWorker(QThread):
-   
-
     frame_ready   = pyqtSignal(np.ndarray)
-    state_changed = pyqtSignal(object, object, float)   # HandState, HandState, float
-    event_fired   = pyqtSignal(object)                  # GestureEvent
+    state_changed = pyqtSignal(object, object, float)
+    event_fired   = pyqtSignal(object)
     status_msg    = pyqtSignal(str)
 
     def __init__(self, config: AppConfig, parent=None) -> None:
         super().__init__(parent)
         self._config  = config
         self._running = False
-
-        # Componentes del pipeline (se crean en run() para vivir en el hilo correcto)
         self._camera:     Optional[Camera]          = None
         self._tracker:    Optional[HandTracker]     = None
         self._classifier: Optional[StateClassifier] = None
         self._stabilizer: Optional[StateStabilizer] = None
         self._manager:    Optional[GestureManager]  = None
 
-    # ------------------------------------------------------------------
     def run(self) -> None:
-        """Bucle principal — corre en el hilo del worker."""
         cfg = self._config
 
         try:
@@ -64,7 +52,7 @@ class CameraWorker(QThread):
 
         self._running = True
         prev_stable: HandState | None = None
-        self.status_msg.emit(" Pipeline iniciado")
+        self.status_msg.emit("Pipeline iniciado")
 
         while self._running:
             frame = self._camera.read()
@@ -73,7 +61,6 @@ class CameraWorker(QThread):
                 time.sleep(0.05)
                 continue
 
-            # Track + classify
             hands_data, hands_raw = self._tracker.process(frame)
 
             if hands_data:
@@ -81,18 +68,15 @@ class CameraWorker(QThread):
             else:
                 raw_state, confidence = HandState.NO_HANDS, 1.0
 
-            # Stabilise
             self._stabilizer.update(raw_state, confidence)
             current = self._stabilizer.current or HandState.NO_HANDS
 
-            # Notificar cambio de estado
             if current != prev_stable:
                 self.status_msg.emit(f"[STATE] {prev_stable} → {current}")
                 prev_stable = current
 
             self.state_changed.emit(current, raw_state, confidence)
 
-            # Gestos
             if current not in (HandState.NO_HANDS, HandState.UNKNOWN):
                 frame_data = FrameData(
                     state=current,
@@ -105,20 +89,17 @@ class CameraWorker(QThread):
                     self.status_msg.emit(f"[EVENT] {event.value}")
                     self.event_fired.emit(event)
 
-            # Emitir frame para la UI (copia para thread-safety)
             self.frame_ready.emit(frame.copy())
 
-        # Cleanup
         self._cleanup()
 
-    # ------------------------------------------------------------------
     def stop(self) -> None:
         self._running = False
-        self.wait(3000)  # espera hasta 3s a que termine
+        self.wait(3000)
 
     def _cleanup(self) -> None:
         if self._camera:
             self._camera.release()
         if self._tracker:
             self._tracker.release()
-        self.status_msg.emit(" Pipeline detenido")
+        self.status_msg.emit("Pipeline detenido")

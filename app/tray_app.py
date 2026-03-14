@@ -1,6 +1,3 @@
-"""
-TrayApp — aplicación de system tray que orquesta el worker y la ventana.
-"""
 from __future__ import annotations
 
 from PyQt6.QtWidgets import QApplication, QSystemTrayIcon, QMenu
@@ -10,7 +7,6 @@ from app.config import AppConfig, default_config
 from app.camera_worker import CameraWorker
 from app.camera_window import CameraWindow
 from app.tray_icon import make_tray_icon
-from domain.enums import HandState
 
 
 class TrayApp:
