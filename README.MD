@@ -1,4 +1,3 @@
-
 # 🖐️ Hand Gesture System shortcuts
 
 Sistema de deteccion de gestos que activa atajos de teclado (zoom,scroll,task-view, etc)
@@ -22,23 +21,28 @@ El sistema está dividido en componentes claros:
 ## 🧩 Tecnologías utilizadas
 
 ### 🔹 OpenCV
+
 Se utiliza para:
+
 - Captura de la cámara
 - Conversión de color (BGR → RGB)
 - Dibujar overlays (texto, líneas, landmarks)
 - Visualización en modo debug
 
 ### 🔹 MediaPipe
+
 Se utiliza para:
+
 - Detectar manos en la imagen
 - Extraer 21 landmarks por mano
 - Proveer estructura anatómica
 
 ### 🔹 Scikit-learn
+
 Se utiliza para:
+
 - Entrenar el modelo de clasificación
 - Predecir el estado actual de la mano
-
 
 ## 🚀 Instalación
 
@@ -46,7 +50,7 @@ Se utiliza para:
 
 ```bash
 python3.11 -m venv venv
-````
+```
 
 Activar:
 
@@ -60,6 +64,10 @@ Mac/Linux:
 
 ```bash
 source venv/bin/activate
+```
+
+```bash
+python -m app.main
 ```
 
 ---
@@ -77,6 +85,7 @@ pip install -r requirements.txt
 ```bash
 python app/main.py
 ```
+
 ---
 
 ## 📈 Flujo de procesamiento
@@ -94,25 +103,24 @@ python app/main.py
 
 Separar claramente:
 
-* Captura
-* Detección
-* Clasificación
-* Lógica de negocio
-* Visualización
+- Captura
+- Detección
+- Clasificación
+- Lógica de negocio
+- Visualización
 
 ---
 
 ## 📌 Requisitos
 
-* Python 3.11
-* Cámara funcional
-* Sistema operativo compatible con OpenCV
+- Python 3.11
+- Cámara funcional
+- Sistema operativo compatible con OpenCV
 
 ---
 
 ## 👨‍💻 Autor
 
-Angel Gabriel Crispin Valdivia 
+Angel Gabriel Crispin Valdivia
 
 ---
-

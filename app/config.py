@@ -5,10 +5,7 @@ from pathlib import Path
 
 @dataclass
 class AppConfig:
-    """
-    Central configuration injected into all components.
-    No more scattered module-level constants.
-    """
+  
     # ---- paths ---------------------------------------------------------
     model_path: Path = Path("models/hand_state_rf.pkl")
 

@@ -23,15 +23,7 @@ from domain.models import FrameData
 
 
 class CameraWorker(QThread):
-    """
-    QThread que ejecuta el pipeline completo de visión + gestos.
-
-    Señales emitidas cada frame:
-        frame_ready   — frame BGR como np.ndarray (para mostrar en la UI)
-        state_changed — (stable_state, raw_state, confidence)
-        event_fired   — GestureEvent detectado
-        status_msg    — string de log para mostrar en la UI
-    """
+   
 
     frame_ready   = pyqtSignal(np.ndarray)
     state_changed = pyqtSignal(object, object, float)   # HandState, HandState, float
@@ -72,7 +64,7 @@ class CameraWorker(QThread):
 
         self._running = True
         prev_stable: HandState | None = None
-        self.status_msg.emit("✅ Pipeline iniciado")
+        self.status_msg.emit(" Pipeline iniciado")
 
         while self._running:
             frame = self._camera.read()
@@ -129,4 +121,4 @@ class CameraWorker(QThread):
             self._camera.release()
         if self._tracker:
             self._tracker.release()
-        self.status_msg.emit("🛑 Pipeline detenido")
+        self.status_msg.emit(" Pipeline detenido")
