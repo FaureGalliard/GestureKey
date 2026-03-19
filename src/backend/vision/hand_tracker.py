@@ -5,7 +5,7 @@ from typing import Any, List, Tuple
 import cv2
 import mediapipe as mp
 
-from domain.models import HandsData, HandsRaw, Landmark2D
+from models import HandsData, HandsRaw, Landmark2D
 
 
 class HandTracker:

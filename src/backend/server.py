@@ -14,15 +14,15 @@ import cv2
 import websockets
 from websockets import serve
 
-from app.config import AppConfig
-from core.camera import Camera
-from core.hand_tracker import HandTracker
-from core.state_classifier import StateClassifier
-from core.state_stabilizer import StateStabilizer
-from core.gesture_manager import GestureManager
-from core.cooldown_manager import CooldownManager
-from domain.enums import HandState
-from domain.models import FrameData
+from config import AppConfig
+from vision.camera import Camera
+from vision.hand_tracker import HandTracker
+from vision.state_classifier import StateClassifier
+from pipeline.state_stabilizer import StateStabilizer
+from pipeline.gesture_manager import GestureManager
+from pipeline.cooldown_manager import CooldownManager
+from enums import HandState
+from models import FrameData
 
 CONFIG = AppConfig(model_path=ROOT / "models" / "hand_state_rf.pkl")
 
@@ -51,6 +51,7 @@ async def handler(ws) -> None:
 
 async def pipeline_loop() -> None:
     cfg = CONFIG
+    
 
     camera     = Camera(cfg.camera_device, cfg.fps_limit)
     tracker    = HandTracker()

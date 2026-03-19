@@ -7,7 +7,7 @@ import numpy as np
 
 
 class Camera:
-    def __init__(self, device: int = 0, fps_limit: int = 30) -> None:
+    def __init__(self, device: int = 0, fps_limit: int = 60) -> None:
         self._cap        = cv2.VideoCapture(device)
         self._frame_time = 1.0 / fps_limit
         self._prev_time  = 0.0

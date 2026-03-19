@@ -3,16 +3,16 @@ from typing import List
 
 import pyautogui
 
-from domain.enums import GestureEvent, HandState
-from domain.models import FrameData
+from enums import GestureEvent, HandState
+from models import FrameData
 from gestures.base import Gesture
 from utils.geometry import hand_center
 
-pyautogui.PAUSE = 0.01
+pyautogui.PAUSE = 0
 
 BASE_GAIN               = 10_000
 ACCEL_FACTOR            = 12_000
-MAX_SCROLL_STEP         = 80_000
+MAX_SCROLL_STEP         = 100_000
 MIN_SCROLL_STEP         = 10
 
 SIZE_COMPENSATION       = True

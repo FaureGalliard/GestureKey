@@ -1,10 +1,10 @@
 from __future__ import annotations
 from typing import List
 
-from domain.enums import GestureEvent, HandState
-from domain.models import FrameData
+from enums import GestureEvent, HandState
+from models import FrameData
 from gestures.base import Gesture
-from core.cooldown_manager import CooldownManager
+from pipeline.cooldown_manager import CooldownManager
 
 
 class MuteToggleGesture(Gesture):

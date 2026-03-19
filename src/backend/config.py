@@ -17,7 +17,6 @@ class AppConfig:
     cooldown: float = 0.6
 
     scroll_arm_time: float = 0.18
-    scroll_max_time: float = 3.0
 
     volume_arm_time: float = 0.20
 
@@ -35,12 +34,6 @@ class AppConfig:
 
     intent_z_enter: float = -0.045
     intent_z_exit: float = -0.005
-
-    deadzone: float = 0.015
-    smoothing: float = 0.7
-    scroll_sens: float = 1.2
-    volume_sens: float = 1.0
-    zoom_sens: float = 1.5
 
 
 default_config = AppConfig()
