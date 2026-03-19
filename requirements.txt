@@ -1,0 +1,19 @@
+# Core vision
+opencv-python>=4.8.0
+mediapipe==0.10.9
+
+# GUI (Qt)
+PySide6>=6.6.0
+
+# System control
+pynput>=1.7.6
+
+# Tray icon
+
+websocket-client>=1.6.0
+# Utils
+python-dotenv>=1.0.0
+pandas>=2.0.0
+
+joblib>=1.3.0
+scikit-learn>=1.3.0
