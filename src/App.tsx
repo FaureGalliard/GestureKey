@@ -5,12 +5,17 @@ import { useGesture } from './hooks/useGesture'
 import { GestureCard } from './components/GestureCard'
 import { StateBuffer } from './components/StateBuffer'
 import { EventLog } from './components/EventLog'
+import { LoadingScreen } from './components/LoadingScreen'
 
 const btn = `flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-medium rounded-full transition-all duration-150`
 
 export default function App() {
     const [panelOpen, setPanelOpen] = useState(false)
     const gesture = useGesture()
+
+    if (!gesture.connected) {
+        return <LoadingScreen />
+    }
 
     return (
         <div className="w-screen h-screen bg-[#1a1a1a] flex flex-col font-inter overflow-hidden">
@@ -21,19 +26,6 @@ export default function App() {
                     className={`${btn} bg-white/10 text-white hover:bg-white/20`}>
                     {panelOpen ? '✕ PANEL' : '≡ PANEL'}
                 </button>
-
-                <div className="w-px h-5 mx-1 bg-white/15" />
-
-                {/* connection status */}
-                <div className="flex items-center gap-2 bg-white/10 rounded-full px-3 py-1.5">
-                    <span
-                        className={`w-1.5 h-1.5 rounded-full shrink-0 ${gesture.connected ? 'bg-[#445ade]' : 'bg-white/20'}`}
-                    />
-                    <span
-                        className={`text-[11px] font-medium ${gesture.connected ? 'text-white' : 'text-white/30'}`}>
-                        {gesture.connected ? 'CONECTADO' : 'DESCONECTADO'}
-                    </span>
-                </div>
 
                 <div className="w-px h-5 mx-1 bg-white/15" />
 
