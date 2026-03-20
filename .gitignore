@@ -29,4 +29,6 @@ src/backend/**/__pycache__/
 src/backend/**/*.pyc
 src/backend/**/*.pyo
 
+src-tauri/server/
+src-tauri/target/
 .vscode
