@@ -43,7 +43,12 @@ async def handler(ws) -> None:
     connected_clients.add(ws)
     print(f"[WS] Client connected — {len(connected_clients)} total")
     try:
-        await ws.wait_closed()
+        async for message in ws:
+            try:
+                msg = json.loads(message)
+                print(f"[WS] Received: {msg}")
+            except Exception:
+                pass
     finally:
         connected_clients.discard(ws)
         print(f"[WS] Client disconnected — {len(connected_clients)} total")
@@ -51,7 +56,6 @@ async def handler(ws) -> None:
 
 async def pipeline_loop() -> None:
     cfg = CONFIG
-    
 
     camera     = Camera(cfg.camera_device, cfg.fps_limit)
     tracker    = HandTracker()
@@ -74,7 +78,6 @@ async def pipeline_loop() -> None:
                 await asyncio.sleep(0.05)
                 continue
 
-            # vision
             hands_data, hands_raw = tracker.process(frame)
 
             if hands_data:
@@ -85,7 +88,6 @@ async def pipeline_loop() -> None:
             stabilizer.update(raw_state, confidence)
             current = stabilizer.current or HandState.NO_HANDS
 
-            # gestures
             events = []
             if current not in (HandState.NO_HANDS, HandState.UNKNOWN):
                 frame_data = FrameData(
@@ -96,12 +98,16 @@ async def pipeline_loop() -> None:
                 )
                 events = manager.process(frame_data)
 
-            # broadcast state
+            # detected hands list e.g. ["Right"], ["Left", "Right"], []
+            detected_hands = list(hands_data.keys())
+
             msg: dict = {
                 "state":      current.value,
                 "raw_state":  raw_state.value,
                 "confidence": round(confidence, 4),
                 "timestamp":  round(time.time(), 3),
+                "paused":     manager._pause.is_paused(),
+                "hands":      detected_hands,
             }
 
             if current != prev_stable:
@@ -112,7 +118,6 @@ async def pipeline_loop() -> None:
 
             await broadcast(msg)
 
-            # broadcast frame
             if connected_clients:
                 frame_flipped = cv2.flip(frame, 1)
                 _, buf = cv2.imencode(".jpg", frame_flipped, [cv2.IMWRITE_JPEG_QUALITY, 70])
