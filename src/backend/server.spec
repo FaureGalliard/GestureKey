@@ -57,7 +57,8 @@ a = Analysis(
     ],
     hookspath=[],
     runtime_hooks=[],
-    excludes=["tkinter", "_tkinter", "tk", "tcl"],
+    excludes=["tkinter", "_tkinter", "tk", "tcl","mediapipe.model_maker","matplotlib.tests","matplotlib.testing","sklearn.externals.array_api_compat.torch",
+    "torch"],
     cipher=block_cipher,
 )
 
