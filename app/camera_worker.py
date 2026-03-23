@@ -21,6 +21,7 @@ class CameraWorker(QThread):
     state_changed = pyqtSignal(object, object, float)
     event_fired   = pyqtSignal(object)
     status_msg    = pyqtSignal(str)
+    hands_changed = pyqtSignal(list)
 
     def __init__(self, config: AppConfig, parent=None) -> None:
         super().__init__(parent)
@@ -34,7 +35,6 @@ class CameraWorker(QThread):
 
     def run(self) -> None:
         cfg = self._config
-
         try:
             self._camera     = Camera(cfg.camera_device, cfg.fps_limit)
             self._tracker    = HandTracker()
@@ -50,8 +50,9 @@ class CameraWorker(QThread):
             self.status_msg.emit(f"[ERROR] Inicialización: {exc}")
             return
 
-        self._running = True
+        self._running  = True
         prev_stable: HandState | None = None
+        prev_hands:  list             = []
         self.status_msg.emit("Pipeline iniciado")
 
         while self._running:
@@ -61,13 +62,16 @@ class CameraWorker(QThread):
                 time.sleep(0.05)
                 continue
 
+            # ── tracking (una sola vez por frame) ───────────────────
             hands_data, hands_raw = self._tracker.process(frame)
 
+            # ── clasificación ────────────────────────────────────────
             if hands_data:
                 raw_state, confidence = self._classifier.predict(hands_data)
             else:
                 raw_state, confidence = HandState.NO_HANDS, 1.0
 
+            # ── estabilización ───────────────────────────────────────
             self._stabilizer.update(raw_state, confidence)
             current = self._stabilizer.current or HandState.NO_HANDS
 
@@ -77,6 +81,13 @@ class CameraWorker(QThread):
 
             self.state_changed.emit(current, raw_state, confidence)
 
+            # ── hands_changed (solo cuando cambia la lista) ──────────
+            detected_hands = list(hands_data.keys())
+            if detected_hands != prev_hands:
+                self.hands_changed.emit(detected_hands)
+                prev_hands = detected_hands
+
+            # ── detección de gestos ──────────────────────────────────
             if current not in (HandState.NO_HANDS, HandState.UNKNOWN):
                 frame_data = FrameData(
                     state=current,
@@ -89,6 +100,7 @@ class CameraWorker(QThread):
                     self.status_msg.emit(f"[EVENT] {event.value}")
                     self.event_fired.emit(event)
 
+            # ── frame a la UI ────────────────────────────────────────
             self.frame_ready.emit(frame.copy())
 
         self._cleanup()
