@@ -13,37 +13,34 @@ class CameraView(QWidget):
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.setStyleSheet(f"background:{BG_CAMERA};")
 
-        self._raw_pixmap:   QPixmap | None = None
-        self._overlay_text: str  = ""   # non-empty → draw overlay
-        self._base_text:    str  = ""
-        self._dot_count:    int  = 0
-        self._frozen:       bool = False  # when True, update_frame() is a no-op
+        self._raw_pixmap:    QPixmap | None = None
+        self._scaled_pixmap: QPixmap | None = None  
+        self._last_size                     = None   
+        self._overlay_text:  str  = ""   
+        self._base_text:     str  = ""
+        self._dot_count:     int  = 0
+        self._frozen:        bool = False  
+        self._bg_color = QColor(BG_CAMERA) if BG_CAMERA.startswith("#") else QColor("#0d0d0d")
 
         self._dot_timer = QTimer(self)
         self._dot_timer.setInterval(500)
         self._dot_timer.timeout.connect(self._tick_dots)
 
-    # ── public API ────────────────────────────────────────────────────────────
-
     def update_frame(self, frame: np.ndarray) -> None:
-        """Deliver a live frame. Ignored while frozen (overlay is showing)."""
         if self._frozen:
             return
         self._overlay_text = ""
         self._base_text    = ""
         self._dot_timer.stop()
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        frame_rgb = cv2.flip(frame_rgb, 1)
         h, w, ch  = frame_rgb.shape
-        img = QImage(frame_rgb.data, w, h, ch * w, QImage.Format.Format_RGB888)
-        self._raw_pixmap = QPixmap.fromImage(img)
+        img = QImage(frame_rgb.data, w, h, ch * w, QImage.Format.Format_RGB888).copy()
+        self._raw_pixmap    = QPixmap.fromImage(img)
+        self._scaled_pixmap = None   
         self.update()
 
     def show_overlay(self, message: str, animate: bool = False) -> None:
-        """
-        Freeze the view and show a pill overlay.
-        Incoming frames are ignored until unfreeze() is called.
-        """
+       
         self._frozen       = True
         self._base_text    = message
         self._dot_count    = 0
@@ -55,17 +52,10 @@ class CameraView(QWidget):
         self.update()
 
     def unfreeze(self) -> None:
-        """
-        Allow frames through again.
-        The overlay disappears automatically on the next update_frame() call.
-        """
         self._frozen = False
 
-    # legacy alias kept for compatibility
     def clear(self, message: str = "Selecting camera…") -> None:
         self.show_overlay(message, animate=False)
-
-    # ── internals ─────────────────────────────────────────────────────────────
 
     def _tick_dots(self) -> None:
         self._dot_count    = (self._dot_count + 1) % 4
@@ -76,8 +66,7 @@ class CameraView(QWidget):
         p = QPainter(self)
         p.setRenderHint(QPainter.RenderHint.Antialiasing)
 
-        bg = QColor(BG_CAMERA) if BG_CAMERA.startswith("#") else QColor("#0d0d0d")
-        p.fillRect(self.rect(), bg)
+        p.fillRect(self.rect(), self._bg_color)
 
         if self._overlay_text:
             p.fillRect(self.rect(), QColor(0, 0, 0, 210))
@@ -104,14 +93,16 @@ class CameraView(QWidget):
             p.drawText(pill_x + pad_x, pill_y + pad_y + fm.ascent(), text)
 
         elif self._raw_pixmap is not None:
-            scaled = self._raw_pixmap.scaled(
-                self.size(),
-                Qt.AspectRatioMode.KeepAspectRatio,
-                Qt.TransformationMode.SmoothTransformation,
-            )
-            x = (self.width()  - scaled.width())  // 2
-            y = (self.height() - scaled.height()) // 2
-            p.drawPixmap(x, y, scaled)
+            if self._scaled_pixmap is None or self._last_size != self.size():
+                self._scaled_pixmap = self._raw_pixmap.scaled(
+                    self.size(),
+                    Qt.AspectRatioMode.KeepAspectRatio,
+                    Qt.TransformationMode.SmoothTransformation,
+                )
+                self._last_size = self.size()
+            x = (self.width()  - self._scaled_pixmap.width())  // 2
+            y = (self.height() - self._scaled_pixmap.height()) // 2
+            p.drawPixmap(x, y, self._scaled_pixmap)
 
         p.end()
 
