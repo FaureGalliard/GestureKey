@@ -12,12 +12,13 @@ class CameraView(QWidget):
         super().__init__(parent)
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.setStyleSheet(f"background:{BG_CAMERA};")
-        self._raw_pixmap: QPixmap | None = None
-        self._overlay_text: str = ""       # non-empty = show overlay
-        self._dot_count: int = 0
-        self._base_text: str = ""
 
-        # Animated dots timer — ticks while overlay is shown
+        self._raw_pixmap:   QPixmap | None = None
+        self._overlay_text: str  = ""   # non-empty → draw overlay
+        self._base_text:    str  = ""
+        self._dot_count:    int  = 0
+        self._frozen:       bool = False  # when True, update_frame() is a no-op
+
         self._dot_timer = QTimer(self)
         self._dot_timer.setInterval(500)
         self._dot_timer.timeout.connect(self._tick_dots)
@@ -25,7 +26,9 @@ class CameraView(QWidget):
     # ── public API ────────────────────────────────────────────────────────────
 
     def update_frame(self, frame: np.ndarray) -> None:
-        """Display a live camera frame and hide any overlay."""
+        """Deliver a live frame. Ignored while frozen (overlay is showing)."""
+        if self._frozen:
+            return
         self._overlay_text = ""
         self._base_text    = ""
         self._dot_timer.stop()
@@ -38,27 +41,34 @@ class CameraView(QWidget):
 
     def show_overlay(self, message: str, animate: bool = False) -> None:
         """
-        Cover the view with a dark overlay + pill message.
-        If animate=True the dots after the message cycle (…).
+        Freeze the view and show a pill overlay.
+        Incoming frames are ignored until unfreeze() is called.
         """
+        self._frozen       = True
         self._base_text    = message
         self._dot_count    = 0
         self._overlay_text = message
-        self._raw_pixmap   = None
         if animate:
             self._dot_timer.start()
         else:
             self._dot_timer.stop()
         self.update()
 
-    # legacy alias used by main_window
+    def unfreeze(self) -> None:
+        """
+        Allow frames through again.
+        The overlay disappears automatically on the next update_frame() call.
+        """
+        self._frozen = False
+
+    # legacy alias kept for compatibility
     def clear(self, message: str = "Selecting camera…") -> None:
         self.show_overlay(message, animate=False)
 
     # ── internals ─────────────────────────────────────────────────────────────
 
     def _tick_dots(self) -> None:
-        self._dot_count = (self._dot_count + 1) % 4
+        self._dot_count    = (self._dot_count + 1) % 4
         self._overlay_text = self._base_text + "." * self._dot_count
         self.update()
 
@@ -70,7 +80,6 @@ class CameraView(QWidget):
         p.fillRect(self.rect(), bg)
 
         if self._overlay_text:
-            # Semi-transparent dark wash over whatever was last painted
             p.fillRect(self.rect(), QColor(0, 0, 0, 210))
 
             text  = self._overlay_text

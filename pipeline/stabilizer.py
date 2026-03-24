@@ -2,7 +2,7 @@ from __future__ import annotations
 from collections import deque, Counter
 from typing import Optional
 
-from enums import HandState
+from utils.enums import HandState
 
 
 class StateStabilizer:

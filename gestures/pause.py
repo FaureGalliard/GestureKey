@@ -8,8 +8,8 @@ try:
 except ImportError:
     _HAS_WIN32 = False
 
-from enums import GestureEvent, HandState
-from models import FrameData
+from utils.enums import GestureEvent, HandState
+from utils.models import FrameData
 from gestures.base import Gesture
 from pipeline.cooldown  import CooldownManager
 

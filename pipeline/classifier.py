@@ -6,7 +6,7 @@ from typing import Dict, List, Optional, Tuple
 import joblib
 import pandas as pd
 
-from enums import HandState
+from utils.enums import HandState
 
 FINGERS = {
     "THUMB":  [1, 2, 4],

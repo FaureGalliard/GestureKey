@@ -10,7 +10,7 @@ from PyQt6.QtWidgets import (
     QFrame, QScrollArea, QSizePolicy,
 )
 
-from enums import HandState, GestureEvent
+from utils.enums import HandState, GestureEvent
 from ui.theme import (
     BG_PANEL, BORDER, BORDER_MED,
     TEXT_HIGH, TEXT_MED, TEXT_LOW, TEXT_MUTED,

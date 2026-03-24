@@ -4,8 +4,8 @@ from typing import List
 
 import pyautogui
 
-from enums import GestureEvent, HandState
-from models import FrameData
+from utils.enums import GestureEvent, HandState
+from utils.models import FrameData
 from gestures.base import Gesture
 from pipeline.cooldown  import CooldownManager
 from utils.geometry import dist, hand_center

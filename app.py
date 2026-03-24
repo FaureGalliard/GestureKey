@@ -10,8 +10,6 @@ from ui.main_window import MainWindow
 from ui.settings_window import SettingsWindow, CameraScanner
 
 
-# ── tray icon ─────────────────────────────────────────────────────────────────
-
 def make_tray_icon(active: bool = True) -> QIcon:
     size = 64
     pix  = QPixmap(size, size)
@@ -39,9 +37,22 @@ def make_tray_icon(active: bool = True) -> QIcon:
     return QIcon(pix)
 
 
-# ── TrayApp ───────────────────────────────────────────────────────────────────
-
 class TrayApp:
+    """
+    Camera ownership
+    ────────────────
+    CameraWorker owns the active VideoCapture at ALL times and NEVER restarts.
+    SettingsWindow uses worker frames for the current camera (MODE A) and its
+    own VideoCapture only when previewing a different device (MODE B).
+
+    Overlay lifecycle
+    ─────────────────
+    open settings  → on_camera_stopped()   freeze + "Selecting camera…"
+    save new cam   → on_camera_loading()   freeze + "Loading camera…" (animated)
+    settings close → on_camera_resumed()   unfreeze — next frame clears overlay
+    switch done    → (no extra call needed, unfreeze already happened)
+    """
+
     def __init__(self, config: AppConfig = default_config) -> None:
         self._config   = config
         self._worker   = CameraWorker(config)
@@ -61,15 +72,15 @@ class TrayApp:
 
     def start(self) -> None:
         self._window.show()
-        self._worker.start()           # start pipeline immediately, no scan yet
+        self._worker.start()
         self._tray.setIcon(make_tray_icon(active=True))
 
     def stop(self) -> None:
-        self._worker._running = False  # non-blocking
+        self._worker.stop()
         self._tray.hide()
         QApplication.quit()
 
-    # ── connections ───────────────────────────────────────────────────────────
+    # ── worker wiring ─────────────────────────────────────────────────────────
 
     def _connect_worker(self) -> None:
         self._worker.frame_ready.connect(self._window.on_frame)
@@ -77,51 +88,68 @@ class TrayApp:
         self._worker.event_fired.connect(self._window.on_event)
         self._worker.hands_changed.connect(self._window.on_hands_changed)
         self._worker.status_msg.connect(print)
-        self._worker.finished.connect(lambda: print('[WORKER] thread finished'))
+        self._worker.camera_switched.connect(self._on_camera_switched)
 
-    # ── settings ──────────────────────────────────────────────────────────────
+    # ── settings flow ─────────────────────────────────────────────────────────
 
     def _open_settings(self) -> None:
-        # If settings already visible, just bring it forward
         if self._settings is not None and self._settings.isVisible():
             self._settings.raise_()
             return
 
-        # Disconnect frame signal FIRST so no more frames reach the UI
-        try:
-            self._worker.frame_ready.disconnect(self._window.on_frame)
-        except RuntimeError:
-            pass
-        # Paint overlay — event loop is free, renders immediately
+        # Freeze main view immediately — worker keeps running normally.
         self._window.on_camera_stopped()
-        # Signal worker to stop non-blocking
-        self._worker._running = False
 
-        # Scan cameras now (worker is stopped, device is free)
+        # Scan cameras while worker continues capturing.
         self._scanner = CameraScanner()
         self._scanner.scan_done.connect(self._on_scan_done)
         self._scanner.start()
 
     def _on_scan_done(self, cameras: dict) -> None:
-        # Build/rebuild settings with fresh camera list
+        if self._settings is not None:
+            try:
+                self._settings.camera_selected.disconnect()
+                self._settings.preview_released.disconnect()
+            except RuntimeError:
+                pass
+            self._settings.deleteLater()
+
         self._settings = SettingsWindow(self._config, cameras=cameras)
-        self._settings.camera_selected.connect(self._on_camera_changed)
-        self._settings.preview_released.connect(self._on_settings_closed)
+        self._settings.camera_selected.connect(self._on_camera_selected)
+        self._settings.preview_released.connect(self._on_preview_released)
+
+        # Wire worker live feed → settings preview (MODE A).
+        self._worker.frame_ready.connect(self._settings.update_preview_frame)
 
         geo = self._window.geometry()
         self._settings.move(geo.right() + 12, geo.top())
         self._settings.show()
 
-    def _on_camera_changed(self, index: int) -> None:
-        self._config.camera_device = index
-
-    def _on_settings_closed(self) -> None:
-        # Show animated loading state while the new pipeline initialises
+    def _on_camera_selected(self, index: int) -> None:
+        """User saved a new device — switch without restarting the worker."""
+        # Loading overlay (still frozen from on_camera_stopped).
         self._window.on_camera_loading()
-        # Restart pipeline with the newly selected device
-        self._worker = CameraWorker(self._config)
-        self._connect_worker()
-        self._worker.start()
+        self._worker.switch_camera(index)
+
+    def _on_preview_released(self) -> None:
+        """Settings is closing — disconnect feed and unfreeze main view."""
+        if self._settings is not None:
+            try:
+                self._worker.frame_ready.disconnect(self._settings.update_preview_frame)
+            except RuntimeError:
+                pass
+        # Unfreeze: the next frame_ready → on_frame → update_frame() will
+        # clear the overlay automatically.
+        self._window.on_camera_resumed()
+
+    def _on_camera_switched(self, device: int) -> None:
+        """Worker finished a switch attempt."""
+        if device == -1:
+            # Switch failed — stay frozen with an error-ish overlay.
+            self._window.on_camera_stopped()
+            print("[APP] Camera switch failed")
+        # On success the unfreeze already happened in _on_preview_released,
+        # so the next frame from the new device will clear the overlay.
 
     # ── tray menu ─────────────────────────────────────────────────────────────
 

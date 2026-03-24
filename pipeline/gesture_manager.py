@@ -1,8 +1,8 @@
 from __future__ import annotations
 from typing import List
 
-from enums import GestureEvent
-from models import FrameData
+from utils.enums import GestureEvent
+from utils.models import FrameData
 from pipeline.cooldown import CooldownManager
 from gestures.scroll import ScrollGesture
 from gestures.volume import VolumeGesture
@@ -12,7 +12,6 @@ from gestures.close_window import CloseWindowGesture
 from gestures.pause import PauseResumeGesture
 from gestures.mute import MuteToggleGesture
 from gestures.task_view import TaskViewGesture
-
 
 class GestureManager:
     def __init__(self, cooldown: CooldownManager) -> None:

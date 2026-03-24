@@ -1,8 +1,8 @@
 from __future__ import annotations
 from typing import List
 
-from enums import GestureEvent, HandState
-from models import FrameData
+from utils.enums import GestureEvent, HandState
+from utils.models import FrameData
 from gestures.base import Gesture
 from pipeline.cooldown import CooldownManager
 from utils.geometry import dist
