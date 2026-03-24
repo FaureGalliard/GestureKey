@@ -124,3 +124,6 @@ Separar claramente:
 Angel Gabriel Crispin Valdivia
 
 ---
+
+ideas para gestos :
+grab ventana-> mover entre pantallas para users con mas de una pantalla
