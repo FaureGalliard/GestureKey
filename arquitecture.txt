@@ -1,5 +1,5 @@
 algo asi: 
-gesturkey/
+gesturekey/
 │
 ├── .venv/
 │
@@ -32,6 +32,7 @@ gesturkey/
 ├── app.py                
 ├── main.py
 ├── config.py
+├── setup.py
 │
 └── models/
     └── hand_state_rf.pkl

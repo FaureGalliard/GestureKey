@@ -14,7 +14,7 @@ from pipeline.gesture_manager import GestureManager
 from pipeline.cooldown import CooldownManager
 from utils.enums import HandState, GestureEvent
 from utils.models import FrameData
-
+import traceback
 _NO_PENDING = -1
 
 
@@ -24,7 +24,7 @@ class CameraWorker(QThread):
     event_fired     = pyqtSignal(object)
     status_msg      = pyqtSignal(str)
     hands_changed   = pyqtSignal(list)
-    camera_switched = pyqtSignal(int)   # new device index, or -1 on failure
+    camera_switched = pyqtSignal(int) 
 
     def __init__(self, config: AppConfig, parent=None) -> None:
         super().__init__(parent)
@@ -55,6 +55,7 @@ class CameraWorker(QThread):
     def run(self) -> None:
         cfg = self._config
         try:
+            # Estas clases ahora lanzan errores descriptivos gracias a los cambios anteriores
             self._camera     = Camera(cfg.camera_device, cfg.fps_limit)
             self._tracker    = HandTracker()
             self._classifier = StateClassifier(cfg.model_path)
@@ -65,8 +66,12 @@ class CameraWorker(QThread):
             )
             cooldown      = CooldownManager(default_cooldown=cfg.cooldown)
             self._manager = GestureManager(cooldown)
+        except RuntimeError as e:
+            self.status_msg.emit(f"[ERROR CRÍTICO] {e}")
+            return
         except Exception as exc:
-            self.status_msg.emit(f"[ERROR] Init: {exc}")
+            traceback.print_exc() 
+            self.status_msg.emit(f"[ERROR INESPERADO] {exc}")
             return
 
         self._running       = True

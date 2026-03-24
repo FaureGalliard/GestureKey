@@ -57,13 +57,13 @@ class SettingsWindow(QDialog):
         super().__init__(parent)
         self._config        = config
         self._cameras       = cameras
-        self._camera_items  = sorted(cameras.items())  
+        self._camera_items  = sorted(cameras.items())
         self._current       = config.camera_device
         self._selected      = config.camera_device
         self._cam_buttons: dict[int, QPushButton] = {}
         self._expanded      = False
 
-        self._use_worker_preview: bool          = True
+        self._use_worker_preview: bool             = True
         self._preview_cap: cv2.VideoCapture | None = None
 
         self._raw_pixmap:    QPixmap | None = None
@@ -71,7 +71,7 @@ class SettingsWindow(QDialog):
         self._last_size     = None
 
         self._preview_timer = QTimer(self)
-        self._preview_timer.setInterval(50)         
+        self._preview_timer.setInterval(50)
         self._preview_timer.timeout.connect(self._tick_preview)
 
         self.setWindowTitle("Settings — GestureKey")
@@ -126,7 +126,7 @@ class SettingsWindow(QDialog):
         self._list_layout = QVBoxLayout(self._list_widget)
         self._list_layout.setContentsMargins(0, 0, 0, 0)
         self._list_layout.setSpacing(2)
-        for idx, name in self._camera_items:         
+        for idx, name in self._camera_items:
             btn = QPushButton(name)
             btn.setStyleSheet(self._cam_btn_style(idx == self._selected))
             btn.clicked.connect(lambda _, i=idx: self._highlight_camera(i))
@@ -174,10 +174,10 @@ class SettingsWindow(QDialog):
     def _start_preview(self, index: int) -> None:
         self._stop_preview()
         self._preview_lbl.setText("Opening…")
-        self._preview_lbl.clear()                      
+        self._preview_lbl.clear()
         cap = cv2.VideoCapture(index, cv2.CAP_DSHOW)
         if cap.isOpened():
-            cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)        
+            cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
             self._preview_cap = cap
             self._preview_timer.start()
         else:
@@ -191,53 +191,56 @@ class SettingsWindow(QDialog):
             self._preview_cap = None
 
     def _tick_preview(self) -> None:
-        if not self.isVisible() or self._preview_cap is None: 
+        if not self.isVisible() or self._preview_cap is None:
             return
         ret, frame = self._preview_cap.read()
         if ret:
             self._display(frame)
 
     def _display(self, frame: np.ndarray) -> None:
-        rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        rgb      = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         h, w, ch = rgb.shape
         img = QImage(rgb.data, w, h, ch * w, QImage.Format.Format_RGB888).copy()
-        self._raw_pixmap    = QPixmap.fromImage(img)
-        self._scaled_pixmap = None                     
+        new_pixmap = QPixmap.fromImage(img)
 
         size = self._preview_lbl.size()
-        if self._scaled_pixmap is None or self._last_size != size:
-            self._scaled_pixmap = self._raw_pixmap.scaled(
+        if self._raw_pixmap is None or self._last_size != size:
+            self._scaled_pixmap = new_pixmap.scaled(
                 size,
                 Qt.AspectRatioMode.KeepAspectRatioByExpanding,
                 Qt.TransformationMode.SmoothTransformation,
             )
             self._last_size = size
+        else:
+            self._scaled_pixmap = new_pixmap.scaled(
+                size,
+                Qt.AspectRatioMode.KeepAspectRatioByExpanding,
+                Qt.TransformationMode.FastTransformation,
+            )
+
+        self._raw_pixmap = new_pixmap
         self._preview_lbl.setPixmap(self._scaled_pixmap)
 
     def _save(self) -> None:
-        import re, pathlib
-        config_path = pathlib.Path(__file__).parent.parent / "config.py"
+        
+        self._config.camera_device = self._selected
+
         try:
-            text = config_path.read_text(encoding="utf-8")
-            text = re.sub(
-                r"(camera_device\s*:\s*int\s*=\s*)\d+",
-                lambda m: f"{m.group(1)}{self._selected}",
-                text,
-            )
-            config_path.write_text(text, encoding="utf-8")
+            self._config.save()
         except Exception as e:
             print(f"[Settings] Error saving config: {e}")
             return
 
-        self._config.camera_device = self._selected
-
         if self._selected != self._current:
+            # Release local preview cap BEFORE worker opens the same device.
             self._stop_preview()
             self.camera_selected.emit(self._selected)
 
         self._save_btn.setText("✓ Saved")
         self._save_btn.setStyleSheet(self._save_btn_style(True))
         QTimer.singleShot(500, self.close)
+
+    # ── lifecycle ─────────────────────────────────────────────────────────────
 
     def showEvent(self, event) -> None:
         super().showEvent(event)
@@ -257,12 +260,14 @@ class SettingsWindow(QDialog):
         for idx, btn in self._cam_buttons.items():
             btn.setStyleSheet(self._cam_btn_style(idx == self._selected))
         self._preview_lbl.setText("Connecting…")
-        self._preview_lbl.clear()                      # avoids QPixmap() allocation
+        self._preview_lbl.clear()
 
     def closeEvent(self, event) -> None:
         self._stop_preview()
         self.preview_released.emit()
         super().closeEvent(event)
+
+    # ── styles ────────────────────────────────────────────────────────────────
 
     def _trigger_style(self) -> str:
         return """

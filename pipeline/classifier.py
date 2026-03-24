@@ -49,6 +49,11 @@ def _extract_features(landmarks: Optional[List]) -> List[float]:
 
 class StateClassifier:
     def __init__(self, model_path: Path) -> None:
+        str_path = str(model_path.absolute())
+        
+        if not model_path.exists():
+            
+            raise FileNotFoundError(f"No se encontró el modelo en: {str_path}")
         self._model         = joblib.load(model_path)
         self._model.verbose = 0
 

@@ -8,12 +8,15 @@ import numpy as np
 
 class Camera:
     def __init__(self, device: int = 0, fps_limit: int = 30) -> None:
-        self._cap        = cv2.VideoCapture(device)
-        self._frame_time = 1.0 / fps_limit
-        self._prev_time  = 0.0
+        try:
+            self._cap = cv2.VideoCapture(device)
+            self._frame_time = 1.0 / fps_limit
+            self._prev_time  = 0.0
 
-        if not self._cap.isOpened():
-            raise RuntimeError(f"Cannot open camera device {device}")
+            if not self._cap.isOpened():
+                raise RuntimeError(f"OpenCV no pudo abrir el dispositivo {device}")
+        except Exception as e:
+            raise RuntimeError(f"Error al inicializar la cámara: {e}")
 
     def read(self) -> Optional[np.ndarray]:
         while True:
