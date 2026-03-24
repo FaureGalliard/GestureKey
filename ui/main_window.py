@@ -5,7 +5,7 @@ from PyQt6.QtWidgets import (
     QMainWindow, QWidget, QHBoxLayout, QSizePolicy,
 )
 
-from domain.enums import HandState, GestureEvent
+from enums import HandState, GestureEvent
 from ui.components.camera_view import CameraView
 from ui.components.console import Console
 from ui.components.toolbar import Toolbar
@@ -25,7 +25,6 @@ class MainWindow(QMainWindow):
         self._size_set = False
         self._build_ui()
 
-    # ── layout ────────────────────────────────────────────────────────────────
 
     def _build_ui(self) -> None:
         central = QWidget()
@@ -36,13 +35,11 @@ class MainWindow(QMainWindow):
         root.setContentsMargins(0, 0, 0, 0)
         root.setSpacing(0)
 
-        # Console panel
         self._console = Console()
         self._console.setFixedWidth(0)
         self._console.hide()
         root.addWidget(self._console)
 
-        # Camera view — fills remaining space
         self._camera_view = CameraView()
         self._camera_view.setStyleSheet(f"background:{BG_CAMERA};")
         self._camera_view.setSizePolicy(
@@ -50,9 +47,6 @@ class MainWindow(QMainWindow):
         )
         root.addWidget(self._camera_view, stretch=1)
 
-        # Toolbar — parented to the QMainWindow itself, not central widget.
-        # This places it above all central-widget repaints in the z-stack,
-        # so camera frame updates can never push it behind the camera feed.
         self._toolbar = Toolbar(self)
         self._toolbar.toggle_console.connect(self._toggle_console)
         self._toolbar.toggle_active.connect(self._on_toggle_active)
@@ -61,18 +55,12 @@ class MainWindow(QMainWindow):
         self._toolbar.show()
         self._toolbar.raise_()
 
-    # ── toolbar positioning ───────────────────────────────────────────────────
 
     def _reposition_toolbar(self) -> None:
         self._toolbar.adjustSize()
-        # Position relative to the QMainWindow frame.
-        # We want top-right of the *camera area* (central widget right edge).
-        # central widget starts at x = 0 within QMainWindow's content area,
-        # but QMainWindow adds a 1px frame — use geometry() for accuracy.
         cw = self.centralWidget()
         if cw is None:
             return
-        # Map top-right of central widget into QMainWindow coordinates
         top_right = cw.mapTo(self, cw.rect().topRight())
         x = top_right.x() - self._toolbar.width() - 16
         y = cw.mapTo(self, cw.rect().topLeft()).y() + 16
@@ -83,7 +71,6 @@ class MainWindow(QMainWindow):
         super().resizeEvent(event)
         self._reposition_toolbar()
 
-    # ── console slide ─────────────────────────────────────────────────────────
 
     def _toggle_console(self) -> None:
         self._console_visible = not self._console_visible
@@ -111,7 +98,6 @@ class MainWindow(QMainWindow):
     def _on_toggle_active(self) -> None:
         pass
 
-    # ── worker slots ──────────────────────────────────────────────────────────
 
     def on_frame(self, frame: np.ndarray) -> None:
         if not self._size_set:

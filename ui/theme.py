@@ -14,7 +14,6 @@ TEXT_MED   = "rgba(255,255,255,0.60)"
 TEXT_LOW   = "rgba(255,255,255,0.35)"
 TEXT_MUTED = "rgba(255,255,255,0.20)"
 
-# State colors
 STATE_COLORS = {
     "PALM":          "#34d399",  # emerald-400
     "FIST":          "#f87171",  # red-400

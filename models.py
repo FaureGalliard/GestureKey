@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Tuple
 import time
 
-from domain.enums import HandState
+from enums import HandState
 
 # Type aliases
 Landmark2D = Tuple[float, float]

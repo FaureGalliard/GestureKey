@@ -12,8 +12,8 @@ from pipeline.classifier import StateClassifier
 from pipeline.stabilizer import StateStabilizer
 from pipeline.gesture_manager import GestureManager
 from pipeline.cooldown import CooldownManager
-from domain.enums import HandState, GestureEvent
-from domain.models import FrameData
+from enums import HandState, GestureEvent
+from models import FrameData
 
 
 class CameraWorker(QThread):

@@ -3,8 +3,8 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import List
 
-from domain.enums import GestureEvent
-from domain.models import FrameData
+from enums import GestureEvent
+from models import FrameData
 
 class Gesture(ABC):
 

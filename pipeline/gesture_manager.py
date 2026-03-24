@@ -1,8 +1,8 @@
 from __future__ import annotations
 from typing import List
 
-from domain.enums import GestureEvent
-from domain.models import FrameData
+from enums import GestureEvent
+from models import FrameData
 from pipeline.cooldown import CooldownManager
 from gestures.scroll import ScrollGesture
 from gestures.volume import VolumeGesture

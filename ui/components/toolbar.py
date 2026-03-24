@@ -1,12 +1,12 @@
 from __future__ import annotations
-from PyQt6.QtCore import Qt, pyqtSignal, QByteArray, QRectF, QPoint
-from PyQt6.QtGui import QCursor, QPainter, QColor, QFontMetrics
+from PyQt6.QtCore import Qt, pyqtSignal, QByteArray, QRectF, QPoint,QPropertyAnimation, QEasingCurve
+from PyQt6.QtGui import QCursor, QPainter, QColor
 from PyQt6.QtSvg import QSvgRenderer
+
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout,
     QPushButton, QLabel, QFrame, QSizePolicy,
 )
-# ── SVG templates ─────────────────────────────────────────────────────────────
 _SVG_MENU = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
     fill="none" stroke="{c}" stroke-width="2" stroke-linecap="round">
   <line x1="4" y1="6" x2="20" y2="6"/>
@@ -50,10 +50,9 @@ _SVG_PAUSE = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill
 _SVG_RESUME = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="{c}">
   <polygon points="5,3 19,12 5,21"/>
 </svg>"""
-_S = 36    # button size
-_I = 16    # icon size
-_O = (_S - _I) // 2  # icon offset = 10
-# ── SVG button ────────────────────────────────────────────────────────────────
+_S = 36   
+_I = 16    
+_O = (_S - _I) // 2 
 class _SvgButton(QPushButton):
     NORMAL = "n"
     ACTIVE = "a"
@@ -92,49 +91,94 @@ class _SvgButton(QPushButton):
         self._hovered = True;  self.update(); super().enterEvent(e)
     def leaveEvent(self, e) -> None:
         self._hovered = False; self.update(); super().leaveEvent(e)
-# ── row: label is painted as overlay, never affects layout ───────────────────
+
+class _HoverLabel(QLabel):
+    def __init__(self, text: str):
+        super().__init__(text, None)
+        self.setWindowOpacity(0) 
+
+        self.setWindowFlags(
+            Qt.WindowType.ToolTip |
+            Qt.WindowType.FramelessWindowHint |
+            Qt.WindowType.WindowStaysOnTopHint
+        )
+
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+
+        self.setStyleSheet("""
+            QLabel {
+                color: white;
+                background: rgba(20,20,20,220);
+                border-radius: 6px;
+                padding: 4px 8px;
+                font-size: 10px;
+                font-weight: 600;
+            }
+        """)
+
+        self.adjustSize()
+
+
 class _BtnRow(QWidget):
-    """
-    Always fixed at _S × _S.  The hover label is drawn by paintEvent as an
-    overlay to the LEFT of the button — it never touches the layout, so the
-    button position is 100% stable regardless of window size or hover state.
-    """
     def __init__(self, btn: _SvgButton, label: str, parent=None) -> None:
         super().__init__(parent)
-        self._label   = label
-        self._hovered = False
+
+        self._btn = btn
+        self._label_text = label
+        self._tooltip = _HoverLabel(label)
+
         self.setFixedSize(_S, _S)
-        self.setStyleSheet("background:transparent;")
+
         lay = QHBoxLayout(self)
         lay.setContentsMargins(0, 0, 0, 0)
         lay.setSpacing(0)
-        lay.addWidget(btn)
+        lay.addWidget(self._btn)
+    def enterEvent(self, e):
+        self._tooltip.setText(self._label_text)
+        self._tooltip.adjustSize()
+
+        global_pos = self.mapToGlobal(self.rect().topLeft())
+
+        gap = 8
+        end_x = global_pos.x() - self._tooltip.width() - gap
+        y = global_pos.y() + (self.height() - self._tooltip.height()) // 2
+
+        start_x = end_x - 10  
+
+        self._tooltip.move(start_x, y)
+        self._tooltip.show()
+
+        self._fade_anim = QPropertyAnimation(self._tooltip, b"windowOpacity")
+        self._fade_anim.setDuration(120)
+        self._fade_anim.setStartValue(0)
+        self._fade_anim.setEndValue(1)
+
+        self._pos_anim = QPropertyAnimation(self._tooltip, b"pos")
+        self._pos_anim.setDuration(120)
+        self._pos_anim.setStartValue(QPoint(start_x, y))
+        self._pos_anim.setEndValue(QPoint(end_x, y))
+        self._pos_anim.setEasingCurve(QEasingCurve.Type.OutCubic)
+
+        self._fade_anim.start()
+        self._pos_anim.start()
+
+        super().enterEvent(e)
+
+    def leaveEvent(self, e):
+        self._fade_anim = QPropertyAnimation(self._tooltip, b"windowOpacity")
+        self._fade_anim.setDuration(100)
+        self._fade_anim.setStartValue(1)
+        self._fade_anim.setEndValue(0)
+
+        self._fade_anim.finished.connect(self._tooltip.hide)
+
+        self._fade_anim.start()
+
+        super().leaveEvent(e)
+
     def set_label(self, text: str) -> None:
-        self._label = text
-        if self._hovered:
-            self.update()
-    def enterEvent(self, e) -> None:
-        self._hovered = True;  self.update(); super().enterEvent(e)
-    def leaveEvent(self, e) -> None:
-        self._hovered = False; self.update(); super().leaveEvent(e)
-    def paintEvent(self, e) -> None:
-        super().paintEvent(e)
-        if not self._hovered or not self._label:
-            return
-        p = QPainter(self)
-        p.setRenderHint(QPainter.RenderHint.Antialiasing)
-        font = p.font()
-        font.setPointSize(7)
-        font.setWeight(600)
-        p.setFont(font)
-        fm   = QFontMetrics(font)
-        text = self._label
-        tw   = fm.horizontalAdvance(text)
-        gap  = 8
-        p.setPen(QColor(255, 255, 255, 102))
-        p.drawText(-(tw + gap), (_S + fm.ascent() - fm.descent()) // 2, text)
-        p.end()
-# ── Toolbar ───────────────────────────────────────────────────────────────────
+        self._label_text = text
+
 class Toolbar(QWidget):
     toggle_console   = pyqtSignal()
     toggle_active    = pyqtSignal()

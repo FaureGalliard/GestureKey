@@ -1,7 +1,7 @@
 from __future__ import annotations
 import threading
 import cv2
-from PyQt6.QtCore import Qt, QTimer, pyqtSignal, QThread, pyqtSlot
+from PyQt6.QtCore import Qt, QTimer, pyqtSignal, QThread
 from PyQt6.QtGui import QImage, QPixmap
 from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QLabel,
@@ -15,15 +15,8 @@ except ImportError:
     TEXT_HIGH  = "rgba(255,255,255,0.90)"
     TEXT_LOW   = "rgba(255,255,255,0.35)"
     BASE_STYLE = ""
-
-
-# ── One-time camera scan at app startup ───────────────────────────────────────
-
 class CameraScanner(QThread):
-    """
-    Run once at startup (before the main worker opens the camera).
-    Probes indices 0-7 in parallel and emits the result as a dict.
-    """
+   
     scan_done = pyqtSignal(dict)   # {index: name}
 
     def run(self) -> None:
@@ -53,31 +46,21 @@ class CameraScanner(QThread):
 
         self.scan_done.emit(found)
 
-
-# ── helpers ───────────────────────────────────────────────────────────────────
-
 def _sep() -> QFrame:
     f = QFrame()
     f.setFrameShape(QFrame.Shape.HLine)
     f.setStyleSheet("background:rgba(255,255,255,0.07);border:none;max-height:1px;")
     return f
 
-
-# ── Settings window ───────────────────────────────────────────────────────────
-
 class SettingsWindow(QDialog):
-    """
-    Opens instantly — camera list is pre-populated before this window exists.
-    Shows a live preview of whichever camera is highlighted.
-    On Save: persists to config, emits camera_selected, closes.
-    """
+   
     camera_selected  = pyqtSignal(int)
     preview_released = pyqtSignal()
 
     def __init__(self, config: AppConfig, cameras: dict[int, str], parent=None) -> None:
         super().__init__(parent)
         self._config   = config
-        self._cameras  = cameras          # pre-populated at startup
+        self._cameras  = cameras        
         self._current  = config.camera_device
         self._selected = config.camera_device
         self._cam_cap: cv2.VideoCapture | None    = None
@@ -102,7 +85,6 @@ class SettingsWindow(QDialog):
         """)
         self._build_ui()
 
-    # ── UI ────────────────────────────────────────────────────────────────────
 
     def _build_ui(self) -> None:
         lay = QVBoxLayout(self)
@@ -115,7 +97,6 @@ class SettingsWindow(QDialog):
         )
         lay.addWidget(lbl)
 
-        # Live preview
         self._preview_lbl = QLabel()
         self._preview_lbl.setFixedHeight(170)
         self._preview_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -125,14 +106,12 @@ class SettingsWindow(QDialog):
         )
         lay.addWidget(self._preview_lbl)
 
-        # Trigger button — shows current camera, click to expand list
         current_name = self._cameras.get(self._current, f"Camera {self._current}")
         self._trigger_btn = QPushButton(current_name + " ▼")
         self._trigger_btn.setStyleSheet(self._trigger_style())
         self._trigger_btn.clicked.connect(self._toggle_expand)
         lay.addWidget(self._trigger_btn)
 
-        # Collapsable camera list
         self._list_widget = QWidget()
         self._list_widget.setStyleSheet("background:transparent;")
         self._list_layout = QVBoxLayout(self._list_widget)
@@ -149,13 +128,11 @@ class SettingsWindow(QDialog):
 
         lay.addWidget(_sep())
 
-        # Save button
         self._save_btn = QPushButton("Save")
         self._save_btn.setStyleSheet(self._save_btn_style(False))
         self._save_btn.clicked.connect(self._save)
         lay.addWidget(self._save_btn)
 
-    # ── styles ────────────────────────────────────────────────────────────────
 
     def _trigger_style(self) -> str:
         return """
@@ -201,7 +178,6 @@ class SettingsWindow(QDialog):
             }
         """
 
-    # ── interactions ──────────────────────────────────────────────────────────
 
     def _toggle_expand(self) -> None:
         self._expanded = not self._expanded
@@ -225,7 +201,6 @@ class SettingsWindow(QDialog):
         for idx, btn in self._cam_buttons.items():
             btn.setStyleSheet(self._cam_btn_style(idx == index))
 
-        # Preview selected camera
         self._start_preview(index)
 
     def _save(self) -> None:
@@ -251,11 +226,9 @@ class SettingsWindow(QDialog):
         self._save_btn.setStyleSheet(self._save_btn_style(True))
         QTimer.singleShot(500, self.close)
 
-    # ── show / close ──────────────────────────────────────────────────────────
 
     def showEvent(self, event) -> None:
         super().showEvent(event)
-        # Reset selection to current saved camera each time window opens
         self._selected = self._config.camera_device
         self._current  = self._config.camera_device
         name = self._cameras.get(self._selected, f"Camera {self._selected}")
@@ -271,7 +244,6 @@ class SettingsWindow(QDialog):
         self.preview_released.emit()
         super().closeEvent(event)
 
-    # ── preview ───────────────────────────────────────────────────────────────
 
     def _start_preview(self, index: int) -> None:
         self._stop_preview()
