@@ -9,7 +9,7 @@ from domain.enums import HandState, GestureEvent
 from ui.components.camera_view import CameraView
 from ui.components.console import Console
 from ui.components.toolbar import Toolbar
-from ui.components.theme import BG_MAIN, BG_CAMERA, BASE_STYLE
+from ui.theme import BG_MAIN, BG_CAMERA, BASE_STYLE
 
 _PANEL_WIDTH = 240
 
@@ -119,6 +119,12 @@ class MainWindow(QMainWindow):
             self.resize(w, h)
             self._size_set = True
         self._camera_view.update_frame(frame)
+    
+    def on_camera_stopped(self) -> None:
+        self._camera_view.show_overlay("Selecting camera…", animate=False)
+
+    def on_camera_loading(self) -> None:
+        self._camera_view.show_overlay("Loading camera", animate=True)
 
     def on_state_changed(self, stable: HandState, raw: HandState, confidence: float) -> None:
         self._console.on_state_changed(stable, raw, confidence)

@@ -1,0 +1,33 @@
+gesturey/
+├── config.py              
+├── main.py
+│
+├── pipeline/              
+│   ├── worker.py          
+│   ├── camera.py          
+│   ├── tracker.py         
+│   ├── classifier.py      
+│   ├── stabilizer.py      
+│   ├── gesture_manager.py 
+│   └── cooldown.py        
+│
+├── domain/               
+│   ├── enums.py
+│   └── models.py
+│
+├── gestures/             
+│   └── ...
+│
+├── ui/
+│   ├── theme.py          
+│   ├── main_window.py
+│   ├── settings_window.py 
+│   └── components/
+│       ├── camera_view.py
+│       ├── console.py
+│       └── toolbar.py
+│
+├── app.py                
+│
+└── models/
+    └── hand_state_rf.pkl

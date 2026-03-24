@@ -11,7 +11,7 @@ except ImportError:
 from domain.enums import GestureEvent, HandState
 from domain.models import FrameData
 from gestures.base import Gesture
-from core.cooldown_manager import CooldownManager
+from pipeline.cooldown  import CooldownManager
 
 
 class PauseResumeGesture(Gesture):

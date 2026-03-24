@@ -5,13 +5,13 @@ from typing import Optional
 import numpy as np
 from PyQt6.QtCore import QThread, pyqtSignal
 
-from app.config import AppConfig
-from core.camera import Camera
-from core.hand_tracker import HandTracker
-from core.state_classifier import StateClassifier
-from core.state_stabilizer import StateStabilizer
-from core.gesture_manager import GestureManager
-from core.cooldown_manager import CooldownManager
+from config import AppConfig
+from pipeline.camera import Camera
+from pipeline.tracker import HandTracker
+from pipeline.classifier import StateClassifier
+from pipeline.stabilizer import StateStabilizer
+from pipeline.gesture_manager import GestureManager
+from pipeline.cooldown import CooldownManager
 from domain.enums import HandState, GestureEvent
 from domain.models import FrameData
 
@@ -107,7 +107,7 @@ class CameraWorker(QThread):
 
     def stop(self) -> None:
         self._running = False
-        self.wait(3000)
+        # Non-blocking — thread finishes on its own and calls _cleanup()
 
     def _cleanup(self) -> None:
         if self._camera:

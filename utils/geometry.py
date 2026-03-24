@@ -1,4 +1,3 @@
-
 from __future__ import annotations
 import math
 from typing import Sequence, Tuple
@@ -18,7 +17,6 @@ def hand_center(landmarks: Sequence[Point2D]) -> Point2D:
 
 
 def angle(a: Point2D, b: Point2D, c: Point2D) -> float:
-   
     ba = (a[0] - b[0], a[1] - b[1])
     bc = (c[0] - b[0], c[1] - b[1])
     dot = ba[0] * bc[0] + ba[1] * bc[1]
