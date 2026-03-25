@@ -86,7 +86,9 @@ pip install -r requirements.txt
 python app/main.py
 ```
 
----
+```bash
+ pyinstaller --onefile --uac-admin main.py
+```
 
 ## 📈 Flujo de procesamiento
 
@@ -126,17 +128,25 @@ Angel Gabriel Crispin Valdivia
 ---
 
 gestos en planes:
-✋ (PALM → FIST) → Pausar / reanudar multimedia
+
+👉 (ONE_FINGER ) → Mover cursor
+👉 (ONE_FINGER ) + mano acercándose (aumenta tamaño) → Click
+
 ✋ + swipe vertical (TWO_FINGERS) → Scroll
+✌️ (TWO_FINGERS) + swipe horizontal → Cambiar entre apps
+
 ✋ + swipe vertical (THREE_FINGERS) → Control de volumen
-✋ + ✋ (2 manos, PALM) → Vista de tareas (Task View)
-✋ + gesto de “juntar manos” (TWO_FINGERS o PALM) → Minimizar todo / mostrar escritorio
+🤟 (THREE_FINGERS) + swipe horizontal derecha → Siguiente canción
+🤟 (THREE_FINGERS) + swipe horizontal izquierda → Canción anterior
+
 🤏 (PINCH) → Zoom in/out
-✊ (FIST) + mover → Grab ventana / mover ventana a pantalla u borde
-✋ (PALM) → soltar ventana
-👉 (TWO_FINGERS) → Mover cursor
-👉 mano acercándose (PALM) → Click
 🤏 (PINCH 100%) → Captura de pantalla
-👉 + swipe horizontal (TWO_FINGERS) → Cambiar entre apps abiertas
-👉 (TWO_FINGERS) + swipe derecha → Siguiente canción
-👉 (TWO_FINGERS) + swipe izquierda → Canción anterior
+
+✋ + ✋ (2 manos, PALM acercándose) → Vista de tareas (Task View)
+✊ + ✊ (2 manos, FIST acercándose) → Minimizar todo / mostrar escritorio
+
+✋ (PALM → FIST) → minimizar + Grab ventana (iniciar “agarre”)
+✊ (FIST) + mover → mover ventana
+✋ (PALM) → Soltar ventana
+
+✋ (FOURFINGER-> FIST) pausar multimedia

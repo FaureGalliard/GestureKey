@@ -38,8 +38,8 @@ class PauseResumeGesture(Gesture):
         state = frame_data.state
         now   = frame_data.timestamp
 
-        if state == HandState.PALM:
-            if self._last_state != HandState.PALM:
+        if state == HandState.FOUR_FINGERS:
+            if self._last_state != HandState.FOUR_FINGERS:
                 self._palm_start = now
                 self._armed      = False
             elif self._palm_start is not None:
@@ -47,7 +47,7 @@ class PauseResumeGesture(Gesture):
                     self._armed = True
 
         elif state == HandState.FIST:
-            if self._armed and self._last_state == HandState.PALM:
+            if self._armed and self._last_state == HandState.FOUR_FINGERS:
                 elapsed = now - (self._palm_start or now)
                 if elapsed <= self._max_time and self._local_cooldown_ok(now):
                     self._execute_toggle()
