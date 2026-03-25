@@ -1,7 +1,11 @@
 .venv/
+
 __pycache__/
 *.py[cod]
+
 settings.json
-.dist/
-.build/
+
+dist/
+build/
+
 arquitecture.txt
