@@ -125,5 +125,18 @@ Angel Gabriel Crispin Valdivia
 
 ---
 
-ideas para gestos :
-grab ventana-> mover entre pantallas para users con mas de una pantalla
+gestos en planes:
+✋ (PALM → FIST) → Pausar / reanudar multimedia
+✋ + swipe vertical (TWO_FINGERS) → Scroll
+✋ + swipe vertical (THREE_FINGERS) → Control de volumen
+✋ + ✋ (2 manos, PALM) → Vista de tareas (Task View)
+✋ + gesto de “juntar manos” (TWO_FINGERS o PALM) → Minimizar todo / mostrar escritorio
+🤏 (PINCH) → Zoom in/out
+✊ (FIST) + mover → Grab ventana / mover ventana a pantalla u borde
+✋ (PALM) → soltar ventana
+👉 (TWO_FINGERS) → Mover cursor
+👉 mano acercándose (PALM) → Click
+🤏 (PINCH 100%) → Captura de pantalla
+👉 + swipe horizontal (TWO_FINGERS) → Cambiar entre apps abiertas
+👉 (TWO_FINGERS) + swipe derecha → Siguiente canción
+👉 (TWO_FINGERS) + swipe izquierda → Canción anterior
