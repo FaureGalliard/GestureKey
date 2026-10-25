@@ -7,10 +7,10 @@ gestos funcionan hoy con la MX Brio. Toma unos 20 minutos. Anota en la tabla del
 
 1. Luz de frente (no a tu espalda), cámara a la altura de los ojos, tú a **~70 cm**.
 2. Cierra las apps que usen la cámara (OBS, Teams, Logi Tune con vista previa).
-3. Lanza con la grabación activada (PowerShell):
+3. Lanza con la grabación activada:
 
-   ```powershell
-   cd D:\GestureKey\app; $env:GESTUREKEY_RECORD=1; pnpm tauri dev
+   ```bash
+   cd /d/GestureKey/app && GESTUREKEY_RECORD=1 pnpm tauri dev
    ```
 
    En **Ajustes › Avanzado › Actividad** debe aparecer "Grabando sesión en …".
