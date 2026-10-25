@@ -33,6 +33,7 @@ if AVAILABLE:
                                      ctypes.c_int, ctypes.c_int, ctypes.c_uint]
     _user32.ShowWindow.argtypes = [wintypes.HWND, ctypes.c_int]
     _user32.IsZoomed.argtypes = [wintypes.HWND]
+    _user32.PostMessageW.argtypes = [wintypes.HWND, wintypes.UINT, wintypes.WPARAM, wintypes.LPARAM]
     _user32.keybd_event.argtypes = [wintypes.BYTE, wintypes.BYTE, wintypes.DWORD, ctypes.c_size_t]
     _user32.mouse_event.argtypes = [wintypes.DWORD, wintypes.DWORD, wintypes.DWORD,
                                     wintypes.DWORD, ctypes.c_size_t]
@@ -87,10 +88,24 @@ def window_rect(hwnd: int) -> Tuple[int, int, int, int]:
     return (r.left, r.top, r.right, r.bottom)
 
 
+def virtual_screen() -> Tuple[int, int, int, int]:
+    """(left, top, width, height) of the desktop spanning every monitor."""
+    if not AVAILABLE:
+        return (0, 0, 1920, 1080)
+    m = _user32.GetSystemMetrics
+    return (m(76), m(77), m(78), m(79))   # SM_X/YVIRTUALSCREEN, SM_CX/CYVIRTUALSCREEN
+
+
+KEEP_VISIBLE = 120   # px of a dragged window that always stay on some screen
+
+
 def move_window_by(hwnd: int, dx: int, dy: int) -> None:
-    left, top, _, _ = window_rect(hwnd)
-    _user32.SetWindowPos(hwnd, None, left + dx, top + dy, 0, 0,
-                         _SWP_NOSIZE | _SWP_NOZORDER | _SWP_NOACTIVATE)
+    """Move across all monitors, but never so far that the window is lost off-screen."""
+    left, top, right, bottom = window_rect(hwnd)
+    vx, vy, vw, vh = virtual_screen()
+    x = max(vx - (right - left) + KEEP_VISIBLE, min(vx + vw - KEEP_VISIBLE, left + dx))
+    y = max(vy, min(vy + vh - KEEP_VISIBLE, top + dy))   # title bar never above the top
+    _user32.SetWindowPos(hwnd, None, x, y, 0, 0, _SWP_NOSIZE | _SWP_NOZORDER | _SWP_NOACTIVATE)
 
 
 def restore_if_maximized(hwnd: int) -> None:
@@ -101,3 +116,8 @@ def restore_if_maximized(hwnd: int) -> None:
 
 def maximize(hwnd: int) -> None:
     _user32.ShowWindow(hwnd, _SW_MAXIMIZE)
+
+
+def close_window(hwnd: int) -> None:
+    """Like clicking its X: the app may still ask to save. Targets this window, not the focus."""
+    _user32.PostMessageW(hwnd, 0x0010, 0, 0)   # WM_CLOSE

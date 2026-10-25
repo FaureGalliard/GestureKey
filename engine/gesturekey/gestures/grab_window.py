@@ -1,4 +1,5 @@
 from __future__ import annotations
+import math
 from collections import deque
 from typing import Deque, Optional, Tuple
 
@@ -9,6 +10,7 @@ from gesturekey.core.types import FrameData, GestureEvent, HandState, Point
 from gesturekey.gestures.base import Gesture, Output
 
 THROW_WINDOW = 0.15   # seconds of motion before the release that define the throw
+THROW_SPAN   = 0.05   # velocity is measured over spans this long, and the peak wins
 
 
 class _Phase:
@@ -24,7 +26,11 @@ class GrabWindowGesture(Gesture):
     FIST + move                                : drag it
     FIST → PALM                                : release where it is — or, if the
                                                  hand was thrown fast, snap to that
-                                                 side / maximize on an upward throw
+                                                 side, maximize (up) or close (down)
+
+    Drag uses pointer-style acceleration: slow moves are 1:1 with one screen,
+    fast moves go further, so a window crosses several monitors without the
+    camera having to see the whole desktop.
     fist lost ≥ lost_timeout                   : release in place
 
     Landmarks arrive already smoothed by the tracker. Fast moves blur the fist
@@ -68,6 +74,7 @@ class GrabWindowGesture(Gesture):
                 if now - self._fist_start >= cfg.hold_time and self._cooldown.ok(self.NAME, now, cfg.cooldown):
                     self._phase     = _Phase.GRABBED
                     self._last      = wrist
+                    self._last_t    = now
                     self._last_seen = now
                     self._trail.clear()
                     out.emit(GestureEvent.GRAB_WINDOW_START, WindowGrab())
@@ -88,8 +95,9 @@ class GrabWindowGesture(Gesture):
             if self._last is not None:
                 dx, dy = wrist[0] - self._last[0], wrist[1] - self._last[1]
                 if abs(dx) > cfg.deadzone or abs(dy) > cfg.deadzone:
-                    out.actions.append(WindowMove(dx, dy))
-                    self._last = wrist
+                    gain = self._gain(math.hypot(dx, dy), now - self._last_t)
+                    out.actions.append(WindowMove(dx * gain, dy * gain))
+                    self._last, self._last_t = wrist, now
 
     def on_lost(self, now: float, out: Output) -> None:
         if self._phase == _Phase.GRABBED:
@@ -99,23 +107,42 @@ class GrabWindowGesture(Gesture):
             self.reset()
 
     def _throw(self, now: float):
-        """Velocity over the moments before the hand opened decides a snap."""
+        """
+        Peak velocity in the moments before the hand opened decides a snap.
+        Peak, not average: the still frames before the throw and while the
+        palm opens would otherwise dilute it.
+        """
         recent = [(t, p) for t, p in self._trail if now - t <= THROW_WINDOW + 0.1]
-        if len(recent) < 2:
+        best, vx, vy = 0.0, 0.0, 0.0
+        for i, (t0, p0) in enumerate(recent):
+            for t1, p1 in recent[i + 1:]:
+                if t1 - t0 >= THROW_SPAN:              # ~3 frames: smooth, still short
+                    wx, wy = (p1[0] - p0[0]) / (t1 - t0), (p1[1] - p0[1]) / (t1 - t0)
+                    if wx * wx + wy * wy > best:
+                        best, vx, vy = wx * wx + wy * wy, wx, wy
+                    break
+        if best == 0.0:
             return None
-        (t0, p0), (t1, p1) = recent[0], recent[-1]
-        if t1 - t0 < 0.03:
-            return None
-        vx, vy = (p1[0] - p0[0]) / (t1 - t0), (p1[1] - p0[1]) / (t1 - t0)
         fast = self._cfg.throw_speed
         if abs(vx) >= fast and abs(vx) >= abs(vy):
             return "right" if vx > 0 else "left"
         if vy <= -fast:
             return "maximize"
+        if vy >= self._cfg.close_speed and vy >= abs(vx):
+            return "close"                       # thrown away downwards
         return None
 
+    def _gain(self, step: float, dt: float) -> float:
+        """Pointer ballistics: slow = precise 1:1, fast = covers more screen (multi-monitor)."""
+        if dt <= 0:
+            return 1.0
+        cfg = self._cfg
+        speed = step / dt
+        return min(cfg.max_gain, 1.0 + cfg.accel * max(0.0, speed - cfg.accel_from))
+
     def _release(self, out: Output, snap) -> None:
-        out.emit(GestureEvent.GRAB_WINDOW_RELEASED, WindowRelease(snap))
+        event = GestureEvent.CLOSE_WINDOW if snap == "close" else GestureEvent.GRAB_WINDOW_RELEASED
+        out.emit(event, WindowRelease(snap))
         self.reset()
 
     def reset(self) -> None:
@@ -123,5 +150,6 @@ class GrabWindowGesture(Gesture):
         self._arm_start:  float           = 0.0
         self._fist_start: float           = 0.0
         self._last:       Optional[Point] = None
+        self._last_t:     float           = 0.0
         self._last_seen:  float           = 0.0
         self._trail: Deque[Tuple[float, Point]] = deque(maxlen=30)

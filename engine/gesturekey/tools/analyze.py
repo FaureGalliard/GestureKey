@@ -21,7 +21,7 @@ from gesturekey.config import GrabWindowConfig, ScrollConfig, settings_path
 
 STILL_MIN_S   = 2.0     # a constant stable state at least this long counts as a "hold"
 MOVE_LIMIT_PX = 40.0    # …and the wrist must stay within this many px of its median
-SCROLL_DEADZONE = ScrollConfig().deadzone        # palm lengths away from the anchor
+SCROLL_MIN_SPEED = ScrollConfig().min_speed     # palm lengths/s below which scroll ignores motion
 GRAB_DEADZONE   = GrabWindowConfig().deadzone    # per frame, image space
 
 Frame = Dict[str, Any]
@@ -107,7 +107,7 @@ def report(path: Path) -> None:
     # ── holds: jitter with the hand still ────────────────────────────────
     print(f"\nposes sostenidas (≥ {STILL_MIN_S:.0f} s, muñeca dentro de {MOVE_LIMIT_PX:.0f} px):")
     print(f"  {'estado':<14}{'dur':>6}{'jitter muñeca':>15}{'jitter índice':>15}"
-          f"{'parpadeos':>11}{'>scroll dz':>12}{'>grab dz':>10}")
+          f"{'parpadeos':>11}{'>scroll':>10}{'>grab dz':>10}")
     any_hold = False
     for a, b in _segments(frames):
         seg = [f for f in frames[a:b] if _main_hand(f)]
@@ -127,14 +127,15 @@ def report(path: Path) -> None:
         tip = [(hd["landmarks"][8][0] * w, hd["landmarks"][8][1] * h) for hd in hands]
         flick = sum(1 for p, q in zip(seg, seg[1:]) if p["raw_state"] != q["raw_state"])
 
-        # would the jitter alone move the gestures? scroll: offset from the hold's start
-        # in palm lengths (joystick dead zone); grab: per-frame wrist step (image units)
+        # would the jitter alone move the gestures? scroll: palm-centre speed in palm
+        # lengths/s vs its min_speed; grab: per-frame wrist step (image units)
         def palm(hd):
             (x0, y0), (x9, y9) = hd["landmarks"][0], hd["landmarks"][9]
             return math.hypot(x9 - x0, y9 - y0) or 1e-3
         cy = [sum(hd["landmarks"][i][1] for i in (0, 5, 9, 13, 17)) / 5 for hd in hands]
-        anchor = cy[min(len(cy) - 1, 3)]
-        over_scroll = sum(1 for y, hd in zip(cy, hands) if abs(y - anchor) / palm(hd) > SCROLL_DEADZONE) / len(cy)
+        speeds = [abs(c1 - c0) / palm(hd) / (f1["t"] - f0["t"])
+                  for c0, c1, hd, f0, f1 in zip(cy, cy[1:], hands[1:], seg, seg[1:]) if f1["t"] > f0["t"]]
+        over_scroll = sum(1 for v in speeds if v > SCROLL_MIN_SPEED) / max(1, len(speeds))
         d_img = [max(abs(q["landmarks"][0][0] - p["landmarks"][0][0]), abs(q["landmarks"][0][1] - p["landmarks"][0][1]))
                  for p, q in zip(hands, hands[1:])]
         over_grab = sum(1 for d in d_img if d > GRAB_DEADZONE) / len(d_img)

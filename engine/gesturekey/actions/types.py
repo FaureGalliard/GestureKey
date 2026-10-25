@@ -31,7 +31,7 @@ class WindowMove:
 
 @dataclass(frozen=True)
 class WindowRelease:
-    snap: Optional[Literal["left", "right", "maximize"]] = None
+    snap: Optional[Literal["left", "right", "maximize", "close"]] = None
 
 
 @dataclass(frozen=True)

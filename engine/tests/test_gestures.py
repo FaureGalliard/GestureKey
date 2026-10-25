@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import pytest
+
 from gesturekey.actions.types import Hotkey, WindowGrab, WindowMove, WindowRelease
 from gesturekey.core.types import HandState
 
@@ -69,7 +71,7 @@ def test_grab_releases_when_hand_lost(clock):
 
 
 def test_screenshot_on_palm_push(clock):
-    clock.run(PALM, 0.1, scale=1.0)
+    clock.run(PALM, 0.4, scale=1.0)                            # steady first: armed
     clock.run(PALM, 0.15, scale=1.0, scale_to=0.6)
     assert "SCREENSHOT" in clock.events
 
@@ -136,13 +138,15 @@ def test_approaching_palms_are_task_view_not_power():
 
 # ── close window / task view (image space) ────────────────────────────────────
 
-def test_close_window_needs_a_still_fist_then_a_drop(clock):
+def test_close_window_needs_a_still_fist_then_a_drop():
+    clock = _clock_with(lambda cfg: setattr(cfg.close_window, "enabled", True))   # off by default
     clock.run(FIST, 0.4, wrist=(0.5, 0.5))                     # held still → armed
     clock.run(FIST, 0.15, wrist=(0.5, 0.5), to=(0.5, 0.72))    # two palm lengths down, fast
     assert "CLOSE_WINDOW" in clock.events
 
 
-def test_moving_fist_without_holding_does_not_close(clock):
+def test_moving_fist_without_holding_does_not_close():
+    clock = _clock_with(lambda cfg: setattr(cfg.close_window, "enabled", True))
     clock.run(FIST, 0.3, wrist=(0.5, 0.3), to=(0.5, 0.9))      # never still
     assert "CLOSE_WINDOW" not in clock.events
 
@@ -162,3 +166,38 @@ def test_task_view_when_palms_come_together():
         events += [e.value for e in out.events]
         t += 1 / 60
     assert events == ["TASK_VIEW"]
+
+
+def _clock_with(tweak):
+    from conftest import Clock
+    from gesturekey.config import GesturesConfig
+    from gesturekey.gestures.arbiter import GestureArbiter
+    cfg = GesturesConfig()
+    tweak(cfg)
+    return Clock(GestureArbiter(cfg))
+
+
+# ── window physics: acceleration and throws ───────────────────────────────────
+
+def test_fast_drag_moves_the_window_further_than_slow(clock):
+    from conftest import Clock
+    slow = Clock(clock.arbiter.__class__(__import__("gesturekey.config", fromlist=["x"]).GesturesConfig()))
+    slow.run(PALM, 0.3, wrist=(0.3, 0.7)).run(FIST, 0.2, wrist=(0.3, 0.7)).run(FIST, 1.0, wrist=(0.3, 0.7), to=(0.5, 0.7))
+    fast = Clock(clock.arbiter.__class__(__import__("gesturekey.config", fromlist=["x"]).GesturesConfig()))
+    fast.run(PALM, 0.3, wrist=(0.3, 0.7)).run(FIST, 0.2, wrist=(0.3, 0.7)).run(FIST, 0.1, wrist=(0.3, 0.7), to=(0.5, 0.7))
+    travel = lambda c: sum(a.dx for a in c.actions if isinstance(a, WindowMove))
+    assert travel(slow) == pytest.approx(0.2, rel=0.15)      # slow: 1:1
+    assert travel(fast) > 2 * travel(slow)                   # fast: accelerated, crosses monitors
+
+
+def test_throwing_a_window_down_closes_it(clock):
+    clock.run(PALM, 0.3, wrist=(0.5, 0.4)).run(FIST, 0.2, wrist=(0.5, 0.4))
+    clock.run(FIST, 0.1, wrist=(0.5, 0.4), to=(0.5, 0.7))    # 3 image heights/s, downwards
+    clock.run(PALM, 0.05, wrist=(0.5, 0.7))
+    assert _release(clock.actions)[-1].snap == "close"
+    assert "CLOSE_WINDOW" in clock.events
+
+
+def test_pause_tolerates_a_pose_in_passing(clock):
+    clock.run(HandState.FOUR_FINGERS, 0.5).run(HandState.THREE_FINGERS, 1 / 30).run(FIST, 1 / 30)
+    assert "MEDIA_PLAY_PAUSE" in clock.events

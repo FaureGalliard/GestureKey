@@ -97,3 +97,5 @@ class ActionExecutor:
                 win32.hotkey(("win", "right"))
             elif action.snap == "maximize":
                 win32.maximize(hwnd)
+            elif action.snap == "close":
+                win32.close_window(hwnd)

@@ -8,7 +8,7 @@ from typing import Any, Dict
 
 
 #: Bump when tuning defaults change meaning, so old settings files don't pin stale values.
-SCHEMA = 2
+SCHEMA = 3
 
 
 def resource_path(relative: str) -> Path:
@@ -69,10 +69,15 @@ class ContinuousConfig:
 
 @dataclass
 class ScrollConfig:
-    enabled:  bool  = True
-    deadzone: float = 0.25     # palm lengths around the anchor that don't scroll
-    gain:     float = 2400.0   # wheel units/s at one palm length past the deadzone
-    max_rate: float = 9000.0   # wheel units/s
+    """Drag-style, like two fingers on a touchpad: the page follows the hand."""
+    enabled:   bool  = True
+    per_palm:  float = 600.0   # wheel units per palm length moved slowly (120 = one notch)
+    accel:     float = 0.9     # extra gain per palm-length/s above accel_from
+    accel_from: float = 1.0    # palm lengths/s; slower than this is 1:1
+    max_gain:  float = 6.0
+    min_speed: float = 0.20    # palm lengths/s; slower is jitter, ignored
+    rollback:  float = 0.20    # on exit, undo this many seconds (the hand going to rest)
+    natural:   bool  = False   # True: hand down scrolls up, like touchpad "natural" scrolling
 
 
 @dataclass
@@ -86,7 +91,7 @@ class VolumeConfig:
 @dataclass
 class ZoomConfig:
     enabled:     bool  = True
-    step_ratio:  float = 1.25   # pinch must open/close by this factor per zoom step
+    step_ratio:  float = 1.20   # pinch must open/close by this factor per zoom step
 
 
 @dataclass
@@ -118,7 +123,8 @@ class ScreenshotConfig:
 
 @dataclass
 class CloseWindowConfig:
-    enabled:   bool  = True
+    # off by default: grabbing a window and throwing it down closes it (grab_window.close_speed)
+    enabled:   bool  = False
     arm_time:  float = 0.30   # fist held still before the jerk counts (it's destructive)
     distance:  float = 1.2    # palm lengths the fist must drop…
     within:    float = 0.30   # …in this many seconds
@@ -129,9 +135,15 @@ class GrabWindowConfig:
     enabled:      bool  = True
     min_arm_time: float = 0.15   # PALM held before the FIST counts
     hold_time:    float = 0.12   # FIST held before grabbing
-    speed:        float = 1.0    # full camera width ≙ full screen width × speed
+    speed:        float = 1.0    # slow moves: full camera width ≙ one screen width × speed
+    # pointer-style acceleration, so fast moves travel further (across several monitors)
+    # without the camera's field of view having to cover all of them
+    accel:        float = 1.6    # extra gain per image-unit/s above accel_from
+    accel_from:   float = 0.35   # image units/s; slower than this moves 1:1
+    max_gain:     float = 5.0
     deadzone:     float = 0.0015
     throw_speed:  float = 1.4    # release velocity (image units/s) that snaps / maximizes
+    close_speed:  float = 1.8    # a downward throw this fast closes the window (destructive: higher)
     lost_timeout: float = 0.60   # release if the fist is lost this long (motion blur)
     cooldown:     float = 0.40
 
@@ -139,7 +151,7 @@ class GrabWindowConfig:
 @dataclass
 class PowerConfig:
     enabled:   bool  = True
-    hold_time: float = 1.5     # both palms still this long toggles GestureKey
+    hold_time: float = 1.0     # both palms still this long toggles GestureKey
     max_drift: float = 0.05    # how far (image units) a wrist may wander while holding
 
 

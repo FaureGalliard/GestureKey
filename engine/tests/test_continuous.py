@@ -1,6 +1,7 @@
 """Scroll, volume and zoom: how they start, act, and — above all — end."""
 from __future__ import annotations
 
+import pytest
 from conftest import make_frame, make_hand
 
 from gesturekey.actions.types import Hotkey, Scroll, VolumeBegin, VolumeSet
@@ -73,7 +74,7 @@ def test_hand_gone_is_instant():
     assert f.update(None, 0.03) == HandState.NO_HANDS
 
 
-# ── scroll: joystick ─────────────────────────────────────────────────────────
+# ── scroll: drag with acceleration ───────────────────────────────────────────
 
 def _scroll():
     return Driver(ScrollGesture(ScrollConfig(), ContinuousConfig()))
@@ -83,43 +84,50 @@ def _wheel(d):
     return sum(a.amount for a in d.of(Scroll))
 
 
-def test_scroll_inside_deadzone_does_nothing():
-    d = _scroll().run(TWO, 0.3).run(TWO, 1.0, y=0.7 + 0.2 * PALM)
+def test_scroll_ignores_jitter():
+    d = _scroll().run(TWO, 0.3)
+    for i in range(30):                                     # ±1 % of a palm, every frame
+        d.run(TWO, 1 / FPS, y=0.7 + (0.01 if i % 2 else -0.01) * PALM)
     assert _wheel(d) == 0
 
 
-def test_holding_an_offset_scrolls_at_a_steady_rate():
-    d = _scroll().run(TWO, 0.3).run(TWO, 0.2, to=0.7 + 1.0 * PALM)   # hand one palm lower
-    before = _wheel(d)
-    d.run(TWO, 1.0, y=0.7 + 1.0 * PALM)
-    per_second = _wheel(d) - before
-    assert per_second < -500                       # scrolls down, steadily
-    d2 = _scroll().run(TWO, 0.3).run(TWO, 0.2, to=0.7 + 2.0 * PALM).run(TWO, 1.0, y=0.7 + 2.0 * PALM)
-    assert _wheel(d2) < _wheel(d)                  # further from the anchor → faster
+def test_page_follows_the_hand():
+    d = _scroll().run(TWO, 0.3).run(TWO, 2.0, to=0.7 + 1.0 * PALM)    # one palm down, slowly (0.5 palm/s)
+    assert _wheel(d) < 0                                    # page goes down (wheel negative)
+    assert abs(_wheel(d)) == pytest.approx(ScrollConfig().per_palm, rel=0.25)
 
 
-def test_back_to_anchor_stops_scrolling():
-    d = _scroll().run(TWO, 0.3).run(TWO, 0.3, to=0.7 + PALM).run(TWO, 0.3, y=0.7 + PALM, to=0.7)
-    before = _wheel(d)
-    d.run(TWO, 1.0, y=0.7)
-    assert _wheel(d) == before
+def test_fast_flick_goes_further_than_slow_move():
+    slow = _scroll().run(TWO, 0.3).run(TWO, 1.0, to=0.7 + PALM)
+    fast = _scroll().run(TWO, 0.3).run(TWO, 0.1, to=0.7 + PALM)
+    assert abs(_wheel(fast)) > 2 * abs(_wheel(slow))
 
 
-def test_dropping_the_hand_ends_scroll_without_a_burst():
-    d = _scroll().run(TWO, 0.3)
+def test_reversing_direction_is_instant():
+    d = _scroll().run(TWO, 0.3).run(TWO, 0.2, to=0.7 + PALM)
+    down = _wheel(d)
+    d.run(TWO, 2 / FPS, y=0.7 + PALM, to=0.7 + 0.8 * PALM)  # two frames back up
+    assert _wheel(d) > down                                 # already scrolling up
+
+
+def test_moving_fast_does_not_end_scroll_but_exit_rolls_back():
+    d = _scroll().run(TWO, 0.3).run(TWO, 0.1, to=1.0)       # very fast: still scrolling
     assert d.g.engaged
-    d.run(TWO, 0.1, y=0.7, to=1.0)                 # fast drop: 3 image units/s
+    d.run(TWO, 0.5, y=1.0)                                  # hold: nothing new
+    kept = _wheel(d)
+    d.run(TWO, 0.15, y=1.0, to=1.0 + PALM)                  # hand drifts to rest…
+    d.run(HandState.FIST, 0.05, y=1.0 + PALM)               # …and the pose ends
     assert not d.g.engaged
-    assert abs(_wheel(d)) < 120                    # at most a notch slipped out
+    assert _wheel(d) == kept                                # the drift was scrolled back
 
 
 def test_doubt_freezes_then_ends():
     d = _scroll().run(TWO, 0.3).run(TWO, 0.2, to=0.7 + PALM)
     before = _wheel(d)
-    d.run(TWO, 0.1, y=0.7 + PALM, raw=HandState.THREE_FINGERS)   # classifier unsure
-    assert _wheel(d) == before and d.g.engaged                    # frozen, not ended
-    d.run(TWO, 0.1, y=0.7 + PALM, raw=HandState.THREE_FINGERS)
-    assert not d.g.engaged                                        # doubt lasted → ended
+    d.run(TWO, 0.1, y=0.7 + 2 * PALM, raw=HandState.THREE_FINGERS)   # classifier unsure
+    assert _wheel(d) == before and d.g.engaged                        # frozen, not ended
+    d.run(TWO, 0.1, y=0.7 + 2 * PALM, raw=HandState.THREE_FINGERS)
+    assert not d.g.engaged
 
 
 # ── volume: absolute and forgiving ───────────────────────────────────────────

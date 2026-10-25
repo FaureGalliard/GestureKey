@@ -27,6 +27,8 @@ class ContinuousGesture(Gesture):
     POSE: HandState = HandState.UNKNOWN
     #: states that keep an active gesture alive (zoom tolerates an opening pinch)
     KEEP: FrozenSet[HandState] = frozenset()
+    #: end on a fast hand (dropping it to rest); gestures where speed is the point opt out
+    EXIT_ON_SPEED = True
 
     def __init__(self, cc: ContinuousConfig) -> None:
         self._arm_time   = cc.arm_time
@@ -63,7 +65,7 @@ class ContinuousGesture(Gesture):
         if self._active:
             if frame.state not in self._keep:
                 return self._finish(now, "pose", out)
-            if speed > self._exit_speed:
+            if self.EXIT_ON_SPEED and speed > self._exit_speed:
                 return self._finish(now, "fast", out)
             if frame.raw_state is not None and frame.raw_state not in self._keep:
                 self._doubt_since = self._doubt_since or now
@@ -79,7 +81,7 @@ class ContinuousGesture(Gesture):
             return
         if self._arm_start is None:
             self._arm_start = now
-        elif now - self._arm_start >= self._arm_time and speed < self._exit_speed:
+        elif now - self._arm_start >= self._arm_time and (speed < self._exit_speed or not self.EXIT_ON_SPEED):
             self._active = True
             self.begin(hand, now, out)
 
