@@ -74,23 +74,22 @@ export interface EngineConfig {
 }
 
 export const GESTURES = {
-  scroll:       { label: "Desplazar",        hint: "Dos dedos arriba, mueve la mano arriba o abajo" },
+  scroll:       { label: "Desplazar",        hint: "Dos dedos y mueve la mano: la página la sigue; rápido llega más lejos" },
   zoom:         { label: "Zoom",             hint: "Junta el pulgar y el índice, ábrelos o ciérralos" },
   task_view:    { label: "Vista de tareas",  hint: "Dos palmas abiertas separadas, júntalas" },
-  grab_window:  { label: "Mover ventanas",   hint: "Palma, luego cierra el puño y arrastra; abre la mano para soltar" },
-  close_window: { label: "Cerrar ventana",   hint: "Puño cerrado con un tirón hacia abajo" },
+  grab_window:  { label: "Mover ventanas",   hint: "Palma, cierra el puño y arrastra; ábrela para soltar. Lánzala a un lado para acoplar, arriba para maximizar, abajo para cerrar" },
   volume:       { label: "Volumen",          hint: "Tres dedos hacia la cámara, sube o baja la mano" },
   mute:         { label: "Silenciar",        hint: "Palma, puño rápido y palma otra vez (choca con mover ventanas)" },
   pause:        { label: "Reproducir / pausar", hint: "Cuatro dedos un momento y cierra el puño" },
   power:        { label: "Encender / apagar", hint: "Dos palmas abiertas quietas frente a la cámara" },
-  screenshot:   { label: "Captura de pantalla", hint: "Empuja la palma abierta lejos de la cámara" },
+  screenshot:   { label: "Captura de pantalla", hint: "Palma quieta un momento y empújala lejos de la cámara" },
 } as const;
 
 export type GestureKey = keyof typeof GESTURES;
 
 export const GESTURE_GROUPS: { title: string; keys: GestureKey[] }[] = [
   { title: "Navegar",       keys: ["scroll", "zoom", "task_view"] },
-  { title: "Ventanas",      keys: ["grab_window", "close_window"] },
+  { title: "Ventanas",      keys: ["grab_window"] },
   { title: "Sonido y medios", keys: ["volume", "mute", "pause"] },
   { title: "Otros",         keys: ["screenshot", "power"] },
 ];
