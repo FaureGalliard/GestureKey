@@ -15,7 +15,6 @@ THROW_WINDOW = 0.15   # seconds of motion before the release that define the thr
 THROW_SPAN   = 0.05   # velocity is measured over spans this long, and the peak wins
 DOMINANCE    = 1.5    # a flick's main axis must be this much faster than the other
 FLICK_BLOCK  = 0.35   # s: after a flick, the rest of that same motion does not drag
-CLOSE_WINDOW = 0.5    # s: after a downward flick, opening the hand this soon closes
 OPEN_FRAMES  = 2      # consecutive open-hand frames that agree before deciding
 OPEN_DECIDE  = 0.25   # s: if they never agree, just let go
 
@@ -39,7 +38,8 @@ class GrabWindowGesture(Gesture):
     flick → / ← while holding                  : send it to the next monitor that way
                                                  (at the desktop edge: snap to that half)
     flick ↑ while holding                      : maximize
-    flick ↓, then open the hand within 0.5 s   : close
+    drag it down against the screen's bottom   : the overlay says "let go to close";
+                                                 open the hand there to close it (a bin)
     FIST → PALM                                : release where it is
     fist lost ≥ lost_timeout                   : release in place
 
@@ -138,8 +138,6 @@ class GrabWindowGesture(Gesture):
         that side. A couple of frames must agree, since the first open frames
         are often mid-transition.
         """
-        if now <= self._close_until:
-            return self._let_go(now, out)                 # flicked down then opened: close
         (x0, y0), (x9, y9) = hand.img[0], hand.img[9]
         tilt = math.degrees(math.atan2(x9 - x0, -(y9 - y0)))   # 0 = fingers up, + = towards the user's right
         vote = ("right" if tilt > 0 else "left") if abs(tilt) >= self._cfg.sweep_tilt else "here"
@@ -190,8 +188,6 @@ class GrabWindowGesture(Gesture):
             out.emit(GestureEvent.WINDOW_MAXIMIZED, WindowSendTo("up"))
             self.reset()                              # maximized: nothing left to drag
             return True
-        elif vy >= cfg.close_speed and vy >= DOMINANCE * abs(vx):
-            self._close_until = now + CLOSE_WINDOW    # armed; opening the hand now closes
         else:
             return False
         self._flick_ready = False
@@ -223,9 +219,6 @@ class GrabWindowGesture(Gesture):
         return vx, vy
 
     def _let_go(self, now: float, out: Output) -> None:
-        if now <= self._close_until:                  # flicked down, then opened: throw it away
-            out.emit(GestureEvent.CLOSE_WINDOW, WindowRelease("close"))
-            return self.reset()
         vx, vy = self._throw(now)
         speed = math.hypot(vx, vy)
         # a small glide with the release velocity; the window physics also maximizes
@@ -263,4 +256,3 @@ class GrabWindowGesture(Gesture):
         self._edge_since: Optional[float] = None
         self._edge_side = ""
         self._block_until = 0.0
-        self._close_until = float("-inf")

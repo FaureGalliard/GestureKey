@@ -180,6 +180,29 @@ def test_zone_at_the_outer_edge_of_the_desktop_maximizes_on_release():
     assert _settle(a).action == "maximize"
 
 
+def test_zone_close_when_pushed_against_the_bottom():
+    a = _anim()
+    for _ in range(15):
+        a.move(0, 60)                                  # dragged down until it can't go further
+    assert a.zone == "close"
+    a.release(0, 0, throw=False)
+    assert _settle(a).action == "close"
+
+
+def test_dragging_back_up_leaves_the_close_zone():
+    a = _anim()
+    for _ in range(15):
+        a.move(0, 60)
+    a.move(0, -40)
+    assert a.zone is None
+
+
+def test_low_window_released_without_pushing_is_not_closed():
+    a = _anim((400, 500, 1000, 900))                  # already low on the screen
+    a.move(20, 0)
+    assert a.zone is None
+
+
 def test_no_zone_between_two_monitors():
     a = _anim((1000, 200, 1600, 600))                 # straddling centre and right
     assert a.zone is None

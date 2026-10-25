@@ -285,28 +285,12 @@ def test_flick_up_maximizes(clock):
     assert "WINDOW_MAXIMIZED" in clock.events
 
 
-def test_flick_down_then_open_closes(clock):
+def test_flick_down_no_longer_closes(clock):
     _grab(clock, at=(0.5, 0.4))
-    clock.run(FIST, 0.1, wrist=(0.5, 0.4), to=(0.5, 0.65))   # fast, downwards: arms closing
+    clock.run(FIST, 0.1, wrist=(0.5, 0.4), to=(0.5, 0.65))   # closing is the bottom drop zone now
     clock.run(PALM, 0.05, wrist=(0.5, 0.65))
-    assert _release(clock.actions)[-1].snap == "close"
-    assert "CLOSE_WINDOW" in clock.events
-
-
-def test_dragging_down_calmly_never_closes(clock):
-    _grab(clock, at=(0.5, 0.3))
-    clock.run(FIST, 1.0, wrist=(0.5, 0.3), to=(0.5, 0.8))    # 0.5 image heights/s
-    clock.run(PALM, 0.05, wrist=(0.5, 0.8))
     assert "CLOSE_WINDOW" not in clock.events
     assert _release(clock.actions)[-1].snap is None
-
-
-def test_flick_down_without_opening_does_not_close(clock):
-    _grab(clock, at=(0.5, 0.4))
-    clock.run(FIST, 0.1, wrist=(0.5, 0.4), to=(0.5, 0.65))
-    clock.run(FIST, 0.8, wrist=(0.5, 0.65))                   # keeps the fist: changed its mind
-    clock.run(PALM, 0.05, wrist=(0.5, 0.65))
-    assert "CLOSE_WINDOW" not in clock.events
 
 
 def test_pause_tolerates_a_pose_in_passing(clock):

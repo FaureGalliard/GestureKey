@@ -10,6 +10,7 @@ lands decides what happens:
   - lands mostly on another monitor   → settles fully inside that monitor
   - thrown against a desktop edge with no monitor beyond → snaps to that half
   - ends with its top at the top of a monitor            → maximizes there
+  - dragged down against the bottom of the desktop       → closes (like a bin)
   - otherwise                                             → stays where it landed
 """
 from __future__ import annotations
@@ -25,7 +26,7 @@ Monitor = Tuple[Rect, Rect]                  # full rect, work area
 class Landing:
     x: float
     y: float
-    action: Optional[str] = None             # None | "left" | "right" | "maximize"
+    action: Optional[str] = None             # None | "left" | "right" | "maximize" | "close"
 
 
 @dataclass
@@ -65,6 +66,7 @@ class WindowAnimator:
         self.y = self.ty = float(top)
         self.active, self._landing = True, None
         self._pushed_top = False
+        self._pushed_bottom = False
         self.start_monitor = self.monitor_at(left + self.w / 2, top + self.h / 2)
 
     @property
@@ -81,6 +83,10 @@ class WindowAnimator:
                 self._pushed_top = True
             elif self.ty > self._top_of(self.tx) + self.cfg.top_margin:
                 self._pushed_top = False
+            if want_y > self.ty + 1:                   # pushed against the bottom: the bin
+                self._pushed_bottom = True
+            elif dy < 0:
+                self._pushed_bottom = False
 
     def step(self, dt: float) -> Optional[Tuple[int, int]]:
         """Advance; returns the new integer position when it changed."""
@@ -127,7 +133,7 @@ class WindowAnimator:
         zone = self.zone
         if zone is not None:                          # dropped in a snap zone: no glide
             x, y = self._fit(self.tx, self.ty, self.monitor_at(self.tx + self.w / 2, self.ty + 15))
-            self.tx, self.ty = (self.tx, self.ty) if zone == "maximize" else (x, y)
+            self.tx, self.ty = (self.tx, self.ty) if zone in ("maximize", "close") else (x, y)
             self._landing = Landing(self.tx, self.ty, zone)
             return self._landing
         cap = cfg.max_glide * self.px_per_unit
@@ -165,10 +171,13 @@ class WindowAnimator:
         """
         Where letting go *now* would put the window, like Windows' snap preview:
         "maximize" when taken to the top of a monitor, "left"/"right" when its
-        title bar is pushed against the outer edge of the desktop. None otherwise.
+        title bar is pushed against the outer edge of the desktop, "close" when
+        pushed down against the bottom. None otherwise.
         """
         if not self.active or self._landing is not None:
             return None
+        if self._pushed_bottom:
+            return "close"
         cx, cy = self.tx + self.w / 2, self.ty + 15          # a point on the title bar
         work = self.monitor_at(cx, max(cy, self.ty))[1]
         if self._pushed_top and self.ty <= work[1] + self.cfg.top_margin:

@@ -127,6 +127,8 @@ class ActionExecutor:
             self.window_zone = None
             if landing and landing.action == "maximize":
                 win32.maximize(hwnd)
+            elif landing and landing.action == "close":
+                win32.close_window(hwnd)
             elif landing and landing.action in ("left", "right"):
                 win32.hotkey(("win", landing.action))
 

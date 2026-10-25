@@ -125,7 +125,7 @@ class ScreenshotConfig:
 
 @dataclass
 class CloseWindowConfig:
-    # off by default: grabbing a window and throwing it down closes it (grab_window.close_speed)
+    # off by default: dragging a window against the bottom of the screen and letting go closes it
     enabled:   bool  = False
     arm_time:  float = 0.30   # fist held still before the jerk counts (it's destructive)
     distance:  float = 1.2    # palm lengths the fist must drop…
@@ -150,7 +150,6 @@ class GrabWindowConfig:
     edge_zone:    float = 0.12   # hand within this fraction of the camera's left/right edge…
     edge_dwell:   float = 0.25   # …for this long = "keep going that way": next monitor
     throw_speed:  float = 1.4    # release velocity that counts as a throw for the glide
-    close_speed:  float = 1.8    # a downward flick this fast arms closing (destructive: higher)
     lost_timeout: float = 0.60   # release if the fist is lost this long (motion blur)
     cooldown:     float = 0.40
 
