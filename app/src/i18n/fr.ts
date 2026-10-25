@@ -73,19 +73,19 @@ export const fr: Dict = {
   },
 
   gestures: {
-    mouse:       { label: "Souris", hint: "Pointez avec l’index : le curseur suit. Pincez pouce et index pour cliquer, pincez et bougez pour glisser, maintenez pour un clic droit. Un coup rapide sur le côté l’envoie sur l’autre écran" },
+    mouse:       { label: "Souris", hint: "Pointez avec l’index : le curseur suit. Pincez pouce et index pour cliquer, pincez et bougez pour glisser, maintenez pour un clic droit. Pointez vers un côté pour passer à cet écran" },
     scroll:      { label: "Défiler", hint: "Deux doigts et bougez la main : la page suit ; un geste rapide va plus loin" },
     zoom:        { label: "Zoom", hint: "Pincez le pouce et l’index, puis écartez-les ou rapprochez-les" },
     task_view:   { label: "Vue des tâches", hint: "Deux paumes ouvertes écartées, puis rapprochez-les. Ensuite : ☝️ pointez une fenêtre et 🤏 pincez pour l’ouvrir, ou écartez les paumes pour quitter" },
     grab_window: {
       label: "Déplacer les fenêtres",
-      hint: "Paume, fermez le poing et faites glisser ; ouvrez-le pour lâcher. Ouvrez la main inclinée vers un côté pour envoyer la fenêtre sur cet écran ; un coup vers le haut l’agrandit ; jetez-la vers le bas pour la fermer",
+      hint: "Paume, fermez le poing et faites glisser ; ouvrez-le pour lâcher. Ouvrez la main inclinée vers un côté pour envoyer la fenêtre sur cet écran ; un coup vers le haut l’agrandit ; ouvrez-la doigts vers le bas pour la fermer",
     },
     volume:      { label: "Volume", hint: "Trois doigts, levez ou baissez la main" },
     mute:        { label: "Couper le son", hint: "Paume, poing rapide, paume à nouveau (gêne le déplacement des fenêtres)" },
     pause:       { label: "Lecture / pause", hint: "Quatre doigts un instant, puis fermez le poing" },
     power:       { label: "Activer / désactiver", hint: "Deux paumes ouvertes immobiles devant la caméra" },
-    screenshot:  { label: "Capture d’écran", hint: "Gardez la paume immobile un instant, puis éloignez-la de la caméra" },
+    screenshot:  { label: "Capture d’écran", hint: "Cadrez l’écran avec les deux mains en L (pouce et index tendus), comme pour une photo" },
   },
 
   states: {

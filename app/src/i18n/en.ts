@@ -72,19 +72,19 @@ export const en = {
   },
 
   gestures: {
-    mouse:       { label: "Mouse", hint: "Point with your index: the cursor follows. Pinch thumb and index to click, pinch and move to drag, hold the pinch for a right click. Flick it sideways to jump to the next monitor" },
+    mouse:       { label: "Mouse", hint: "Point with your index: the cursor follows. Pinch thumb and index to click, pinch and move to drag, hold the pinch for a right click. Point towards a side to jump to that monitor" },
     scroll:      { label: "Scroll", hint: "Two fingers and move your hand: the page follows; a quick flick goes further" },
     zoom:        { label: "Zoom", hint: "Pinch thumb and index, then open or close them" },
     task_view:   { label: "Task view", hint: "Two open palms apart, then bring them together. Inside: ☝️ point at a window and 🤏 pinch to open it, or move the palms apart to leave" },
     grab_window: {
       label: "Move windows",
-      hint: "Palm, close your fist and drag; open it to let go. Open it tilted towards a side to send the window to that monitor; flick up to maximize; throw it down to close",
+      hint: "Palm, close your fist and drag; open it to let go. Open it tilted towards a side to send the window to that monitor; flick up to maximize; open it with the fingers pointing down to close",
     },
     volume:      { label: "Volume", hint: "Three fingers, raise or lower your hand" },
     mute:        { label: "Mute", hint: "Palm, quick fist, palm again (clashes with moving windows)" },
     pause:       { label: "Play / pause", hint: "Four fingers for a moment, then close your fist" },
     power:       { label: "On / off", hint: "Both open palms held still in front of the camera" },
-    screenshot:  { label: "Screenshot", hint: "Hold your palm still for a moment, then push it away from the camera" },
+    screenshot:  { label: "Screenshot", hint: "Frame the screen with both hands in an L (thumb and index stretched), like taking a photo" },
   },
 
   states: {

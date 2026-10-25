@@ -73,19 +73,19 @@ export const es: Dict = {
   },
 
   gestures: {
-    mouse:       { label: "Ratón", hint: "Apunta con el índice: el cursor te sigue. Junta pulgar e índice para hacer clic, júntalos y mueve para arrastrar, mantén para clic derecho. Un golpe rápido hacia un lado lo lleva a la otra pantalla" },
+    mouse:       { label: "Ratón", hint: "Apunta con el índice: el cursor te sigue. Junta pulgar e índice para hacer clic, júntalos y mueve para arrastrar, mantén para clic derecho. Apunta hacia un lado para saltar a esa pantalla" },
     scroll:      { label: "Desplazar", hint: "Dos dedos y mueve la mano: la página la sigue; rápido llega más lejos" },
     zoom:        { label: "Zoom", hint: "Junta el pulgar y el índice, ábrelos o ciérralos" },
     task_view:   { label: "Vista de tareas", hint: "Dos palmas abiertas separadas, júntalas. Dentro: ☝️ apunta a una ventana y 🤏 pellizca para abrirla, o separa las palmas para salir" },
     grab_window: {
       label: "Mover ventanas",
-      hint: "Palma, cierra el puño y arrastra; ábrela para soltar. Ábrela inclinada hacia un lado para mandar la ventana a ese monitor; golpe arriba para maximizar; tírala hacia abajo para cerrar",
+      hint: "Palma, cierra el puño y arrastra; ábrela para soltar. Ábrela inclinada hacia un lado para mandar la ventana a ese monitor; golpe arriba para maximizar; ábrela con los dedos hacia abajo para cerrar",
     },
     volume:      { label: "Volumen", hint: "Tres dedos, sube o baja la mano" },
     mute:        { label: "Silenciar", hint: "Palma, puño rápido y palma otra vez (choca con mover ventanas)" },
     pause:       { label: "Reproducir / pausar", hint: "Cuatro dedos un momento y cierra el puño" },
     power:       { label: "Encender / apagar", hint: "Dos palmas abiertas quietas frente a la cámara" },
-    screenshot:  { label: "Captura de pantalla", hint: "Palma quieta un momento y empújala lejos de la cámara" },
+    screenshot:  { label: "Captura de pantalla", hint: "Encuadra la pantalla con las dos manos en L (pulgar e índice estirados), como para una foto" },
   },
 
   states: {
