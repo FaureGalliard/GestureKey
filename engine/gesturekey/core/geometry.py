@@ -4,9 +4,6 @@ from typing import Sequence
 
 from gesturekey.core.types import Hand, Point
 
-FINGERTIPS = (4, 8, 12, 16, 20)
-
-
 def dist(a: Point, b: Point) -> float:
     return math.hypot(a[0] - b[0], a[1] - b[1])
 
@@ -26,13 +23,11 @@ def angle(a: Point, b: Point, c: Point) -> float:
     return math.degrees(math.acos(cos_val))
 
 
-def hand_size_3d(hand: Hand) -> float:
-    """Wrist → middle fingertip distance in image space (with depth)."""
-    (wx, wy), (mx, my) = hand.img[0], hand.img[12]
-    dz = hand.z[12] - hand.z[0]
-    return math.sqrt((mx - wx) ** 2 + (my - wy) ** 2 + dz ** 2)
+def palm_length(hand: Hand) -> float:
+    """Wrist → middle MCP in image units: the yardstick that makes gestures distance-invariant."""
+    return dist(hand.img[0], hand.img[9]) or 1e-3
 
 
-def relative_depth(hand: Hand) -> float:
-    """Mean fingertip depth relative to the wrist (negative = pointing at camera)."""
-    return sum(hand.z[i] for i in FINGERTIPS) / len(FINGERTIPS) - hand.z[0]
+def palm_center(hand: Hand) -> Point:
+    idx = (0, 5, 9, 13, 17)
+    return (sum(hand.img[i][0] for i in idx) / 5, sum(hand.img[i][1] for i in idx) / 5)

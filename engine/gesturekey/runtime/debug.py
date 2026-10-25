@@ -61,6 +61,6 @@ def _draw(img: np.ndarray, msg: Dict[str, Any]) -> None:
     label = f"{msg['state']}  ({msg['raw_state']} {msg['confidence']:.2f})  {msg['fps']:.0f} fps"
     if msg.get("owner"):
         label += f"  owner={msg['owner']}"
-    if msg.get("paused"):
-        label += "  PAUSED"
+    if not msg.get("enabled", True):
+        label += "  OFF"
     cv2.putText(img, label, (8, 18), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)

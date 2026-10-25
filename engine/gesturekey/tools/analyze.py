@@ -17,14 +17,12 @@ from collections import Counter
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-from gesturekey.config import settings_path
-from gesturekey.core.geometry import hand_center
-from gesturekey.vision.tracker import _normalise
+from gesturekey.config import GrabWindowConfig, ScrollConfig, settings_path
 
 STILL_MIN_S   = 2.0     # a constant stable state at least this long counts as a "hold"
 MOVE_LIMIT_PX = 40.0    # …and the wrist must stay within this many px of its median
-SCROLL_DEADZONE = 0.003  # gestures/scroll.py VELOCITY_DEADZONE (per frame, norm space)
-GRAB_DEADZONE   = 0.002  # config GrabWindowConfig.deadzone (per frame, image space)
+SCROLL_DEADZONE = ScrollConfig().deadzone        # palm lengths away from the anchor
+GRAB_DEADZONE   = GrabWindowConfig().deadzone    # per frame, image space
 
 Frame = Dict[str, Any]
 
@@ -129,12 +127,16 @@ def report(path: Path) -> None:
         tip = [(hd["landmarks"][8][0] * w, hd["landmarks"][8][1] * h) for hd in hands]
         flick = sum(1 for p, q in zip(seg, seg[1:]) if p["raw_state"] != q["raw_state"])
 
-        # per-frame deltas the gestures would see while the user holds still
-        centers = [hand_center(_normalise([(x * w, y * h) for x, y in hd["landmarks"]])) for hd in hands]
-        dy_norm = [abs(q[1] - p[1]) for p, q in zip(centers, centers[1:])]
+        # would the jitter alone move the gestures? scroll: offset from the hold's start
+        # in palm lengths (joystick dead zone); grab: per-frame wrist step (image units)
+        def palm(hd):
+            (x0, y0), (x9, y9) = hd["landmarks"][0], hd["landmarks"][9]
+            return math.hypot(x9 - x0, y9 - y0) or 1e-3
+        cy = [sum(hd["landmarks"][i][1] for i in (0, 5, 9, 13, 17)) / 5 for hd in hands]
+        anchor = cy[min(len(cy) - 1, 3)]
+        over_scroll = sum(1 for y, hd in zip(cy, hands) if abs(y - anchor) / palm(hd) > SCROLL_DEADZONE) / len(cy)
         d_img = [max(abs(q["landmarks"][0][0] - p["landmarks"][0][0]), abs(q["landmarks"][0][1] - p["landmarks"][0][1]))
                  for p, q in zip(hands, hands[1:])]
-        over_scroll = sum(1 for d in dy_norm if d > SCROLL_DEADZONE) / len(dy_norm)
         over_grab = sum(1 for d in d_img if d > GRAB_DEADZONE) / len(d_img)
 
         print(f"  {seg[0]['state']:<14}{seg[-1]['t'] - seg[0]['t']:>5.1f}s"

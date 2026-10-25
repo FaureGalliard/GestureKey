@@ -58,10 +58,18 @@ class Hand:
 
 @dataclass
 class FrameData:
-    """All data relevant to a single processed frame."""
-    state:     HandState
-    hands:     Dict[str, Hand] = field(default_factory=dict)
-    timestamp: float = 0.0
+    """
+    All data relevant to a single processed frame.
+
+    state is the filtered (probabilistic) hand state; raw_state/raw_confidence
+    are the classifier's verdict for this very frame — gestures use them to
+    notice early that the user is leaving a pose.
+    """
+    state:          HandState
+    hands:          Dict[str, Hand] = field(default_factory=dict)
+    timestamp:      float = 0.0
+    raw_state:      Optional[HandState] = None
+    raw_confidence: float = 1.0
 
     @property
     def main_hand(self) -> Optional[Hand]:

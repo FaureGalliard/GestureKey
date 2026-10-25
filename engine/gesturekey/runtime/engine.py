@@ -19,7 +19,7 @@ from gesturekey.gestures.power import PowerToggleGesture
 from gesturekey.runtime.recorder import Recorder
 from gesturekey.vision.camera import Camera, list_cameras
 from gesturekey.vision.classifier import StateClassifier
-from gesturekey.vision.stabilizer import StateStabilizer
+from gesturekey.vision.states import StateFilter
 from gesturekey.vision.tracker import HandTracker
 
 Message = Dict[str, Any]
@@ -54,7 +54,7 @@ class Engine:
         self._camera:     Optional[Camera]          = None
         self._tracker:    Optional[HandTracker]     = None
         self._classifier: Optional[StateClassifier] = None
-        self._stabilizer: Optional[StateStabilizer] = None
+        self._states:     Optional[StateFilter]     = None
         self._arbiter:    Optional[GestureArbiter]  = None
         self._power:      Optional[PowerToggleGesture] = None
         self._executor:   Optional[ActionExecutor]  = None
@@ -125,16 +125,18 @@ class Engine:
                 continue
             frame, stamp = got
 
-            assert self._tracker and self._classifier and self._stabilizer and self._arbiter and self._executor
-            hands = self._tracker.process(frame)
-            if hands:
-                raw_state, confidence = self._classifier.predict(hands)
+            assert self._tracker and self._classifier and self._states and self._arbiter and self._executor
+            hands = self._tracker.process(frame, stamp)
+            proba = self._classifier.predict_proba(hands) if hands else None
+            if proba:
+                best = max(proba, key=proba.__getitem__)
+                raw_state, confidence = _as_state(best), proba[best]
             else:
                 raw_state, confidence = HandState.NO_HANDS, 1.0
-            self._stabilizer.update(raw_state, confidence)
-            state = self._stabilizer.current or HandState.NO_HANDS
+            state = self._states.update(proba, stamp)
 
-            frame_data = FrameData(state=state, hands=hands, timestamp=stamp)
+            frame_data = FrameData(state=state, hands=hands, timestamp=stamp,
+                                   raw_state=raw_state, raw_confidence=confidence)
             events: List[str] = []
 
             # power runs even while off, so the same gesture turns GestureKey back on
@@ -167,7 +169,7 @@ class Engine:
                     for h in hands.values()
                 ],
                 "owner":      owner.NAME if owner else None,
-                "owner_info": owner.readout if owner else None,
+                "owner_info": self._owner_info(owner),
                 "arming":     self._arming(),
                 "enabled":    self._enabled,
                 "fps":        round(fps, 1),
@@ -226,6 +228,14 @@ class Engine:
             self._arbiter.reset_all()
         self._emit({"type": "enabled", "enabled": self._enabled})
 
+    def _owner_info(self, owner) -> Optional[Message]:
+        if owner is None:
+            return None
+        info = dict(owner.readout or {})
+        if owner.NAME == "VOLUME" and self._executor and self._executor.volume_level is not None:
+            info["volume"] = round(self._executor.volume_level, 3)
+        return info or None
+
     def _arming(self) -> Optional[Message]:
         """A deliberate hold in progress, for the overlay's progress ring."""
         p = self._power.progress if self._power else None
@@ -239,7 +249,8 @@ class Engine:
             if self._tracker:
                 self._tracker.release()
             self._tracker = HandTracker(cfg.tracking)
-        self._stabilizer = StateStabilizer(cfg.stabilizer)
+        if self._classifier:
+            self._states = StateFilter(self._classifier.classes, cfg.states)
         self._arbiter    = GestureArbiter(cfg.gestures)
         self._power      = PowerToggleGesture(cfg.gestures.power) if cfg.gestures.power.enabled else None
         if self._executor:
@@ -265,8 +276,8 @@ class Engine:
             self._camera_info = {"type": "camera", "device": self._camera.device,
                                  "width": w, "height": h, "fps": fps}
             self._emit(self._camera_info)
-        if self._stabilizer:
-            self._stabilizer.reset()
+        if self._states:
+            self._states.reset()
         if self._arbiter:
             self._arbiter.reset_all()
 
@@ -287,3 +298,10 @@ def _encode_preview(frame: np.ndarray) -> str:
     small = cv2.resize(frame, (PREVIEW_WIDTH, int(h * PREVIEW_WIDTH / w)))
     ok, buf = cv2.imencode(".jpg", small, [cv2.IMWRITE_JPEG_QUALITY, 70])
     return base64.b64encode(buf.tobytes()).decode("ascii") if ok else ""
+
+
+def _as_state(name: str) -> HandState:
+    try:
+        return HandState(name)
+    except ValueError:
+        return HandState.UNKNOWN

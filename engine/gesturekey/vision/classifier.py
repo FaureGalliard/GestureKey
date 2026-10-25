@@ -48,15 +48,23 @@ class StateClassifier:
         self._model.verbose = 0
         self._classes = list(self._model.classes_)
 
-    def predict(self, hands: Dict[str, Hand]) -> Tuple[HandState, float]:
+    @property
+    def classes(self) -> List[str]:
+        return [str(c) for c in self._classes]
+
+    def predict_proba(self, hands: Dict[str, Hand]) -> Dict[str, float]:
         X = np.asarray([feature_vector(hands)], dtype=np.float64)
         with warnings.catch_warnings():
             # model was fitted on a DataFrame; numpy input is ~10× faster
             warnings.filterwarnings("ignore", message="X does not have valid feature names")
             proba = self._model.predict_proba(X)[0]
-        best = int(np.argmax(proba))
+        return {str(c): float(p) for c, p in zip(self._classes, proba)}
+
+    def predict(self, hands: Dict[str, Hand]) -> Tuple[HandState, float]:
+        proba = self.predict_proba(hands)
+        best = max(proba, key=proba.__getitem__)
         try:
-            state = HandState(self._classes[best])
+            state = HandState(best)
         except ValueError:
             state = HandState.UNKNOWN
-        return state, float(proba[best])
+        return state, proba[best]

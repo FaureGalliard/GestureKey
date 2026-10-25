@@ -11,7 +11,7 @@ def _frame(t, state, hand, conf=0.9):
     return {
         "type": "frame", "t": t, "state": state, "raw_state": state, "confidence": conf,
         "hands": [{"side": hand.side, "score": 1.0, "landmarks": [list(p) for p in hand.img]}] if hand else [],
-        "owner": None, "paused": False, "fps": 30.0,
+        "owner": None, "enabled": True, "fps": 30.0,
     }
 
 

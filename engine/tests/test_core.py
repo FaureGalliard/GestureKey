@@ -48,3 +48,15 @@ def test_executor_coalesces_moves():
     moves = [a for a in ran if isinstance(a, WindowMove)]
     assert sum(m.dx for m in moves) == 0.05
     assert isinstance(ran[0], Hotkey) and isinstance(ran[-1], Hotkey)
+
+
+def test_old_settings_keep_choices_but_take_new_tuning(tmp_path):
+    path = tmp_path / "settings.json"
+    path.write_text(json.dumps({                      # written by an older version, no schema
+        "camera": {"device": 1},
+        "gestures": {"pause": {"enabled": False, "min_time": 0.2}, "zoom": {"enabled": True}},
+    }))
+    cfg = AppConfig.load(path)
+    assert cfg.camera.device == 1
+    assert cfg.gestures.pause.enabled is False        # the user's choice survives
+    assert cfg.gestures.pause.min_time == 0.35        # stale tuning does not
