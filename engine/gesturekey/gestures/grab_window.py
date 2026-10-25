@@ -6,7 +6,7 @@ from typing import Deque, Optional, Tuple
 from gesturekey.actions.types import WindowGrab, WindowMove, WindowRelease, WindowSendTo
 from gesturekey.config import GrabWindowConfig
 from gesturekey.core.cooldown import CooldownManager
-from gesturekey.core.geometry import palm_center
+from gesturekey.core.geometry import hand_tilt, openness, palm_center
 from gesturekey.core.types import FrameData, GestureEvent, HandState, Point
 from gesturekey.gestures.base import Gesture, Output
 from gesturekey.gestures.mouse import POINTING_REACH, index_reach
@@ -14,6 +14,7 @@ from gesturekey.gestures.mouse import POINTING_REACH, index_reach
 THROW_WINDOW = 0.15   # seconds of motion before the release that define the throw
 THROW_SPAN   = 0.05   # velocity is measured over spans this long, and the peak wins
 DOMINANCE    = 1.5    # a flick's main axis must be this much faster than the other
+OPEN_REACH   = 1.3    # openness() above this = an open hand, whatever the classifier says
 OPEN_FRAMES  = 2      # consecutive open-hand frames that agree before deciding
 OPEN_DECIDE  = 0.25   # s: if they never agree, just let go
 
@@ -29,6 +30,7 @@ class GrabWindowGesture(Gesture):
     """
     PALM (≥ min_arm_time) → FIST (≥ hold_time) : grab the foreground window
     FIST + move                                : drag it (pointer acceleration)
+    open the hand with the fingers down        : close it (drop it)
     open the hand tilted sideways (a sweep)    : send it to the monitor that way and
                                                  maximize it there — the natural way to
                                                  say "over there"; upright = let go here
@@ -100,7 +102,8 @@ class GrabWindowGesture(Gesture):
 
         elif self._phase == _Phase.GRABBED:
             self._trail.append((now, wrist))
-            if state in (HandState.PALM, HandState.FOUR_FINGERS):
+            # upside down the classifier rarely says PALM: the finger geometry decides too
+            if state in (HandState.PALM, HandState.FOUR_FINGERS) or openness(hand) >= OPEN_REACH:
                 return self._opening(hand, now, out)
             self._open_votes.clear()
             if fist:
@@ -129,12 +132,16 @@ class GrabWindowGesture(Gesture):
     def _opening(self, hand, now: float, out: Output) -> None:
         """
         The hand opened. Upright = let go here; tilted sideways = a sweep towards
-        that side. A couple of frames must agree, since the first open frames
-        are often mid-transition.
+        that side; fingers pointing down = drop it, close the window. A couple
+        of frames must agree, since the first open frames are often mid-transition.
         """
-        (x0, y0), (x9, y9) = hand.img[0], hand.img[9]
-        tilt = math.degrees(math.atan2(x9 - x0, -(y9 - y0)))   # 0 = fingers up, + = towards the user's right
-        vote = ("right" if tilt > 0 else "left") if abs(tilt) >= self._cfg.sweep_tilt else "here"
+        tilt = hand_tilt(hand)
+        if abs(tilt) >= self._cfg.close_tilt:
+            vote = "close"
+        elif abs(tilt) >= self._cfg.sweep_tilt:
+            vote = "right" if tilt > 0 else "left"
+        else:
+            vote = "here"
         if not self._open_votes:
             self._open_since = now
         self._open_votes.append(vote)
@@ -142,6 +149,9 @@ class GrabWindowGesture(Gesture):
         if len(recent) == OPEN_FRAMES and len(set(recent)) == 1:
             if vote == "here":
                 return self._let_go(now, out)
+            if vote == "close":
+                out.emit(GestureEvent.CLOSE_WINDOW, WindowRelease("close"))
+                return self.reset()
             out.emit(GestureEvent.WINDOW_TO_MONITOR,
                      WindowSendTo(vote, release=self._cfg.maximize_on_move))
             if not self._cfg.maximize_on_move:

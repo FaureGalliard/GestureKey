@@ -25,6 +25,8 @@ _POSES = {
     "pinch": {**_CURLED, 7: (0.045, -0.15), 8: (0.05, -0.125), 4: (0.05, -0.12)},
 }
 
+_POSE_OF = {HandState.FIST: "fist", HandState.POINT: "point", HandState.PINCH: "pinch"}
+
 
 def make_hand(wrist: Tuple[float, float] = (0.5, 0.7), side: str = "Right", scale: float = 1.0,
               tilt: float = 0.0, pose: str = "open") -> Hand:
@@ -39,7 +41,8 @@ def make_hand(wrist: Tuple[float, float] = (0.5, 0.7), side: str = "Right", scal
 
 def make_frame(state: HandState, t: float, wrist=(0.5, 0.7), scale: float = 1.0,
                hands: Optional[Dict[str, Hand]] = None, raw_state: Optional[HandState] = None,
-               tilt: float = 0.0, pose: str = "open") -> FrameData:
+               tilt: float = 0.0, pose: Optional[str] = None) -> FrameData:
+    pose = pose or _POSE_OF.get(state, "open")     # the finger shape that goes with the state
     if hands is None:
         hands = {} if state == HandState.NO_HANDS else {"Right": make_hand(wrist, scale=scale, tilt=tilt, pose=pose)}
     return FrameData(state=state, hands=hands, timestamp=t, raw_state=raw_state or state)
@@ -54,7 +57,7 @@ class Clock:
         self.actions: list = []
 
     def run(self, state: HandState, seconds: float, wrist=(0.5, 0.7), to=None, scale_to=None, scale=1.0, tilt=0.0,
-            pose="open"):
+            pose=None):
         n = max(1, round(seconds / self.dt))
         for i in range(n):
             k = (i + 1) / n

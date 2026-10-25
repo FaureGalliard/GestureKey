@@ -279,6 +279,19 @@ def test_flick_up_maximizes(clock):
     assert "WINDOW_MAXIMIZED" in clock.events
 
 
+def test_opening_the_hand_fingers_down_closes(clock):
+    _grab(clock)
+    clock.run(HandState.OTHER, 0.1, tilt=170)                  # upside down: the model says OTHER
+    assert _release(clock.actions)[-1].snap == "close"
+    assert "CLOSE_WINDOW" in clock.events and clock.arbiter.owner is None
+
+
+def test_turning_the_fist_down_without_opening_does_not_close(clock):
+    _grab(clock)
+    clock.run(FIST, 0.4, tilt=170, pose="fist")
+    assert "CLOSE_WINDOW" not in clock.events and owner(clock) == "GRAB_WINDOW"
+
+
 def test_fast_downward_drag_never_closes(clock):
     _grab(clock, at=(0.5, 0.4))
     clock.run(FIST, 0.1, wrist=(0.5, 0.4), to=(0.5, 0.65))   # fast, downwards

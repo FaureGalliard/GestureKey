@@ -31,3 +31,18 @@ def palm_length(hand: Hand) -> float:
 def palm_center(hand: Hand) -> Point:
     idx = (0, 5, 9, 13, 17)
     return (sum(hand.img[i][0] for i in idx) / 5, sum(hand.img[i][1] for i in idx) / 5)
+
+
+def hand_tilt(hand: Hand) -> float:
+    """Degrees of wrist → middle knuckle from straight up: + = towards the user's right, ±180 = fingers down."""
+    (x0, y0), (x9, y9) = hand.img[0], hand.img[9]
+    return math.degrees(math.atan2(x9 - x0, -(y9 - y0)))
+
+
+def openness(hand: Hand) -> float:
+    """
+    Mean fingertip ↔ wrist of index, middle and ring, in palm lengths: ~0.7 for a
+    fist, ~1.8 for an open hand. Works at any rotation, where the pose model
+    (trained on upright hands) does not.
+    """
+    return sum(dist(hand.img[i], hand.img[0]) for i in (8, 12, 16)) / (3 * palm_length(hand))

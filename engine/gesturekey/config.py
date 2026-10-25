@@ -146,6 +146,7 @@ class GrabWindowConfig:
     deadzone:     float = 0.0015
     flick_speed:  float = 1.5    # image units/s: an upward flick while holding maximizes
     sweep_tilt:   float = 28.0   # degrees: opening the hand tilted this far sideways = send that way
+    close_tilt:   float = 120.0  # degrees: opening it this far round (fingers down) = close the window
     maximize_on_move: bool = True   # a window sent to another monitor / an edge is maximized there
     edge_zone:    float = 0.12   # hand within this fraction of the camera's left/right edge…
     edge_dwell:   float = 0.25   # …for this long = "keep going that way": next monitor
