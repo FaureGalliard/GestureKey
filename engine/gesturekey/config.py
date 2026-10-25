@@ -158,6 +158,23 @@ class GrabWindowConfig:
 
 
 @dataclass
+class MouseConfig:
+    enabled:     bool  = True
+    # pointer ballistics (image units of palm travel → monitor widths), as for windows
+    accel:       float = 2.0
+    accel_from:  float = 0.25    # image units/s; slower than this moves 1:1 (precise)
+    max_gain:    float = 6.0
+    deadzone:    float = 0.0012  # image units per frame: below this the cursor rests (tremor)
+    # 🤏 clicking: thumb tip ↔ index tip in palm lengths, with hysteresis
+    pinch_on:    float = 0.30
+    pinch_off:   float = 0.45
+    pinch_reach: float = 0.95    # index tip ↔ wrist (palm lengths) at least this: a fist is no pinch
+    drag_start:  float = 0.25    # palm lengths moved while pinching = drag instead of click
+    right_hold:  float = 0.70    # still pinch this long = right click
+    rollback:    float = 0.15    # s of cursor motion undone when the hand goes away
+
+
+@dataclass
 class PowerConfig:
     enabled:   bool  = True
     hold_time: float = 1.0     # both palms still this long toggles GestureKey
@@ -178,6 +195,7 @@ class GesturesConfig:
     screenshot:   ScreenshotConfig  = field(default_factory=ScreenshotConfig)
     close_window: CloseWindowConfig = field(default_factory=CloseWindowConfig)
     grab_window:  GrabWindowConfig  = field(default_factory=GrabWindowConfig)
+    mouse:        MouseConfig       = field(default_factory=MouseConfig)
     power:        PowerConfig       = field(default_factory=PowerConfig)
 
 

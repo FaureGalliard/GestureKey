@@ -7,6 +7,7 @@ from gesturekey.core.types import FrameData, HandState
 from gesturekey.gestures.base import Gesture, Output
 from gesturekey.gestures.close_window import CloseWindowGesture
 from gesturekey.gestures.grab_window import GrabWindowGesture
+from gesturekey.gestures.mouse import MouseGesture
 from gesturekey.gestures.mute import MuteToggleGesture
 from gesturekey.gestures.pause import PauseResumeGesture
 from gesturekey.gestures.scroll import ScrollGesture
@@ -43,6 +44,7 @@ class GestureArbiter:
         self._hand_gestures: List[Gesture] = [
             g for g, enabled in (
                 (GrabWindowGesture(cooldown, cfg.grab_window),   cfg.grab_window.enabled),
+                (MouseGesture(cfg.mouse, cfg.continuous),        cfg.mouse.enabled),
                 (ScrollGesture(cfg.scroll, cfg.continuous),      cfg.scroll.enabled),
                 (VolumeGesture(cfg.volume, cfg.continuous),      cfg.volume.enabled),
                 (PinchZoomGesture(cfg.zoom, cfg.continuous),     cfg.zoom.enabled),
