@@ -1,14 +1,15 @@
-import { useEffect, useState } from "react";
-import { Sidebar } from "./components/Sidebar";
-import { Stage } from "./components/Stage";
-import { TitleBar } from "./components/TitleBar";
+import { useCallback, useEffect, useState } from "react";
+import { SettingsPanel, type SettingsTab } from "./components/settings/SettingsPanel";
 import type { LogEntry } from "./lib/useEngine";
 import { useEngine } from "./lib/useEngine";
+import { Home } from "./pages/Home";
 
 const TOAST_MS = 1400;
 
 export default function App() {
   const engine = useEngine();
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [tab, setTab] = useState<SettingsTab>("gestures");
   const [videoOn, setVideoOn] = useState(false);
   const [toast, setToast] = useState<LogEntry | null>(null);
 
@@ -21,29 +22,26 @@ export default function App() {
     return () => window.clearTimeout(timer);
   }, [newest?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const toggleVideo = () => {
-    engine.send({ cmd: "preview", on: !videoOn });
-    setVideoOn(!videoOn);
-  };
+  // the camera video only streams while it is shown
+  const { connected, send } = engine;
+  useEffect(() => {
+    if (connected) send({ cmd: "preview", on: videoOn });
+  }, [videoOn, connected, send]);
+
+  const closeSettings = useCallback(() => setSettingsOpen(false), []);
 
   return (
-    // 1 px accent outline around the window: the teleprompter's signature frame
-    <div className="flex h-full flex-col outline outline-1 -outline-offset-1 outline-accent/40">
-      <TitleBar connected={engine.connected} version={engine.version} />
-      <main className="flex min-h-0 flex-1">
-        <Stage
-          connected={engine.connected}
-          enabled={engine.enabled}
-          frame={engine.frame}
-          camera={engine.camera}
-          preview={engine.preview}
-          videoOn={videoOn}
-          lastEvent={toast}
-          onToggleEnabled={() => engine.send({ cmd: "set_enabled", enabled: !engine.enabled })}
-          onToggleVideo={toggleVideo}
-        />
-        <Sidebar config={engine.config} cameras={engine.cameras} log={engine.log} send={engine.send} />
-      </main>
+    <div className="h-full overflow-y-auto">
+      <Home engine={engine} toast={toast} videoOn={videoOn} onOpenSettings={() => setSettingsOpen(true)} />
+      <SettingsPanel
+        open={settingsOpen}
+        tab={tab}
+        onTab={setTab}
+        onClose={closeSettings}
+        engine={engine}
+        videoOn={videoOn}
+        onVideo={setVideoOn}
+      />
     </div>
   );
 }

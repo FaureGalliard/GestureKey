@@ -1,46 +1,44 @@
 @import "tailwindcss";
-@import "@fontsource-variable/inter";
+@import "@fontsource-variable/inter/opsz.css";
 @import "@fontsource/fira-code/400.css";
-@import "@fontsource/fira-code/500.css";
 
 /*
  * Design tokens — shared language with angelcrispin.github.io and Vocal Teleprompter.
  * Rule (same as the website): components use these classes, never raw hex.
- * A new color starts here or not at all.
+ * A new color starts here or not at all. See docs/design.md.
  */
 @theme static {
+    /* The website's faces. Inter with optical sizing: titles get the Display cut. */
     --font-sans: "Inter Variable", system-ui, sans-serif;
     --font-mono: "Fira Code", ui-monospace, monospace;
 
-    /* Chrome: the dark app shell (teleprompter title bar / toolbar, website menu) */
-    --color-ink: #0c0c0d;           /* app background, the stage */
-    --color-chrome: #1a1a1a;        /* title bar, side panel — same ink as the website's black */
-    --color-chrome-raised: #242424; /* menus and popovers, one step above */
+    /* Surfaces, darkest to lightest */
+    --color-ink: #0e0e0f;           /* navigation rail, camera stage */
+    --color-chrome: #151516;        /* page background */
+    --color-chrome-raised: #1e1e20; /* menus, hovered rows, inputs */
 
-    /* Text on chrome: two inks, not five */
-    --color-fg: #f2f2f3;            /* primary text */
-    --color-fg-muted: #9a9ba1;      /* secondary text, 7:1 on chrome */
-    --color-fg-faint: #5c5d63;      /* labels' quiet half, decorative glyphs; never body text */
+    /* Text: two inks, not five */
+    --color-fg: #f4f4f5;            /* primary text */
+    --color-fg-muted: #9a9ba1;      /* secondary text */
+    --color-fg-faint: #5f6066;      /* hints and glyphs; never body text */
 
-    /* Lines: opaque, so they read the same on chrome and on the stage */
-    --color-line: #2a2a2c;
-    --color-line-strong: #3a3a3d;
+    /* Lines: opaque, so they read the same on every surface */
+    --color-line: #262628;
+    --color-line-strong: #36363a;
 
     /* Accent ramp, one hue: #445ade (website brand, teleprompter primary) */
-    --color-accent: #445ade;        /* fills: primary pill, toggles on, focus */
-    --color-accent-strong: #3448c5; /* hover / pressed */
-    --color-accent-light: #7698fe;  /* accent as text or line on dark — teleprompter text color */
-    --color-accent-tint: #445ade26; /* tinted surface (15 %) */
+    --color-accent: #445ade;
+    --color-accent-strong: #3448c5;
+    --color-accent-light: #7698fe;  /* accent as text or line on dark */
+    --color-accent-tint: #445ade1f;
 
     /* Feedback */
-    --color-live: #34d399;          /* engine connected, hand tracked */
-    --color-hold: #f87171;          /* a gesture owns the hand (grabbing) */
+    --color-live: #34d399;
+    --color-hold: #f87171;
     --color-warn: #fbbf24;
-    --color-danger: #ef4444;        /* close button hover, errors */
+    --color-danger: #ef4444;
 
-    /* Motion: teleprompter's panel easing and the website's page easing */
     --ease-panel: cubic-bezier(0.32, 0.72, 0, 1);
-    --ease-page: cubic-bezier(0.76, 0, 0.24, 1);
 }
 
 :root {
@@ -57,16 +55,17 @@ body,
 body {
     margin: 0;
     overflow: hidden;
-    background: var(--color-ink);
+    background: var(--color-chrome);
     color: var(--color-fg);
     font-family: var(--font-sans);
+    font-optical-sizing: auto;
+    font-feature-settings: "cv11", "ss03"; /* single-storey a, round quotes: softer, more editorial */
     -webkit-font-smoothing: antialiased;
     user-select: none;
 }
 
 ::selection {
     background-color: var(--color-accent-tint);
-    color: var(--color-fg);
 }
 
 :focus-visible {
@@ -74,7 +73,6 @@ body {
     outline-offset: 2px;
 }
 
-/* Teleprompter: no visible scrollbars */
 ::-webkit-scrollbar {
     display: none;
 }
