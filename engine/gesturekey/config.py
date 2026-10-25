@@ -114,8 +114,6 @@ class TaskViewConfig:
     arm_time:     float = 0.15
     min_approach: float = 0.15   # image units the palms close (to open) or open (to leave)
     cooldown:     float = 1.5
-    nav_step:     float = 0.8    # palm lengths of ✌️ travel per selection step (arrow key)
-    select_hold:  float = 0.15   # fist held this long opens the selected window (Enter)
     idle_timeout: float = 20.0   # no gesture this long: stop driving task view
     lost_timeout: float = 3.0    # hand gone this long: stop driving task view
 

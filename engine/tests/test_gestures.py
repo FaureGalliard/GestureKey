@@ -155,11 +155,11 @@ def test_moving_fist_without_holding_does_not_close():
 
 def test_task_view_when_palms_come_together():
     from conftest import make_frame, make_hand
-    from gesturekey.config import TaskViewConfig
+    from gesturekey.config import MouseConfig, TaskViewConfig
     from gesturekey.core.cooldown import CooldownManager
     from gesturekey.gestures.base import Output
     from gesturekey.gestures.task_view import TaskViewGesture
-    g, events, t = TaskViewGesture(CooldownManager(), TaskViewConfig()), [], 0.0
+    g, events, t = TaskViewGesture(CooldownManager(), TaskViewConfig(), MouseConfig()), [], 0.0
     for i in range(60):                                         # 1 s: hold apart, then approach
         k = max(0.0, (i - 20) / 40)
         left, right = (0.2 + 0.15 * k, 0.6), (0.8 - 0.15 * k, 0.6)
@@ -199,26 +199,36 @@ def _keys(clock):
     return [a.keys for a in clock.actions if a.__class__.__name__ == "Hotkey"][1:]   # skip Win+Tab
 
 
-def test_task_view_two_fingers_move_the_selection():
-    clock = _open_task_view()
-    clock.run(TWO_FINGERS, 0.1, wrist=(0.4, 0.6))
-    clock.run(TWO_FINGERS, 0.4, wrist=(0.4, 0.6), to=(0.6, 0.6))       # ~1.8 palm lengths right
-    clock.run(TWO_FINGERS, 0.3, wrist=(0.6, 0.6), to=(0.6, 0.48))      # ~1.1 up
-    assert _keys(clock) == [("right",), ("right",), ("up",)]
-    assert clock.arbiter.owner is not None                             # still driving
+def _buttons(clock):
+    from gesturekey.actions.types import MouseButton
+    return [(a.button, a.down) for a in clock.actions if isinstance(a, MouseButton)]
 
 
-def test_task_view_fist_opens_the_selected_window():
+def test_task_view_point_and_pinch_opens_a_window():
+    from gesturekey.actions.types import CursorMove
     clock = _open_task_view()
-    clock.run(FIST, 0.3)
-    assert _keys(clock) == [("enter",)]
+    clock.run(HandState.POINT, 0.2, pose="point")
+    clock.run(HandState.POINT, 0.3, pose="point", wrist=(0.5, 0.7), to=(0.65, 0.6))
+    assert [a for a in clock.actions if isinstance(a, CursorMove)]
+    clock.run(HandState.PINCH, 0.15, pose="pinch", wrist=(0.65, 0.6))
+    clock.run(HandState.POINT, 0.1, pose="point", wrist=(0.65, 0.6))
+    assert _buttons(clock) == [("left", True), ("left", False)] and _keys(clock) == []
+    assert clock.arbiter.owner is None
+
+
+def test_task_view_point_then_palms_apart_opens_what_the_cursor_is_on():
+    clock = _open_task_view()
+    clock.run(HandState.POINT, 0.3, pose="point", wrist=(0.5, 0.7), to=(0.6, 0.6))
+    clock.palms(0.3, 0.3, 0.2)
+    clock.palms(0.3, 0.6, 0.4)
+    assert _buttons(clock) == [("left", True), ("left", False)] and _keys(clock) == []
     assert "TASK_VIEW_OPEN" in clock.events and clock.arbiter.owner is None
 
 
 def test_task_view_palms_apart_leave_it():
     clock = _open_task_view()
     clock.palms(0.3, 0.6, 0.4)
-    assert _keys(clock) == [("esc",)]
+    assert _keys(clock) == [("esc",)] and _buttons(clock) == []
     assert "TASK_VIEW_CLOSED" in clock.events and clock.arbiter.owner is None
 
 

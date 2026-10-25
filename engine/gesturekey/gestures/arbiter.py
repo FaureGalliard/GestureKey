@@ -53,7 +53,7 @@ class GestureArbiter:
                 (CloseWindowGesture(cooldown, cfg.close_window), cfg.close_window.enabled),
             ) if enabled
         ]
-        self._two_hand: List[Gesture] = [TaskViewGesture(cooldown, cfg.task_view)] if cfg.task_view.enabled else []
+        self._two_hand: List[Gesture] = [TaskViewGesture(cooldown, cfg.task_view, cfg.mouse)] if cfg.task_view.enabled else []
         self._mute_enabled = cfg.mute.enabled
         self._refractory = cfg.refractory
         self._quiet_until = float("-inf")

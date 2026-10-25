@@ -1,12 +1,13 @@
 from __future__ import annotations
 from typing import Optional
 
-from gesturekey.actions.types import Hotkey
-from gesturekey.config import TaskViewConfig
+from gesturekey.actions.types import Hotkey, MouseButton
+from gesturekey.config import MouseConfig, TaskViewConfig
 from gesturekey.core.cooldown import CooldownManager
-from gesturekey.core.geometry import dist, palm_center, palm_length
+from gesturekey.core.geometry import dist, palm_center
 from gesturekey.core.types import FrameData, GestureEvent, HandState, Point
 from gesturekey.gestures.base import Gesture, Output
+from gesturekey.gestures.mouse import POINTING_REACH, Pointer, index_reach
 
 MIN_INITIAL_DISTANCE    = 0.25   # image width fraction; wider and MediaPipe tends to drop a hand
 MAX_APPROACH_SPEED      = 0.50
@@ -20,12 +21,11 @@ class TaskViewGesture(Gesture):
     """
     ✋✋ two open palms apart, brought together → Win+Tab, and then *drive* it.
 
-    While task view is open the gesture owns the hand (Windows' task view takes
-    arrow keys, Enter and Esc):
-      ✌️ two fingers (or ☝️) and move the hand → arrow keys, one per `nav_step`
-                                                 palm lengths, dominant axis
-      ✊ fist held `select_hold`               → Enter: open the selected window
-      ✋✋ palms moving apart (the reverse)     → Esc: leave task view
+    While task view is open the gesture owns the hand:
+      ☝️ point                  → the cursor follows (as the mouse gesture)
+      🤏 pinch on a window      → it opens (a click), and task view is done
+      ✋✋ palms moving apart    → leave: opens the window under the cursor if
+                                  you pointed at one, otherwise Esc (back)
     No gesture for `idle_timeout`, or the hand gone for `lost_timeout`, and it
     stops driving (task view stays as it is).
 
@@ -35,14 +35,16 @@ class TaskViewGesture(Gesture):
 
     NAME = "TASK_VIEW"
 
-    def __init__(self, cooldown: CooldownManager, cfg: TaskViewConfig) -> None:
+    #: while the pointer is on, these keep it (a pinching hand reads as any of them)
+    POINTING = frozenset({HandState.POINT, HandState.PINCH, HandState.OTHER, HandState.UNKNOWN})
+
+    def __init__(self, cooldown: CooldownManager, cfg: TaskViewConfig, mouse: MouseConfig) -> None:
         self._cooldown           = cooldown
         self._arm_time           = cfg.arm_time
         self._min_approach       = cfg.min_approach
         self._task_view_cooldown = cfg.cooldown
         self._last_activation    = float("-inf")
-        self._nav_step           = cfg.nav_step
-        self._select_hold        = cfg.select_hold
+        self._pointer            = Pointer(mouse)
         self._idle_timeout       = cfg.idle_timeout
         self._lost_timeout       = cfg.lost_timeout
         self.reset()
@@ -122,52 +124,52 @@ class TaskViewGesture(Gesture):
         now = frame.timestamp
         self._lost_since = None
         if now - self._last_activity > self._idle_timeout:
-            return self._leave(out, None)
+            return self._leave(out)
 
-        # ✋✋ moving apart: the reverse of opening → Esc
+        # ✋✋ moving apart: the reverse of opening → leave
         if frame.has_both_hands and frame.state == HandState.PALM:
+            self._stop_pointing(now, out)
             gap = dist(palm_center(frame.hands["Left"]), palm_center(frame.hands["Right"]))
             if self._apart_from is None or gap < self._apart_from:
                 self._apart_from = gap                     # closest so far
             elif gap - self._apart_from >= self._min_approach:
-                return self._leave(out, GestureEvent.TASK_VIEW_CLOSED, "esc")
-            self._anchor, self._fist_since = None, None
+                if self._pointed:                          # open what the cursor is on
+                    out.emit(GestureEvent.TASK_VIEW_OPEN, MouseButton("left", True), MouseButton("left", False))
+                else:
+                    out.emit(GestureEvent.TASK_VIEW_CLOSED, Hotkey(("esc",)))
+                return self._leave(out)
             return
         self._apart_from = None
 
         hand = frame.main_hand
         if hand is None:
             return
-        if frame.state in (HandState.TWO_FINGERS, HandState.POINT):
-            self._fist_since = None
-            here = palm_center(hand)
-            if self._anchor is None:
-                self._anchor = here
-                return
-            dx = (here[0] - self._anchor[0]) / palm_length(hand)
-            dy = (here[1] - self._anchor[1]) / palm_length(hand)
-            if max(abs(dx), abs(dy)) >= self._nav_step:
-                key = ("right" if dx > 0 else "left") if abs(dx) >= abs(dy) else ("down" if dy > 0 else "up")
-                out.emit(GestureEvent.TASK_VIEW_MOVE, Hotkey((key,)))
-                self._anchor, self._last_activity = here, now   # each step re-anchors
-        elif frame.state == HandState.FIST:
-            self._anchor = None
-            self._fist_since = self._fist_since or now
-            if now - self._fist_since >= self._select_hold:
-                return self._leave(out, GestureEvent.TASK_VIEW_OPEN, "enter")
+        starting = frame.state == HandState.POINT and index_reach(hand) >= POINTING_REACH
+        if self._pointing and frame.state in self.POINTING or starting:
+            if not self._pointing:
+                self._pointer.begin(hand, now, out)
+                self._pointing = self._pointed = True
+            self._last_activity = now
+            if self._pointer.update(hand, frame.state, now, out) == "click":
+                return self._leave(out)                    # a window was clicked: Windows opens it
         else:
-            self._anchor, self._fist_since = None, None
+            self._stop_pointing(now, out)
+
+    def _stop_pointing(self, now: float, out: Output) -> None:
+        if self._pointing:
+            self._pointer.end(now, out)
+            self._pointing = False
 
     def on_lost(self, now: float, out: Output) -> None:
         if not self._mode:
             return
         self._lost_since = self._lost_since or now
         if now - self._lost_since > self._lost_timeout:
-            self._leave(out, None)
+            self._leave(out)
 
-    def _leave(self, out: Output, event, key: Optional[str] = None) -> None:
-        if event is not None and key is not None:
-            out.emit(event, Hotkey((key,)))
+    def _leave(self, out: Output) -> None:
+        if self._pointing:
+            self._pointer.end(self._last_activity, out)
         self.reset()
 
     def reset(self) -> None:
@@ -176,8 +178,9 @@ class TaskViewGesture(Gesture):
         self._last_activity = 0.0
         self._lost_since: Optional[float] = None
         self._apart_from: Optional[float] = None
-        self._anchor: Optional[Point] = None
-        self._fist_since: Optional[float] = None
+        self._pointing = False      # the pointer is on right now
+        self._pointed = False       # it was used this time (palms apart then open what it is on)
+        self._pointer.reset()
 
     def _reset_opening(self) -> None:
         self._both_start:        Optional[float] = None
