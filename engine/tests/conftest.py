@@ -21,10 +21,10 @@ def make_hand(wrist: Tuple[float, float] = (0.5, 0.7), side: str = "Right", scal
 
 
 def make_frame(state: HandState, t: float, wrist=(0.5, 0.7), scale: float = 1.0,
-               hands: Optional[Dict[str, Hand]] = None) -> FrameData:
+               hands: Optional[Dict[str, Hand]] = None, raw_state: Optional[HandState] = None) -> FrameData:
     if hands is None:
         hands = {} if state == HandState.NO_HANDS else {"Right": make_hand(wrist, scale=scale)}
-    return FrameData(state=state, hands=hands, timestamp=t)
+    return FrameData(state=state, hands=hands, timestamp=t, raw_state=raw_state or state)
 
 
 class Clock:
