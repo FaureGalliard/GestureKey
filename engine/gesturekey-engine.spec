@@ -13,8 +13,9 @@ a = Analysis(
         (str(ROOT / "gesturekey" / "models"), "models"),
         *collect_data_files("mediapipe", includes=["**/*.tflite", "**/*.binarypb", "**/*.txt"]),
     ],
-    hiddenimports=["sklearn.ensemble._forest", "sklearn.tree._tree"],
-    excludes=["matplotlib", "tkinter", "PyQt6", "pandas"],
+    hiddenimports=["sklearn.ensemble._forest", "sklearn.tree._tree", "pycaw.pycaw", "comtypes.stream"],
+    # matplotlib stays: mediapipe.solutions imports it through drawing_utils
+    excludes=["tkinter", "PyQt6", "PyQt5", "pandas", "IPython", "pytest"],
 )
 pyz = PYZ(a.pure)
 exe = EXE(
