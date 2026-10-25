@@ -1,110 +1,126 @@
 # 🖐️ GestureKey
 
-Controla tu PC con gestos de la mano: scroll, volumen, zoom, mover ventanas,
-vista de tareas y más, usando solo la webcam.
+Control your PC with hand gestures in front of the webcam: scroll, volume, zoom,
+move windows between monitors, task view and more.
 
-> **v3** separa el proyecto en un **motor Python** (visión + gestos) y una
-> **app Tauri + React** que lo lanza como sidecar. La v2 (PyQt) sigue en el tag
-> `v2.0.0` y en la rama `legacy/v2`.
+> **v3 (beta)** splits the project into a **Python engine** (vision + gestures)
+> and a **Tauri + React app** that runs it as a sidecar. v2 (PyQt) lives on in
+> tag `v2.0.0` and branch `legacy/v2`.
 
 ---
 
-## 🧩 Estructura
+## ✋ Gestures
+
+| Gesture | Action |
+|---|---|
+| ✌️ two fingers, move the hand | Scroll — the page follows the hand; a quick flick goes further |
+| 🤟 three fingers, raise / lower | Volume — same height, same level |
+| 🤏 pinch, open / close | Zoom |
+| ✋ → ✊ and drag | Move the window (smooth, accelerated, across monitors) |
+| …open the hand **tilted** towards a side | Send it to that monitor and maximize it there |
+| …park the hand at the camera's edge | Push it on to the next monitor |
+| …flick up | Maximize |
+| …flick down, then open | Close |
+| …open the hand upright | Let go where it is (taken to the top of a monitor = maximize) |
+| ✋✋ bring the palms together | Task view (Win+Tab) |
+| 🖖 four fingers → ✊ | Play / pause media |
+| ✋ held steady, then pushed away | Screenshot (Win+PrintScreen) |
+| ✋✋ both palms still for 1 s | Turn GestureKey on / off (works while off) |
+
+After any gesture nothing new starts for 0.8 s, so putting the hand down never
+fires another one. Settings (camera, which gestures are on) are stored in
+`%APPDATA%\GestureKey\settings.json`.
+
+---
+
+## 🧩 Layout
 
 ```
-engine/                 Motor Python (uv)
+engine/                 Python engine (uv)
   gesturekey/
-    core/               tipos, geometría, filtros, cooldowns — sin Qt ni win32
-    vision/             cámara, MediaPipe, clasificador, estabilizador
-    gestures/           gestos puros + árbitro (quién tiene la mano)
-    actions/            lo único que toca el SO: teclas, scroll, ventanas
-    runtime/            loop del motor, servidor WebSocket, modo debug
+    core/               types, geometry, filters, cooldowns — no UI, no OS calls
+    vision/             camera, MediaPipe tracker, classifier, probabilistic state filter
+    gestures/           pure gesture detectors + the arbiter (who owns the hand)
+    actions/            the only part that touches the OS: keys, scroll, windows, volume
+    runtime/            engine loop, WebSocket server, recorder, debug window
+    tools/              collect / train / replay / export / analyze
     models/             hand_state_rf.pkl
-  tests/                gestos probados con frames sintéticos
-app/                    UI Tauri 2 + React 19 + Tailwind 4 (pnpm)
-  src/                  React
-  src-tauri/            Rust: lanza el motor, bandeja del sistema
-docs/protocol.md        mensajes motor ⇄ UI
+  training/             datasets and the training guide
+  tests/                gestures tested with synthetic frames, no camera
+app/                    Tauri 2 + React 19 + Tailwind 4 UI (pnpm)
+  src/                  app window and the feedback overlay
+  src-tauri/            Rust: spawns the engine, tray, overlay window
+docs/                   protocol, design system, gesture catalog, testing, platforms
 ```
 
 ```
-cámara → tracker → clasificador → estabilizador → árbitro → gestos → acciones → SO
-                                                          ↘ WebSocket → UI (landmarks, estado, eventos)
+camera → tracker (One Euro) → classifier → state filter (HMM) → arbiter → gestures → actions → OS
+                                                                        ↘ WebSocket → app + overlay
 ```
 
-- Los **gestos solo detectan**: devuelven acciones (`Hotkey`, `Scroll`,
-  `WindowMove`…) y el `ActionExecutor` las ejecuta en su propio hilo.
-- El **árbitro** da la mano a un solo gesto mientras está activo: mientras
-  arrastras una ventana, *cerrar ventana* y *silenciar* no se disparan.
+- **Gestures only detect.** They return actions (`Hotkey`, `Scroll`,
+  `WindowMove`, `VolumeSet`…); the `ActionExecutor` performs them on its own
+  thread, and animates dragged windows at 120 Hz.
+- **The arbiter** gives the hand to one gesture at a time: while you drag a
+  window, nothing else fires.
 
 ---
 
-## 🚀 Desarrollo
+## 🚀 Development
 
-Requisitos: Python 3.11 + [uv](https://docs.astral.sh/uv/), Node 22 + pnpm, Rust (para Tauri).
+Requirements: Python 3.11 + [uv](https://docs.astral.sh/uv/), Node 22 + pnpm, Rust.
 
 ```bash
-cd engine
-uv sync
-uv run pytest
+cd /d/GestureKey/engine && uv sync && uv run pytest
 ```
 
 ```bash
-cd app
-pnpm install
-pnpm tauri dev          # lanza la UI y el motor (engine/.venv) como sidecar
+cd /d/GestureKey/app && pnpm install && pnpm tauri dev
 ```
 
-Otras formas de correr el motor:
+Other ways to run the engine:
 
 ```bash
-pnpm engine             # solo el servidor WebSocket (ws://127.0.0.1:8765)
-pnpm engine:debug       # ventana de OpenCV con landmarks, sin UI
+cd /d/GestureKey/app && pnpm engine            # WebSocket server only (ws://127.0.0.1:8765)
 ```
 
-Para desarrollar la UI con el motor corriendo aparte, pon
-`GESTUREKEY_NO_ENGINE=1` antes de `pnpm tauri dev`, o abre
-`http://localhost:1420` en el navegador con `pnpm dev`.
+```bash
+cd /d/GestureKey/app && pnpm engine:debug      # OpenCV window with landmarks, no UI
+```
+
+Record a session and inspect it:
+
+```bash
+cd /d/GestureKey/app && GESTUREKEY_RECORD=1 pnpm tauri dev
+```
+
+```bash
+cd /d/GestureKey/engine && uv run python -m gesturekey.tools.analyze --latest
+```
+
+```bash
+cd /d/GestureKey/engine && uv run python -m gesturekey.tools.export --latest    # CSV of movements
+```
+
+Check a gesture filmed with any camera app:
+
+```bash
+cd /d/GestureKey/engine && uv run python -m gesturekey.tools.replay clip.mp4 --trace
+```
+
+Retrain the hand-pose model: see [engine/training/README.md](engine/training/README.md).
 
 ### Build
 
 ```bash
-cd app
-pnpm release            # PyInstaller (motor) + instalador NSIS de Tauri
+cd /d/GestureKey/app && pnpm release           # PyInstaller engine + NSIS installer
 ```
 
-> Para mover ventanas de apps que corren como administrador, GestureKey
-> también tiene que correr como administrador.
+> To move windows of apps that run as administrator, GestureKey must run as
+> administrator too.
 
 ---
 
-## ✋ Gestos
-
-| Gesto | Acción |
-|-------|--------|
-| ✌️ Dos dedos + mover arriba/abajo | Scroll |
-| 🤟 Tres dedos hacia la cámara + arriba/abajo | Volumen |
-| 🤏 Pinza hacia la cámara + abrir/cerrar | Zoom (Ctrl + / Ctrl −) |
-| ✋ → ✊ sostenido, mover, ✋ | Mover ventana (lanzamiento lateral = snap, hacia arriba = maximizar) |
-| ✋ → ✊ rápido → ✋ | Silenciar |
-| ✋ empujada lejos de la cámara | Captura (Win + Impr Pant) |
-| ✊ con tirón hacia abajo | Cerrar ventana (Alt + F4) |
-| ✋ + ✋ separadas que se juntan | Vista de tareas (Win + Tab) |
-| 🖖 Cuatro dedos → ✊ | Pausa multimedia y pausa todos los gestos |
-
-La configuración (cámara, umbrales, gestos activos) se guarda en
-`%APPDATA%\GestureKey\settings.json`.
-
-### Ideas pendientes
-
-- ☝️ Un dedo → mover cursor; acercar → click
-- ✌️ Dos dedos + swipe horizontal → cambiar de app
-- 🤟 Tres dedos + swipe horizontal → siguiente/anterior canción
-- ✊ + ✊ acercándose → mostrar escritorio
-- Reentrenar el clasificador con datos de la cámara nueva (`training/`)
-
----
-
-## 👨‍💻 Autor
+## 👨‍💻 Author
 
 Angel Gabriel Crispin Valdivia
