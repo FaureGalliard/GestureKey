@@ -108,7 +108,23 @@ Prioridad: **A** = sin reentrenar (poses actuales) · **B** = requiere poses nue
 | — | **Perfiles por app**: el mismo gesto hace cosas distintas en el navegador, en un reproductor o en una presentación (← → = diapositiva) | C |
 | — | **Asignación personalizada**: el usuario elige qué hace cada gesto desde Ajustes | C |
 
-## 5. Orden propuesto
+## 5. Decisiones tomadas
+
+- **Overlay de feedback:** un toast pequeño arriba del todo de la pantalla (no la ventana
+  de la app, que vive en segundo plano en la bandeja) que muestra la acción que se acaba de
+  hacer y el **anillo de progreso** de los gestos que se mantienen (p. ej. encender/apagar).
+  Una ventana Tauri aparte: sin bordes, transparente, siempre encima, que no roba el foco
+  ni recibe clics.
+- **Varios monitores** (el usuario usa 3): desarrollar la idea. Candidatos: 🤟 tres dedos
+  ← → cambia de app *dentro del monitor actual*; lanzar una ventana agarrada hacia un borde
+  la manda al monitor de al lado (Win+Shift+← / →); señalar con ☝️ elige monitor.
+- **Pestañas con ✌️ ← → sin matar el scroll:** el scroll es ✌️ ↑ ↓. Se separan por el eje
+  dominante del movimiento con histéresis (ver Regla 1), y el swipe horizontal exige un
+  movimiento rápido y corto, mientras que el scroll es continuo.
+- **Mouse con ☝️ índice:** sí, requiere entrenar la pose nueva.
+- **Perfiles por app:** a futuro.
+
+## 6. Orden propuesto
 
 1. **Base:** gestos independientes de los fps, One Euro global, filtro bayesiano de estados
    (ver la clase de jitter). Sin esto, cada gesto nuevo hereda el ruido.
