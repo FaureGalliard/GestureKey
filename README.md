@@ -1,9 +1,34 @@
+<div align="center">
+
 # 🖐️ GestureKey
 
-Control your PC with hand gestures in front of the webcam: scroll, volume, zoom,
-move windows between monitors, task view and more.
+**Control your Windows PC with your hands — just a webcam, no special hardware.**
 
-> **v3 (beta)** splits the project into a **Python engine** (vision + gestures)
+Point to move the mouse, pinch to click, grab a window and throw it to another monitor.
+
+[![Release](https://img.shields.io/github/v/release/FaureGalliard/GestureKey?include_prereleases&label=download)](https://github.com/FaureGalliard/GestureKey/releases/latest)
+![Platform](https://img.shields.io/badge/platform-Windows%2010%20%7C%2011-0078d4)
+![Runs locally](https://img.shields.io/badge/runs-100%25%20offline-2ea043)
+![Languages](https://img.shields.io/badge/UI-EN%20%7C%20ES%20%7C%20FR%20%7C%20KO-445ade)
+
+**[⬇️ Download the installer](https://github.com/FaureGalliard/GestureKey/releases)** · [Gestures](#-gestures) · [Development](#-development)
+
+</div>
+
+---
+
+## ✨ Why GestureKey
+
+- **☝️ A mouse in your finger** — point, pinch to click, drag, right click, jump between monitors.
+- **🪟 Windows that feel physical** — grab, drag at 120 Hz, open your hand tilted to send it
+  to another screen, fingers down to close it.
+- **🔒 Private by design** — everything runs on your PC. No account, no cloud, no video
+  leaves your machine.
+- **🖥️ Built for multi-monitor setups** — every gesture knows where your screens are.
+- **🧠 Forgiving** — gestures end cleanly when you lower your hand, and nothing fires while
+  another gesture owns it.
+
+> **v3 (beta)** splits the project into a **Python engine** (MediaPipe + gestures)
 > and a **Tauri + React app** that runs it as a sidecar. v2 (PyQt) lives on in
 > tag `v2.0.0` and branch `legacy/v2`.
 
