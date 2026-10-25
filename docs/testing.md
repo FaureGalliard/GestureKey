@@ -51,26 +51,26 @@ Anota **aciertos / 5**, **falsos** (se disparó otra cosa) y cómo se sintió
 
 | # | Gesto | Dónde | Cómo | Resultado esperado |
 |---|---|---|---|---|
-| C1 | Desplazar | navegador, página larga | ✌️ dos dedos, espera ½ s, sube y baja la mano (lento y rápido) | scroll fluido; se detiene al quedarte quieto |
-| C2 | Volumen | cualquier sitio | 🤟 tres dedos **apuntando a la cámara**, sube y baja | sube/baja el volumen de Windows |
-| C3 | Zoom | navegador | 🤏 pinza **apuntando a la cámara**, abre y cierra | Ctrl + / Ctrl − |
-| C4 | Mover ventana | Bloc de notas sin maximizar | ✋ palma ½ s → ✊ puño y mantén → mueve → ✋ abre | la ventana sigue a la mano y **se queda donde la sueltas** |
-| C5 | Acoplar | Bloc de notas | igual que C4, pero lánzala rápido a la derecha / izquierda | se acopla a esa mitad |
-| C6 | Maximizar | Bloc de notas | igual que C4, pero lánzala rápido hacia arriba | se maximiza |
-| C7 | Silenciar | cualquier sitio | ✋ → ✊ muy rápido → ✋ | silencia / quita silencio |
-| C8 | Pausa | YouTube | 🖖 cuatro dedos ½ s → ✊ | pausa el video y Inicio dice "Pausado con un gesto"; repetir reanuda |
+| C1 | Desplazar | navegador, página larga | ✌️ dos dedos; aleja la mano un poco hacia abajo o arriba y **mantenla ahí** | scroll continuo, más rápido cuanto más lejos; vuelve al punto inicial y para; bájala rápido y termina sin saltos |
+| C2 | Volumen | cualquier sitio | 🤟 tres dedos; sube o baja la mano | la barra del overlay sigue tu altura; sube y vuelve: el mismo volumen del inicio |
+| C3 | Zoom | navegador | 🤏 pinza; abre o cierra el pulgar y el índice | un paso de zoom por cada apertura; vuelve a cerrar y regresa al zoom inicial |
+| C4 | Mover ventana | Bloc de notas sin maximizar | ✋ palma → ✊ puño y mantén → mueve → ✋ abre | la ventana sigue a la mano, aguanta movimientos rápidos y **se queda donde la sueltas** |
+| C5 | Acoplar | Bloc de notas | igual que C4, pero **lánzala** rápido a un lado y abre la mano en el lanzamiento | se acopla a esa mitad |
+| C6 | Maximizar | Bloc de notas | igual que C5, lanzándola hacia arriba | se maximiza |
+| C7 | Encender / apagar | cualquier sitio | ✋✋ dos palmas **quietas** | aparece el anillo arriba; a 1.5 s se apaga; repite para encender |
+| C8 | Reproducir / pausar | YouTube | 🖖 cuatro dedos un momento → ✊ | pausa o reanuda el video (ya no apaga los gestos) |
 | C9 | Vista de tareas | escritorio | ✋✋ dos palmas separadas → júntalas | Win+Tab |
-| C10 | Captura | cualquier sitio | ✋ palma cerca → empújala rápido lejos de la cámara | aparece en Imágenes › Capturas de pantalla |
-| C11 | Cerrar ventana | **un Bloc de notas vacío** | ✊ puño → tirón rápido hacia abajo | Alt+F4 |
+| C10 | Captura | cualquier sitio | ✋ palma cerca → empújala rápido lejos de la cámara | toast "Captura guardada"; aparece en Imágenes › Capturas de pantalla |
+| C11 | Cerrar ventana | **un Bloc de notas vacío** | ✊ puño **quieto** un momento → tirón rápido hacia abajo | Alt+F4 |
 
 ## D. Conflictos · ~2 min
 
 | # | Prueba | Esperado |
 |---|---|---|
 | D1 | Agarra una ventana (C4) y arrástrala **rápido hacia abajo** | se mueve, **no** se cierra |
-| D2 | ✋ → ✊ y suelta en menos de ⅓ s | silencia o nada, pero **no** agarra la ventana |
+| D2 | ✋ → ✊ (pasando por cuatro dedos) | agarra la ventana, **no** pausa el video |
 | D3 | Scroll con ✌️ y, sin bajar la mano, pasa a 🤟 | el scroll se detiene; no salta el volumen de golpe |
-| D4 | ✋✋ dos palmas quietas 3 s, sin acercarlas | no pasa nada (aún no hay gesto de apagar) |
+| D4 | ✋✋ dos palmas que se **acercan** | vista de tareas, **no** el anillo de apagar |
 
 ## E. Uso normal · 2 min
 
@@ -84,8 +84,8 @@ Cuenta en *Actividad* los eventos que se dispararon solos: son los falsos positi
 1. Cierra GestureKey desde la bandeja (**Salir**): así se cierra el archivo de grabación.
 2. Analiza la última grabación:
 
-   ```powershell
-   cd D:\GestureKey\engine; uv run python -m gesturekey.tools.analyze --latest
+   ```bash
+   cd /d/GestureKey/engine && uv run python -m gesturekey.tools.analyze --latest
    ```
 
 3. Pásame la salida y la tabla de abajo.
@@ -100,8 +100,8 @@ Cuenta en *Actividad* los eventos que se dispararon solos: son los falsos positi
 | C4 Mover ventana | | | |
 | C5 Acoplar | | | |
 | C6 Maximizar | | | |
-| C7 Silenciar | | | |
-| C8 Pausa | | | |
+| C7 Encender / apagar | | | |
+| C8 Reproducir / pausar | | | |
 | C9 Vista de tareas | | | |
 | C10 Captura | | | |
 | C11 Cerrar ventana | | | |
@@ -109,10 +109,10 @@ Cuenta en *Actividad* los eventos que se dispararon solos: son los falsos positi
 | E (falsos en 2 min) | — | | |
 | A/B (parpadeos que viste) | — | | |
 
-## Lo que ya sospecho que va a fallar
+## Qué cambió desde la primera prueba
 
-- **C7 Silenciar:** exige que el puño dure *exactamente un* frame estable; a 30 fps casi nunca pasa.
-- **C11 Cerrar ventana:** mide el centro de la mano *relativo a la muñeca*, así que responde a
-  doblar la muñeca más que a bajar el puño.
-- **C1–C3:** sus umbrales son por frame y estaban ajustados para la cámara anterior
-  (~16 fps); a ~30 fps pueden sentirse lentos o con zona muerta grande.
+- Landmarks filtrados una sola vez (One Euro) y estados con filtro probabilístico: menos parpadeo.
+- Los gestos continuos terminan al cambiar de pose, al dudar el modelo o al bajar la mano rápido.
+- Scroll tipo joystick, volumen absoluto y zoom reversible (con deshacer del último ¼ s al salir).
+- Silenciar está **apagado por defecto** (chocaba con mover ventanas); vuelve con 👎.
+- Overlay arriba de la pantalla con el gesto en curso, toasts y el anillo de encender/apagar.
