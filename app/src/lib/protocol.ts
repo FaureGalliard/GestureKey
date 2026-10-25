@@ -74,7 +74,7 @@ export interface GestureToggle { enabled: boolean; [param: string]: number | boo
 
 export interface EngineConfig {
   camera: { name: string; device: number; width: number; height: number; fps: number; mirror: boolean };
-  tracking: { model_complexity: number; min_detection_confidence: number; min_tracking_confidence: number };
+  tracking: { min_detection_confidence: number; min_presence_confidence: number; min_tracking_confidence: number };
   states: { switch_rate: number; enter: number; floor: number };
   gestures: { cooldown: number } & Record<GestureKey, GestureToggle>;
   ui: { language: string };    // "auto" | "en" | "es" | "fr" | "ko"

@@ -14,11 +14,8 @@ class HandState(str, Enum):
     THREE_FINGERS = "THREE_FINGERS"
     FOUR_FINGERS  = "FOUR_FINGERS"
     # poses to train next (see engine/training/README.md)
-    POINT         = "POINT"          # ☝️ index only — cursor
-    THUMB_UP      = "THUMB_UP"       # 👍
-    THUMB_DOWN    = "THUMB_DOWN"     # 👎 — mute
-    ROCK          = "ROCK"           # 🤘 index + pinky — media
-    OK            = "OK"             # 👌
+    POINT         = "POINT"          # ☝️ index only — the mouse cursor
+    THUMB_DOWN    = "THUMB_DOWN"     # 👎 — mute (recorded, not in the model yet)
     OTHER         = "OTHER"          # relaxed / in between: explicitly "no pose"
     UNKNOWN       = "UNKNOWN"
     NO_HANDS      = "NO HANDS"

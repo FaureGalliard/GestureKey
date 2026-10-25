@@ -30,8 +30,7 @@ N = 21
 # ⌨ key → pose, for tools.collect. Existing poses first, then the ones to add.
 LABEL_KEYS: Dict[str, str] = {
     "1": "PALM", "2": "FIST", "3": "PINCH", "4": "TWO_FINGERS", "5": "THREE_FINGERS",
-    "6": "FOUR_FINGERS", "7": "POINT", "8": "THUMB_UP", "9": "THUMB_DOWN",
-    "r": "ROCK", "k": "OK", "0": "OTHER",
+    "6": "FOUR_FINGERS", "7": "POINT", "9": "THUMB_DOWN", "0": "OTHER",
 }
 
 

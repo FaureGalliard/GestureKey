@@ -25,7 +25,7 @@ def replay(path: Path, mirror: bool = True, trace: bool = False) -> list:
     cfg = AppConfig()
     cap = cv2.VideoCapture(str(path))
     fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
-    tracker = HandTracker(cfg.tracking)
+    tracker = HandTracker(cfg.tracking, mirrored=mirror)
     classifier = StateClassifier(MODEL_PATH)
     states = StateFilter(classifier.classes, cfg.states)
     arbiter = GestureArbiter(cfg.gestures)

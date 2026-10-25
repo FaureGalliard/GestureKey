@@ -299,3 +299,13 @@ def test_sweep_right(clock):
     _grab(clock, at=(0.4, 0.6))
     clock.run(PALM, 0.15, wrist=(0.55, 0.6), tilt=40)
     assert [a.direction for a in clock.actions if isinstance(a, WindowSendTo)] == ["right"]
+
+
+def test_a_fist_misread_as_pointing_still_grabs(clock):
+    clock.run(PALM, 0.3).run(HandState.POINT, 0.2)               # the model says POINT, it's a fist
+    assert "GRAB_WINDOW_START" in clock.events
+
+
+def test_pointing_without_the_palm_first_does_not_grab(clock):
+    clock.run(HandState.POINT, 1.0)
+    assert "GRAB_WINDOW_START" not in clock.events

@@ -85,9 +85,8 @@ def main() -> None:
     parser = argparse.ArgumentParser(prog="gesturekey.tools.train")
     parser.add_argument("--data", type=Path, default=None)
     parser.add_argument("--no-legacy", action="store_true")
-    # POINT and the thumbs are recorded but no gesture uses them yet, and they take
-    # frames from FIST (which moving windows depends on): left out until they're wired
-    parser.add_argument("--exclude", nargs="*", default=["OK", "ROCK", "POINT", "THUMB_UP", "THUMB_DOWN"],
+    # THUMB_UP, OK and ROCK were dropped; THUMB_DOWN is recorded but unused so far
+    parser.add_argument("--exclude", nargs="*", default=["OK", "ROCK", "THUMB_UP", "THUMB_DOWN"],
                         help="poses to leave out")
     parser.add_argument("--save", action="store_true", help="write the model the engine loads")
     args = parser.parse_args()

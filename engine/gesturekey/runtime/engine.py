@@ -287,7 +287,7 @@ class Engine:
         if tracker or self._tracker is None:
             if self._tracker:
                 self._tracker.release()
-            self._tracker = HandTracker(cfg.tracking)
+            self._tracker = HandTracker(cfg.tracking, mirrored=cfg.camera.mirror)
         if self._classifier:
             self._states = StateFilter(self._classifier.classes, cfg.states)
         self._arbiter    = GestureArbiter(cfg.gestures)
@@ -327,6 +327,8 @@ class Engine:
             if attempt < attempts - 1:
                 time.sleep(RETRY_GAP_S)
 
+        if self._tracker:
+            self._tracker.mirrored = cam_cfg.mirror     # handedness depends on the mirror view
         if self._camera is None and fallback is not None and fallback != device:
             return self._open_camera(fallback, attempts=1, reconnecting=reconnecting)
 

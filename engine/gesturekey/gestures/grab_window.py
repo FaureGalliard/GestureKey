@@ -68,13 +68,16 @@ class GrabWindowGesture(Gesture):
         if hand is None:
             return self.on_lost(now, out)
         wrist = hand.wrist
+        # Once the palm has armed a grab, a "pointing" hand is almost surely a fist the
+        # 2D features misread (loose index): count it as one. POINT stays free otherwise.
+        fist = state == HandState.FIST or (state == HandState.POINT and self._phase != _Phase.IDLE)
 
         if self._phase == _Phase.IDLE:
             if state == HandState.PALM:
                 self._phase, self._arm_start = _Phase.ARMING, now
 
         elif self._phase == _Phase.ARMING:
-            if state == HandState.FIST:
+            if fist:
                 if now - self._arm_start >= cfg.min_arm_time:
                     self._phase, self._fist_start = _Phase.HOLDING, now
                 else:
@@ -83,7 +86,7 @@ class GrabWindowGesture(Gesture):
                 self._phase = _Phase.IDLE
 
         elif self._phase == _Phase.HOLDING:
-            if state == HandState.FIST:
+            if fist:
                 if now - self._fist_start >= cfg.hold_time and self._cooldown.ok(self.NAME, now, cfg.cooldown):
                     self._phase     = _Phase.GRABBED
                     self._last      = wrist
@@ -101,7 +104,7 @@ class GrabWindowGesture(Gesture):
             if state in (HandState.PALM, HandState.FOUR_FINGERS):
                 return self._opening(hand, now, out)
             self._open_votes.clear()
-            if state == HandState.FIST:
+            if fist:
                 self._last_seen = now
             elif now - self._last_seen > cfg.lost_timeout:
                 return self._drop(out)

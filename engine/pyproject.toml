@@ -4,13 +4,14 @@ version = "3.0.0b1"
 description = "GestureKey engine — hand-gesture recognition that drives keyboard shortcuts and windows"
 requires-python = ">=3.11,<3.12"
 dependencies = [
-    "mediapipe==0.10.9",          # legacy `solutions.hands` API; pulls opencv-contrib-python
+    "mediapipe==1.1.1",           # Tasks API (HandLandmarker); `solutions` was removed in 0.10.30
     "numpy>=1.26",
     "scikit-learn==1.8.0",        # must match the version that pickled hand_state_rf.pkl
     "joblib>=1.5",
     "websockets>=15,<16",
     "pygrabber>=0.2; sys_platform == 'win32'",   # DirectShow camera names
     "pycaw>=20240210 ; sys_platform == 'win32'",
+    "opencv-python>=4.10,<5",
 ]
 
 [project.scripts]

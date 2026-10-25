@@ -4,7 +4,7 @@ Record labelled hand poses for training.
     uv run python -m gesturekey.tools.collect [--out training/data] [--camera 0]
 
 Keys:  1 PALM  2 FIST  3 PINCH  4 TWO_FINGERS  5 THREE_FINGERS  6 FOUR_FINGERS
-       7 POINT  8 THUMB_UP  9 THUMB_DOWN  r ROCK  k OK  0 OTHER (relaxed / in between)
+       7 POINT  9 THUMB_DOWN  0 OTHER (relaxed / in between)
        SPACE start/stop recording the selected pose     q quit
 
 Record each pose in several short takes: both hands, near and far, tilted,
@@ -39,7 +39,7 @@ def main() -> None:
     session = time.strftime("%Y%m%d-%H%M%S")
     path = data_dir(args.out) / f"session-{session}.csv.gz"   # ~5× smaller, fine for git
     camera = Camera(cfg.camera, device=args.camera)
-    tracker = HandTracker(cfg.tracking)
+    tracker = HandTracker(cfg.tracking, mirrored=cfg.camera.mirror)
     label, recording, pending, counts = "PALM", False, [], Counter()
     print(f"Writing {path}")
     try:
@@ -67,7 +67,7 @@ def main() -> None:
                         (60, 60, 255) if recording else (255, 255, 255), 2, cv2.LINE_AA)
             summary = "  ".join(f"{k}:{v}" for k, v in sorted(counts.items()))
             cv2.putText(view, summary, (16, h - 20), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (200, 200, 200), 1, cv2.LINE_AA)
-            cv2.imshow("GestureKey collect — 1-9 r k 0 choose pose, SPACE record, q quit", view)
+            cv2.imshow("GestureKey collect — 1-7 9 0 choose pose, SPACE record, q quit", view)
 
             key = cv2.waitKey(1) & 0xFF
             if key == ord("q"):

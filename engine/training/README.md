@@ -30,10 +30,7 @@ Each run of the tool is one session.
 | 5 | THREE_FINGERS 🤟 | volume |
 | 6 | FOUR_FINGERS 🖖 | play / pause |
 | 7 | POINT ☝️ | **new** — mouse cursor |
-| 8 | THUMB_UP 👍 | **new** — confirm / Enter |
-| 9 | THUMB_DOWN 👎 | **new** — mute (replaces palm-fist-palm) |
-| r | ROCK 🤘 | **new** — media (next / previous track) |
-| k | OK 👌 | **new** — later (dictation) |
+| 9 | THUMB_DOWN 👎 | **new** — mute later (recorded, not in the model yet) |
 | 0 | OTHER | **new** — relaxed hand, half-open, scratching, typing: explicitly "no pose" |
 
 **OTHER matters most.** Today the model must pick one of six poses even for a
@@ -79,6 +76,15 @@ e.g. joint flexion angles in 3D, thumb-to-fingertip distances, palm orientation.
 Those are far less sensitive to camera, distance and wrist rotation than the
 current 2D features.
 
+## Tracker
+
+Since 2026-10-25 the engine uses MediaPipe **Tasks** (`HandLandmarker`, model
+`gesturekey/models/hand_landmarker.task`) instead of the removed `mp.solutions`
+API. On the user's test clip its landmarks match the old API's within ~0.9 % of the
+image width (median), it is faster (23 vs 40 ms/frame) and keeps the hand's side
+steadier. The first Brio session was recorded with the old API; new sessions are
+recorded with Tasks, so later models will match the live tracker even better.
+
 ## Model history
 
 | Model | Data | Classes | On the MX Brio session |
@@ -86,9 +92,10 @@ current 2D features.
 | `models/hand_state_rf_v2.pkl` | v2 (old webcam, one session; the exact data isn't in git) | 6 + UNKNOWN | 87.5 % (palm 80 %, pinch 77 %; a relaxed hand read as fist 182×) |
 | `models/hand_state_rf.pkl` (2026-10-25) | v2 dataset + Brio session 1 | 6 + OTHER | 95.9 % held-out time blocks; 94.1 % cross-camera (trained on v2 data only) |
 
-POINT, THUMB_UP and THUMB_DOWN are recorded but excluded by default: with them the
-fist's recall dropped to 67 % (a fist with a loose thumb looks like 👍). Add them
-back (`--exclude OK ROCK`) once a gesture uses them and there are more sessions.
+THUMB_UP, OK and ROCK were dropped. THUMB_DOWN is recorded but excluded by default
+until mute uses it. POINT is in the model (the cursor needs it) but takes frames from
+FIST (~23 % in the held-out blocks): moving windows treats POINT as a fist once it has
+seen the palm, and more fist / point sessions should fix it at the source.
 
 ## Pretrained alternatives (researched 2026-10-25)
 

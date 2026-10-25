@@ -41,8 +41,8 @@ class FakeCamera:
 class FakeTracker:
     """Two open palms, held still: exercises classifier, state filter and power."""
 
-    def __init__(self, cfg):
-        pass
+    def __init__(self, cfg, mirrored=True):
+        self.mirrored = mirrored
 
     def process(self, frame, t):
         return {"Left": make_hand((0.3, 0.6), side="Left"), "Right": make_hand((0.7, 0.6))}
