@@ -15,7 +15,7 @@ from gesturekey.gestures.task_view import TaskViewGesture
 from gesturekey.gestures.volume import VolumeGesture
 from gesturekey.gestures.zoom import PinchZoomGesture
 
-_LOST = (HandState.NO_HANDS, HandState.UNKNOWN)
+_LOST = (HandState.NO_HANDS,)
 
 
 class GestureArbiter:
@@ -39,9 +39,9 @@ class GestureArbiter:
         self._hand_gestures: List[Gesture] = [
             g for g, enabled in (
                 (GrabWindowGesture(cooldown, cfg.grab_window),   cfg.grab_window.enabled),
-                (ScrollGesture(cfg.scroll),                      cfg.scroll.enabled),
-                (VolumeGesture(cfg.volume),                      cfg.volume.enabled),
-                (PinchZoomGesture(cfg.zoom),                     cfg.zoom.enabled),
+                (ScrollGesture(cfg.scroll, cfg.continuous),      cfg.scroll.enabled),
+                (VolumeGesture(cfg.volume, cfg.continuous),      cfg.volume.enabled),
+                (PinchZoomGesture(cfg.zoom, cfg.continuous),     cfg.zoom.enabled),
                 (PauseResumeGesture(cooldown, cfg.pause),        cfg.pause.enabled),
                 (ScreenshotGesture(cooldown, cfg.screenshot),    cfg.screenshot.enabled),
                 (CloseWindowGesture(cooldown, cfg.close_window), cfg.close_window.enabled),
@@ -68,8 +68,11 @@ class GestureArbiter:
             return out
 
         if self._owner is not None:
-            self._owner.update(frame, out)
+            self._owner.update(frame, out)   # the owner decides what an UNKNOWN frame means
             self._release_if_done()
+            return out
+
+        if frame.state == HandState.UNKNOWN:
             return out
 
         if self._mute_enabled:

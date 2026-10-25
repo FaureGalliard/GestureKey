@@ -1,190 +1,74 @@
 from __future__ import annotations
-from typing import List, Optional
+import math
+from collections import deque
+from typing import Deque, Tuple
 
 from gesturekey.actions.types import Hotkey
-from gesturekey.config import ZoomConfig
-from gesturekey.core.geometry import dist, hand_center, hand_size_3d, relative_depth
-from gesturekey.core.types import FrameData, GestureEvent, HandState, Hand, Point
-from gesturekey.gestures.base import Gesture, Output
+from gesturekey.config import ContinuousConfig, ZoomConfig
+from gesturekey.core.geometry import dist, palm_length
+from gesturekey.core.types import GestureEvent, Hand, HandState
+from gesturekey.gestures.base import Output
+from gesturekey.gestures.continuous import ContinuousGesture
 
-BASE_GAIN               = 10
-ACCEL_FACTOR            = 1.5
-MAX_ZOOM_STEP           = 5
-MIN_ZOOM_STEP           = 1
-
-SIZE_COMPENSATION       = True
-SIZE_RATIO_MIN          = 0.3
-SIZE_RATIO_MAX          = 1.8
-SIZE_ALPHA              = 0.6
-POSITION_ALPHA          = 0.7
-PINCH_ALPHA             = 0.5
-MAX_POSITION_JUMP       = 0.15
-MAX_SIZE_CHANGE         = 0.30
-MAX_PINCH_JUMP          = 0.10
-OUTLIER_RECOVERY_FRAMES = 2
-
-VELOCITY_DEADZONE       = 0.003
-TEMPORAL_FRAMES         = 3
-MOTION_THRESHOLD        = 0.004
-STILLNESS_TIMEOUT       = 0.1
-
-INTENT_Z_ENTER          = -0.045
-INTENT_Z_EXIT           = -0.005
+MAX_STEPS = 10
+ROLLBACK_S = 0.25
 
 
-class PinchZoomGesture(Gesture):
-    """PINCH pointing at the camera, then open/close thumb–index."""
+class PinchZoomGesture(ContinuousGesture):
+    """
+    🤏 pinch, then open / close thumb and index. Each `step_ratio` change of
+    the thumb–index gap (relative to the start, in palm lengths) is one zoom
+    step, so the zoom follows the fingers and is reversible: close back to
+    the start and you are back at the start zoom.
+
+    An opening pinch soon stops looking like a pinch to the classifier, so
+    while active the gesture tolerates the neighbouring poses.
+    """
 
     NAME = "ZOOM"
+    POSE = HandState.PINCH
+    KEEP = frozenset({HandState.TWO_FINGERS, HandState.THREE_FINGERS, HandState.UNKNOWN})
 
-    def __init__(self, cfg: ZoomConfig) -> None:
-        self._arm_time = cfg.arm_time
-        self.reset()
+    def __init__(self, cfg: ZoomConfig, cc: ContinuousConfig) -> None:
+        self._log_step = math.log(cfg.step_ratio)
+        super().__init__(cc)
 
-    @property
-    def engaged(self) -> bool:
-        return self._active
+    @staticmethod
+    def _gap(hand: Hand) -> float:
+        return max(1e-3, dist(hand.img[4], hand.img[8]) / palm_length(hand))
 
-    def update(self, frame: FrameData, out: Output) -> None:
-        hand = frame.main_hand
-        if frame.state != HandState.PINCH or hand is None:
-            self.reset()
+    def begin(self, hand: Hand, now: float, out: Output) -> None:
+        self._gap0 = self._gap(hand)
+        self._steps = 0
+        self._history.append((now, 0))
+
+    def act(self, hand: Hand, now: float, dt: float, out: Output) -> None:
+        target = round(math.log(self._gap(hand) / self._gap0) / self._log_step)
+        target = max(-MAX_STEPS, min(MAX_STEPS, target))
+        self._send(target - self._steps, out)
+        self._steps = target
+        self._history.append((now, self._steps))
+
+    def end(self, now: float, reason: str, out: Output) -> None:
+        keep = self._steps
+        for t, steps in self._history:
+            if t <= now - ROLLBACK_S:
+                keep = steps
+        self._send(keep - self._steps, out, quiet=True)
+
+    @staticmethod
+    def _send(diff: int, out: Output, quiet: bool = False) -> None:
+        if diff == 0:
             return
-
-        now            = frame.timestamp
-        center_raw     = hand_center(hand.norm)
-        pinch_dist_raw = dist(hand.norm[4], hand.norm[8])
-        hand_size      = hand_size_3d(hand)
-
-        if self._smoothed_hand_size is None:
-            self._smoothed_hand_size = hand_size
+        key = "plus" if diff > 0 else "minus"
+        action = Hotkey(("ctrl", key), times=abs(diff))
+        if quiet:
+            out.actions.append(action)
         else:
-            self._smoothed_hand_size = SIZE_ALPHA * hand_size + (1 - SIZE_ALPHA) * self._smoothed_hand_size
-
-        if self._smoothed_center is None:
-            self._smoothed_center = center_raw
-        else:
-            self._smoothed_center = (
-                POSITION_ALPHA * center_raw[0] + (1 - POSITION_ALPHA) * self._smoothed_center[0],
-                POSITION_ALPHA * center_raw[1] + (1 - POSITION_ALPHA) * self._smoothed_center[1],
-            )
-
-        if self._smoothed_pinch is None:
-            self._smoothed_pinch = pinch_dist_raw
-        else:
-            self._smoothed_pinch = PINCH_ALPHA * pinch_dist_raw + (1 - PINCH_ALPHA) * self._smoothed_pinch
-
-        if not self._active:
-            if not self._valid_detection(self._smoothed_center, self._smoothed_hand_size, self._smoothed_pinch):
-                self._outlier_count += 1
-                if self._outlier_count > OUTLIER_RECOVERY_FRAMES:
-                    self.reset()
-                return
-            self._outlier_count     = 0
-            self._last_valid_center = self._smoothed_center
-            self._last_valid_size   = self._smoothed_hand_size
-            self._last_valid_pinch  = self._smoothed_pinch
-
-        if not self._depth_intent_ok(hand):
-            self.reset()
-            return
-
-        if not self._active:
-            if self._start_time is None:
-                self._start_time     = now
-                self._prev_pinch_raw = pinch_dist_raw
-                self._anchor_pinch   = pinch_dist_raw
-                self._ref_hand_size  = self._smoothed_hand_size
-                return
-            if now - self._start_time < self._arm_time:
-                self._prev_pinch_raw = pinch_dist_raw
-                return
-            self._active = True
-
-        if self._prev_pinch_raw is not None:
-            delta_raw = pinch_dist_raw - self._prev_pinch_raw
-
-            if SIZE_COMPENSATION and self._smoothed_hand_size and self._ref_hand_size:
-                ratio = max(SIZE_RATIO_MIN, min(SIZE_RATIO_MAX,
-                            self._ref_hand_size / self._smoothed_hand_size))
-                delta = delta_raw * ratio
-            else:
-                delta = delta_raw
-
-            if abs(delta) < VELOCITY_DEADZONE:
-                delta = 0.0
-
-            if abs(delta) > MOTION_THRESHOLD:
-                self._last_motion_time = now
-            elif self._last_motion_time and now - self._last_motion_time > STILLNESS_TIMEOUT:
-                self._prev_pinch_raw = pinch_dist_raw
-                return
-
-            if self._pinch_100ms is None or self._t_100ms is None:
-                self._pinch_100ms, self._t_100ms = pinch_dist_raw, now
-            elif now - self._t_100ms >= 0.1:
-                if abs(pinch_dist_raw - self._pinch_100ms) < MOTION_THRESHOLD:
-                    self._prev_pinch_raw = pinch_dist_raw
-                    return
-                self._pinch_100ms, self._t_100ms = pinch_dist_raw, now
-
-            if delta != 0.0:
-                self._d_buffer.append(delta)
-                if len(self._d_buffer) > TEMPORAL_FRAMES:
-                    self._d_buffer.pop(0)
-            if len(self._d_buffer) < TEMPORAL_FRAMES:
-                self._prev_pinch_raw = pinch_dist_raw
-                return
-
-            d_eff = sum(self._d_buffer) / len(self._d_buffer)
-            gain  = BASE_GAIN + abs(pinch_dist_raw - self._anchor_pinch) * ACCEL_FACTOR
-            steps = int(d_eff * gain)
-
-            if abs(steps) >= MIN_ZOOM_STEP:
-                steps = min(MAX_ZOOM_STEP, abs(steps))
-                if d_eff > 0:
-                    out.emit(GestureEvent.ZOOM_IN, Hotkey(("ctrl", "plus"), times=steps))
-                else:
-                    out.emit(GestureEvent.ZOOM_OUT, Hotkey(("ctrl", "minus"), times=steps))
-
-        self._prev_pinch_raw = pinch_dist_raw
+            out.emit(GestureEvent.ZOOM_IN if diff > 0 else GestureEvent.ZOOM_OUT, action)
 
     def reset(self) -> None:
-        self._prev_pinch_raw:     Optional[float] = None
-        self._active:             bool            = False
-        self._start_time:         Optional[float] = None
-        self._anchor_pinch:       float           = 0.0
-        self._ref_hand_size:      Optional[float] = None
-        self._smoothed_hand_size: Optional[float] = None
-        self._outlier_count:      int             = 0
-        self._last_valid_center:  Optional[Point] = None
-        self._last_valid_size:    Optional[float] = None
-        self._last_valid_pinch:   Optional[float] = None
-        self._smoothed_center:    Optional[Point] = None
-        self._smoothed_pinch:     Optional[float] = None
-        self._d_buffer:           List[float]     = []
-        self._last_motion_time:   Optional[float] = None
-        self._pinch_100ms:        Optional[float] = None
-        self._t_100ms:            Optional[float] = None
-        self._intent_active:      bool            = False
-
-    def _valid_detection(self, center: Point, hand_size: Optional[float], pinch: Optional[float]) -> bool:
-        if self._last_valid_center is None:
-            return True
-        if abs(center[1] - self._last_valid_center[1]) > MAX_POSITION_JUMP:
-            return False
-        if (hand_size and self._last_valid_size
-                and abs(hand_size - self._last_valid_size) / self._last_valid_size > MAX_SIZE_CHANGE):
-            return False
-        if pinch and self._last_valid_pinch and abs(pinch - self._last_valid_pinch) > MAX_PINCH_JUMP:
-            return False
-        return True
-
-    def _depth_intent_ok(self, hand: Hand) -> bool:
-        depth = relative_depth(hand)
-        if not self._intent_active:
-            if depth < INTENT_Z_ENTER:
-                self._intent_active = True
-        elif depth > INTENT_Z_EXIT:
-            self._intent_active = False
-        return self._intent_active
+        super().reset()
+        self._gap0 = 1.0
+        self._steps = 0
+        self._history: Deque[Tuple[float, int]] = deque(maxlen=120)

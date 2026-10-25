@@ -4,8 +4,9 @@ import threading
 from typing import Callable, Iterable, Optional
 
 from gesturekey.actions import win32
+from gesturekey.actions.audio import MasterVolume
 from gesturekey.actions.types import (
-    Action, Hotkey, Scroll, WindowGrab, WindowMove, WindowRelease,
+    Action, Hotkey, Scroll, VolumeBegin, VolumeSet, WindowGrab, WindowMove, WindowRelease,
 )
 
 _STOP = object()
@@ -23,6 +24,10 @@ class ActionExecutor:
         self.speed = speed
         self._hwnd: Optional[int] = None
         self._screen = win32.screen_size()
+        self._volume = MasterVolume()
+        self._volume_ref = 0.0
+        #: last level set by a volume gesture, read by the engine for the overlay
+        self.volume_level: Optional[float] = None
         self._thread = threading.Thread(target=self._loop, name="actions", daemon=True)
         self._thread.start()
 
@@ -78,6 +83,10 @@ class ActionExecutor:
                 w, h = self._screen
                 win32.move_window_by(self._hwnd, round(action.dx * w * self.speed),
                                      round(action.dy * h * self.speed))
+        elif isinstance(action, VolumeBegin):
+            self._volume_ref = self.volume_level = self._volume.get()
+        elif isinstance(action, VolumeSet):
+            self.volume_level = self._volume.set(self._volume_ref + action.delta)
         elif isinstance(action, WindowRelease):
             hwnd, self._hwnd = self._hwnd, None
             if hwnd is None:

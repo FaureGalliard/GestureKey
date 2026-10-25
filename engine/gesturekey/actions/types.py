@@ -34,4 +34,14 @@ class WindowRelease:
     snap: Optional[Literal["left", "right", "maximize"]] = None
 
 
-Action = Union[Hotkey, Scroll, WindowGrab, WindowMove, WindowRelease]
+@dataclass(frozen=True)
+class VolumeBegin:
+    """Remember the current system volume as the reference for VolumeSet."""
+
+
+@dataclass(frozen=True)
+class VolumeSet:
+    delta: float              # level = reference ± delta, clamped to 0..1
+
+
+Action = Union[Hotkey, Scroll, WindowGrab, WindowMove, WindowRelease, VolumeBegin, VolumeSet]

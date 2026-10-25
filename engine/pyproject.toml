@@ -10,6 +10,7 @@ dependencies = [
     "joblib>=1.5",
     "websockets>=15,<16",
     "pygrabber>=0.2; sys_platform == 'win32'",   # DirectShow camera names
+    "pycaw>=20240210 ; sys_platform == 'win32'",
 ]
 
 [project.scripts]
