@@ -58,7 +58,7 @@ export interface GestureToggle { enabled: boolean; [param: string]: number | boo
 export interface EngineConfig {
   camera: { device: number; width: number; height: number; fps: number; mirror: boolean };
   tracking: { model_complexity: number; min_detection_confidence: number; min_tracking_confidence: number };
-  stabilizer: { window: number; consensus: number; min_confidence: number };
+  states: { switch_rate: number; enter: number; floor: number };
   gestures: { cooldown: number } & Record<GestureKey, GestureToggle>;
 }
 
@@ -69,7 +69,7 @@ export const GESTURES = {
   grab_window:  { label: "Mover ventanas",   hint: "Palma, luego cierra el puño y arrastra; abre la mano para soltar" },
   close_window: { label: "Cerrar ventana",   hint: "Puño cerrado con un tirón hacia abajo" },
   volume:       { label: "Volumen",          hint: "Tres dedos hacia la cámara, sube o baja la mano" },
-  mute:         { label: "Silenciar",        hint: "Palma, puño rápido y palma otra vez" },
+  mute:         { label: "Silenciar",        hint: "Palma, puño rápido y palma otra vez (choca con mover ventanas)" },
   pause:        { label: "Reproducir / pausar", hint: "Cuatro dedos un momento y cierra el puño" },
   power:        { label: "Encender / apagar", hint: "Dos palmas abiertas quietas frente a la cámara" },
   screenshot:   { label: "Captura de pantalla", hint: "Empuja la palma abierta lejos de la cámara" },
