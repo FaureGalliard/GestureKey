@@ -44,8 +44,13 @@ class WindowRelease:
 
 @dataclass(frozen=True)
 class WindowSendTo:
-    """While dragging: jump to the neighbouring monitor (left/right) or maximize (up)."""
+    """
+    Jump to the neighbouring monitor (left/right) or maximize (up). With
+    `release`, the grab ends and the window is maximized where it arrives
+    (or on this monitor, if there is none that way).
+    """
     direction: Literal["left", "right", "up"]
+    release: bool = False
 
 
 @dataclass(frozen=True)

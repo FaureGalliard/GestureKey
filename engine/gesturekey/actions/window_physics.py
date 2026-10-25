@@ -37,6 +37,8 @@ class PhysicsConfig:
     top_margin:     int   = 10      # px: top this close to a monitor's top → maximize
     edge_margin:    int   = 8       # px: title bar this close to the desktop's outer edge → snap
     keep_visible:   int   = 120     # px of the window that always stay on screen
+    snap_halves:    bool  = False   # desktop edge → half of the monitor; off: maximize (nobody
+                                    # keeps a half window, per the user's testing)
 
 
 def _contains(rect: Rect, x: float, y: float) -> bool:
@@ -173,11 +175,15 @@ class WindowAnimator:
             return "maximize"
         left = min(m[0][0] for m in self.monitors)
         right = max(m[0][2] for m in self.monitors)
-        if cx <= left + self.cfg.edge_margin:
-            return "left"
-        if cx >= right - self.cfg.edge_margin:
-            return "right"
-        return None
+        edge = "left" if cx <= left + self.cfg.edge_margin else "right" if cx >= right - self.cfg.edge_margin else None
+        if edge and not self.cfg.snap_halves:
+            return "maximize"
+        return edge
+
+    def land(self, action: Optional[str]) -> Landing:
+        """End the drag here (after any send): settle at the target, then `action`."""
+        self._landing = Landing(self.tx, self.ty, action)
+        return self._landing
 
     @property
     def settled(self) -> bool:
@@ -186,6 +192,8 @@ class WindowAnimator:
 
     def finish(self) -> Optional[Landing]:
         landing, self.active, self._landing = self._landing, False, None
+        if landing and landing.action in ("left", "right") and not self.cfg.snap_halves:
+            landing.action = "maximize"
         return landing
 
     # ── geometry ─────────────────────────────────────────────────────────────

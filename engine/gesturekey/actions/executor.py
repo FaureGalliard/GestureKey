@@ -135,12 +135,15 @@ class ActionExecutor:
                 anim.finish()
                 self._hwnd = None
                 win32.maximize(hwnd)
-            elif anim.send(action.direction) == "edge":
-                # no monitor that way: snap to that half of this one and let go
+                return
+            moved = anim.send(action.direction) == "moved"
+            if action.release:
+                anim.land("maximize")         # glide over, then maximize there
+            elif not moved:
+                # no monitor that way while still holding: maximize here and let go
                 anim.finish()
                 self._hwnd = None
-                win32.set_window_pos(hwnd, round(anim.tx), round(anim.ty))
-                win32.hotkey(("win", action.direction))
+                win32.maximize(hwnd)
         elif isinstance(action, VolumeBegin):
             self._volume_ref = self.volume_level = self._volume.get()
         elif isinstance(action, VolumeSet):

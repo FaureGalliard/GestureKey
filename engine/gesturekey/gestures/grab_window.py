@@ -15,6 +15,8 @@ THROW_SPAN   = 0.05   # velocity is measured over spans this long, and the peak 
 DOMINANCE    = 1.5    # a flick's main axis must be this much faster than the other
 FLICK_BLOCK  = 0.35   # s: after a flick, the rest of that same motion does not drag
 CLOSE_WINDOW = 0.5    # s: after a downward flick, opening the hand this soon closes
+OPEN_FRAMES  = 2      # consecutive open-hand frames that agree before deciding
+OPEN_DECIDE  = 0.25   # s: if they never agree, just let go
 
 
 class _Phase:
@@ -28,6 +30,9 @@ class GrabWindowGesture(Gesture):
     """
     PALM (≥ min_arm_time) → FIST (≥ hold_time) : grab the foreground window
     FIST + move                                : drag it (pointer acceleration)
+    open the hand tilted sideways (a sweep)    : send it to the monitor that way and
+                                                 maximize it there — the natural way to
+                                                 say "over there"; upright = let go here
     hand held at the camera's left/right edge  : "keep going that way" → next monitor
                                                  (like dragging a mouse past the screen edge)
     flick → / ← while holding                  : send it to the next monitor that way
@@ -93,8 +98,9 @@ class GrabWindowGesture(Gesture):
 
         elif self._phase == _Phase.GRABBED:
             self._trail.append((now, wrist))
-            if state == HandState.PALM:
-                return self._let_go(now, out)
+            if state in (HandState.PALM, HandState.FOUR_FINGERS):
+                return self._opening(hand, now, out)
+            self._open_votes.clear()
             if state == HandState.FIST:
                 self._last_seen = now
             elif now - self._last_seen > cfg.lost_timeout:
@@ -120,6 +126,32 @@ class GrabWindowGesture(Gesture):
             if last_t - t >= THROW_SPAN:
                 return (last_p[0] - p[0]) / (last_t - t), (last_p[1] - p[1]) / (last_t - t)
         return 0.0, 0.0
+
+    def _opening(self, hand, now: float, out: Output) -> None:
+        """
+        The hand opened. Upright = let go here; tilted sideways = a sweep towards
+        that side. A couple of frames must agree, since the first open frames
+        are often mid-transition.
+        """
+        if now <= self._close_until:
+            return self._let_go(now, out)                 # flicked down then opened: close
+        (x0, y0), (x9, y9) = hand.img[0], hand.img[9]
+        tilt = math.degrees(math.atan2(x9 - x0, -(y9 - y0)))   # 0 = fingers up, + = towards the user's right
+        vote = ("right" if tilt > 0 else "left") if abs(tilt) >= self._cfg.sweep_tilt else "here"
+        if not self._open_votes:
+            self._open_since = now
+        self._open_votes.append(vote)
+        recent = self._open_votes[-OPEN_FRAMES:]
+        if len(recent) == OPEN_FRAMES and len(set(recent)) == 1:
+            if vote == "here":
+                return self._let_go(now, out)
+            out.emit(GestureEvent.WINDOW_TO_MONITOR,
+                     WindowSendTo(vote, release=self._cfg.maximize_on_move))
+            if not self._cfg.maximize_on_move:
+                out.emit(GestureEvent.GRAB_WINDOW_RELEASED, WindowRelease())
+            return self.reset()
+        if now - self._open_since >= OPEN_DECIDE:
+            return self._let_go(now, out)
 
     def _edge_push(self, hand, now: float, out: Output) -> None:
         """Hand parked at the edge of the camera's view: the user wants to go beyond it."""
@@ -220,6 +252,8 @@ class GrabWindowGesture(Gesture):
         self._last_seen:  float           = 0.0
         self._trail: Deque[Tuple[float, Point]] = deque(maxlen=30)
         self._flick_ready = True
+        self._open_votes: list = []
+        self._open_since = 0.0
         self._edge_ready = True
         self._edge_since: Optional[float] = None
         self._edge_side = ""

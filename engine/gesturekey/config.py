@@ -8,7 +8,7 @@ from typing import Any, Dict
 
 
 #: Bump when tuning defaults change meaning, so old settings files don't pin stale values.
-SCHEMA = 4
+SCHEMA = 5
 
 
 def resource_path(relative: str) -> Path:
@@ -143,6 +143,8 @@ class GrabWindowConfig:
     max_gain:     float = 5.0
     deadzone:     float = 0.0015
     flick_speed:  float = 1.5    # image units/s: a flick while holding sends to a monitor / maximizes
+    sweep_tilt:   float = 28.0   # degrees: opening the hand tilted this far sideways = send that way
+    maximize_on_move: bool = True   # a window sent to another monitor / an edge is maximized there
     edge_zone:    float = 0.12   # hand within this fraction of the camera's left/right edge…
     edge_dwell:   float = 0.25   # …for this long = "keep going that way": next monitor
     throw_speed:  float = 1.4    # release velocity that counts as a throw for the glide

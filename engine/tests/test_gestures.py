@@ -270,3 +270,32 @@ def test_parking_the_hand_at_the_camera_edge_sends_the_window_on(clock):
     clock.run(FIST, 0.4, wrist=(0.95, 0.5), to=(0.5, 0.5))     # back towards the centre…
     clock.run(FIST, 0.4, wrist=(0.5, 0.5), to=(0.95, 0.5)).run(FIST, 0.4, wrist=(0.95, 0.5))
     assert [a.direction for a in clock.actions if isinstance(a, WindowSendTo)] == ["right", "right"]
+
+
+# ── the sweep (user's video): fist, then open the hand tilted towards a side ──
+
+def test_opening_the_hand_tilted_left_sends_the_window_left_and_maximizes(clock):
+    from gesturekey.actions.types import WindowSendTo
+    _grab(clock, at=(0.67, 0.59))
+    clock.run(FIST, 0.3, wrist=(0.67, 0.59), to=(0.5, 0.57))       # moving left with the fist
+    clock.run(PALM, 0.15, wrist=(0.5, 0.57), tilt=-45)             # hand opens, leaning left
+    sends = [a for a in clock.actions if isinstance(a, WindowSendTo)]
+    assert [(a.direction, a.release) for a in sends] == [("left", True)]
+    assert owner(clock) is None                                    # the grab is over
+    clock.run(PALM, 0.4, wrist=(0.68, 0.59))                       # back to upright: nothing new
+    assert len([a for a in clock.actions if isinstance(a, WindowSendTo)]) == 1
+
+
+def test_opening_the_hand_upright_lets_go_in_place(clock):
+    from gesturekey.actions.types import WindowSendTo
+    _grab(clock)
+    clock.run(PALM, 0.15, tilt=-8)                                 # a little lean is still upright
+    assert not [a for a in clock.actions if isinstance(a, WindowSendTo)]
+    assert _release(clock.actions)[-1].snap is None
+
+
+def test_sweep_right(clock):
+    from gesturekey.actions.types import WindowSendTo
+    _grab(clock, at=(0.4, 0.6))
+    clock.run(PALM, 0.15, wrist=(0.55, 0.6), tilt=40)
+    assert [a.direction for a in clock.actions if isinstance(a, WindowSendTo)] == ["right"]

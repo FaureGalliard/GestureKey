@@ -42,8 +42,16 @@ def test_flick_right_lands_fully_inside_the_right_monitor():
     assert 1366 <= landing.x and landing.x + 600 <= 2732
 
 
-def test_flick_past_the_desktop_edge_snaps_to_that_half():
+def test_flick_past_the_desktop_edge_maximizes():
     a = _anim((1800, 200, 2400, 600))     # already on the rightmost monitor
+    a.release(9000, 0, throw=True)
+    assert _settle(a).action == "maximize"    # nobody keeps a half window
+
+
+def test_half_snapping_is_still_available():
+    from gesturekey.actions.window_physics import PhysicsConfig
+    a = WindowAnimator(LAYOUT, PhysicsConfig(snap_halves=True))
+    a.start((1800, 200, 2400, 600))
     a.release(9000, 0, throw=True)
     assert _settle(a).action == "right"
 
@@ -163,13 +171,13 @@ def test_zone_maximize_when_taken_to_the_top():
     assert a.zone == "maximize"
 
 
-def test_zone_left_at_the_outer_edge_of_the_desktop_and_snap_on_release():
+def test_zone_at_the_outer_edge_of_the_desktop_maximizes_on_release():
     a = _anim((-1000, 200, -400, 600))                # on the left monitor
     for _ in range(20):
         a.move(-80, 0)                                 # push past the desktop's left edge
-    assert a.zone == "left"
+    assert a.zone == "maximize"
     a.release(0, 0, throw=False)
-    assert _settle(a).action == "left"
+    assert _settle(a).action == "maximize"
 
 
 def test_no_zone_between_two_monitors():
