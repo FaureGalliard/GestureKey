@@ -49,11 +49,15 @@ class GestureArbiter:
                 (VolumeGesture(cfg.volume, cfg.continuous),      cfg.volume.enabled),
                 (PinchZoomGesture(cfg.zoom, cfg.continuous),     cfg.zoom.enabled),
                 (PauseResumeGesture(cooldown, cfg.pause),        cfg.pause.enabled),
-                (ScreenshotGesture(cooldown, cfg.screenshot),    cfg.screenshot.enabled),
                 (CloseWindowGesture(cooldown, cfg.close_window), cfg.close_window.enabled),
             ) if enabled
         ]
-        self._two_hand: List[Gesture] = [TaskViewGesture(cooldown, cfg.task_view, cfg.mouse)] if cfg.task_view.enabled else []
+        self._two_hand: List[Gesture] = [
+            g for g, enabled in (
+                (TaskViewGesture(cooldown, cfg.task_view, cfg.mouse), cfg.task_view.enabled),
+                (ScreenshotGesture(cooldown, cfg.screenshot),         cfg.screenshot.enabled),
+            ) if enabled
+        ]
         self._mute_enabled = cfg.mute.enabled
         self._refractory = cfg.refractory
         self._quiet_until = float("-inf")
@@ -81,8 +85,10 @@ class GestureArbiter:
             self._release_if_done(now)
             return out
 
-        if frame.state in (HandState.UNKNOWN, HandState.OTHER) or now < self._quiet_until:
+        if now < self._quiet_until:
             return out
+        if frame.state in (HandState.UNKNOWN, HandState.OTHER) and not frame.has_both_hands:
+            return out                           # two-hand poses (the frame) often read as OTHER
 
         if self._mute_enabled:
             self._mute.update(frame, out)
@@ -90,7 +96,8 @@ class GestureArbiter:
                 self._quiet(now)
                 return out
 
-        candidates = (self._hand_gestures if frame.main_hand is not None else []) + self._two_hand
+        one_hand = frame.main_hand is not None and frame.state not in (HandState.UNKNOWN, HandState.OTHER)
+        candidates = (self._hand_gestures if one_hand else []) + self._two_hand
         for gesture in candidates:
             gesture.update(frame, out)
             if gesture.engaged:

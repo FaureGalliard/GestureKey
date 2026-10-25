@@ -120,7 +120,8 @@ class TaskViewConfig:
 
 @dataclass
 class ScreenshotConfig:
-    enabled: bool = True
+    enabled: bool  = True
+    hold:    float = 0.40   # both hands framing (L shapes) this long takes the screenshot
 
 
 @dataclass

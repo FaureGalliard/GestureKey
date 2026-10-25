@@ -1,68 +1,75 @@
 from __future__ import annotations
-from collections import deque
-from typing import Deque, Optional, Tuple
+import math
+from typing import Optional
 
 from gesturekey.actions.types import Hotkey
 from gesturekey.config import ScreenshotConfig
 from gesturekey.core.cooldown import CooldownManager
-from gesturekey.core.geometry import palm_length
-from gesturekey.core.types import FrameData, GestureEvent, HandState
+from gesturekey.core.geometry import dist, palm_center, palm_length
+from gesturekey.core.types import FrameData, GestureEvent, Hand
 from gesturekey.gestures.base import Gesture, Output
 
-WINDOW_S     = 0.40   # look-back window
-SHRINK_RATIO = 0.75   # palm must shrink to 75 % of its recent size
-GRACE_S      = 0.15   # a fast push blurs the palm; tolerate this much non-PALM
-ARM_S        = 0.30   # the palm must first be held steady this long
-STEADY       = 0.08   # "steady" = palm size within ±8 % of its running level
+INDEX_OUT  = 1.30   # index tip ↔ wrist (palm lengths): extended
+THUMB_OUT  = 0.60   # thumb tip ↔ index knuckle: stretched away, not tucked across the palm
+THUMB_WIDE = 50.0   # degrees between thumb and index: an L, not a flat palm
+CURLED     = 1.20   # middle / ring tip ↔ wrist below this: folded
+MIN_APART  = 0.15   # image units between the two hands
+MAX_DRIFT  = 0.06   # image units a hand may wander while the frame is held
+
+
+def is_l_shape(hand: Hand) -> bool:
+    """
+    👆 index and thumb stretched apart like an L, the other fingers folded.
+    Pure finger geometry, so it works with the L at any angle (one hand is
+    often upside down in a frame), where the pose model has no class for it.
+    """
+    p, pl = hand.img, palm_length(hand)
+    if dist(p[8], p[0]) / pl < INDEX_OUT or dist(p[4], p[5]) / pl < THUMB_OUT:
+        return False
+    if dist(p[12], p[0]) / pl > CURLED or dist(p[16], p[0]) / pl > CURLED:
+        return False
+    tx, ty = p[4][0] - p[2][0], p[4][1] - p[2][1]
+    ix, iy = p[8][0] - p[5][0], p[8][1] - p[5][1]
+    cos = (tx * ix + ty * iy) / ((math.hypot(tx, ty) * math.hypot(ix, iy)) or 1e-9)
+    return math.degrees(math.acos(max(-1.0, min(1.0, cos)))) >= THUMB_WIDE
 
 
 class ScreenshotGesture(Gesture):
     """
-    ✋ open palm held steady a moment, then pushed quickly away from the camera
-    (it looks smaller) → Win+PrintScreen. The steady hold first keeps a hand
-    that just happens to move back from firing it. Measured in image space; a
-    short blur mid-push doesn't reset it.
+    🖼️ both hands in an L, framing the screen like a photo, held `hold` s →
+    Win+PrintScreen (saved to Pictures\\Screenshots). Two hands in a pose
+    nothing else uses, so it cannot fire by accident.
     """
 
     NAME = "SCREENSHOT"
 
     def __init__(self, cooldown: CooldownManager, cfg: ScreenshotConfig) -> None:
         self._cooldown = cooldown
+        self._hold = cfg.hold
         self.reset()
 
+    @property
+    def progress(self) -> Optional[float]:
+        if self._since is None:
+            return None
+        return min(1.0, (self._now - self._since) / self._hold)
+
     def update(self, frame: FrameData, out: Output) -> None:
-        hand, now = frame.main_hand, frame.timestamp
-        if hand is None:
-            self.reset()
+        now = self._now = frame.timestamp
+        hands = frame.hands
+        if not frame.has_both_hands or not all(is_l_shape(h) for h in hands.values()):
+            return self.reset()
+        left, right = palm_center(hands["Left"]), palm_center(hands["Right"])
+        if dist(left, right) < MIN_APART:
+            return self.reset()
+        if self._since is None or dist(left, self._left) > MAX_DRIFT or dist(right, self._right) > MAX_DRIFT:
+            self._since, self._left, self._right = now, left, right       # (re)start the hold
             return
-        if frame.state != HandState.PALM:
-            if self._last_palm is not None and now - self._last_palm > GRACE_S:
-                self.reset()
-            return
-        self._last_palm = now
-
-        size = palm_length(hand)
-        self._recent.append((now, size))
-        while self._recent and now - self._recent[0][0] > WINDOW_S:
-            self._recent.popleft()
-
-        if not self._armed:
-            if self._level is None or abs(size - self._level) > STEADY * self._level:
-                self._level, self._steady_since = size, now          # moving: start over
-            else:
-                self._level = 0.8 * self._level + 0.2 * size
-                if now - self._steady_since >= ARM_S:
-                    self._armed = True
-            return
-
-        peak = max(s for _, s in self._recent)
-        if size < peak * SHRINK_RATIO and self._cooldown.ok(self.NAME, now):
+        if now - self._since >= self._hold and self._cooldown.ok(self.NAME, now):
             out.emit(GestureEvent.SCREENSHOT, Hotkey(("win", "printscreen")))
             self.reset()
 
     def reset(self) -> None:
-        self._recent: Deque[Tuple[float, float]] = deque()
-        self._last_palm: Optional[float] = None
-        self._level: Optional[float] = None
-        self._steady_since = 0.0
-        self._armed = False
+        self._since: Optional[float] = None
+        self._left = self._right = (0.0, 0.0)
+        self._now = 0.0

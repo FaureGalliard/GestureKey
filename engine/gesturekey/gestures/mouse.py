@@ -199,8 +199,8 @@ class MouseGesture(ContinuousGesture):
     def update(self, frame, out: Output) -> None:
         self._state = frame.state
         hand = frame.main_hand
-        if not self._active and hand is not None and index_reach(hand) < POINTING_REACH:
-            self.reset()                       # "POINT" with a curled index: a misread fist (grab's)
+        if not self._active and hand is not None and (index_reach(hand) < POINTING_REACH or frame.has_both_hands):
+            self.reset()                       # a misread fist (grab's), or two hands (a frame, task view)
             return
         super().update(frame, out)
 

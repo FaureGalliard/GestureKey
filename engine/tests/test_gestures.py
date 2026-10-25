@@ -72,16 +72,42 @@ def test_grab_releases_when_hand_lost(clock):
     assert owner(clock) is None
 
 
-def test_screenshot_on_palm_push(clock):
-    clock.run(PALM, 0.4, scale=1.0)                            # steady first: armed
-    clock.run(PALM, 0.15, scale=1.0, scale_to=0.6)
+def _frame(clock, seconds, left="L", right="L", state=HandState.OTHER, tilt=0.0):
+    from conftest import make_frame, make_hand
+    for _ in range(round(seconds / clock.dt)):
+        hands = {"Left": make_hand((0.3, 0.6), side="Left", pose=left, tilt=tilt),
+                 "Right": make_hand((0.7, 0.6), pose=right, tilt=-tilt)}
+        out = clock.arbiter.process(make_frame(state, clock.t, hands=hands))
+        clock.events += [e.value for e in out.events]
+        clock.actions += out.actions
+        clock.t += clock.dt
+
+
+def test_framing_with_both_hands_takes_a_screenshot(clock):
+    _frame(clock, 0.6)
+    assert clock.events.count("SCREENSHOT") == 1
+    assert ("win", "printscreen") in [a.keys for a in clock.actions if isinstance(a, Hotkey)]
+
+
+def test_a_frame_with_one_hand_upside_down_still_counts(clock):
+    from conftest import make_frame, make_hand
+    for _ in range(36):
+        hands = {"Left": make_hand((0.3, 0.5), side="Left", pose="L"), "Right": make_hand((0.7, 0.7), pose="L", tilt=180)}
+        clock.events += [e.value for e in clock.arbiter.process(make_frame(HandState.POINT, clock.t, hands=hands)).events]
+        clock.t += clock.dt
     assert "SCREENSHOT" in clock.events
 
 
-def test_steady_palm_takes_no_screenshot(clock):
+def test_a_quick_frame_or_one_l_takes_no_screenshot(clock):
+    _frame(clock, 0.2)                                          # too short
     clock.run(PALM, 1.0)
-    assert "SCREENSHOT" not in clock.events
+    _frame(clock, 0.6, right="point")                           # only one hand in an L
+    assert "SCREENSHOT" not in clock.events and "MOUSE_CLICK" not in clock.events
 
+
+def test_open_palms_are_no_frame(clock):
+    _frame(clock, 0.8, left="open", right="open", state=PALM)
+    assert "SCREENSHOT" not in clock.events
 
 def test_four_fingers_then_fist_is_media_play_pause(clock):
     clock.run(HandState.FOUR_FINGERS, 0.4).run(FIST, 1 / 60)

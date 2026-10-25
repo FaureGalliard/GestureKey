@@ -23,6 +23,7 @@ _POSES = {
     "fist":  {**_CURLED, 6: (0.03, -0.12), 7: (0.035, -0.09), 8: (0.03, -0.075), 4: (0.04, -0.08)},
     "point": {**_CURLED, 4: (0.03, -0.07)},
     "pinch": {**_CURLED, 7: (0.045, -0.15), 8: (0.05, -0.125), 4: (0.05, -0.12)},
+    "L":     {**_CURLED, 2: (0.06, -0.04), 3: (0.10, -0.06), 4: (0.14, -0.08)},   # thumb stretched out
 }
 
 _POSE_OF = {HandState.FIST: "fist", HandState.POINT: "point", HandState.PINCH: "pinch"}
