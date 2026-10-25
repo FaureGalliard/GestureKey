@@ -1,4 +1,5 @@
 from __future__ import annotations
+import math
 import queue
 import threading
 import time
@@ -7,12 +8,14 @@ from typing import Callable, Iterable, Optional
 from gesturekey.actions import win32
 from gesturekey.actions.audio import MasterVolume
 from gesturekey.actions.types import (
-    Action, Hotkey, Scroll, VolumeBegin, VolumeSet, WindowGrab, WindowMove, WindowRelease, WindowSendTo,
+    Action, CursorBegin, CursorMove, Hotkey, MouseButton, Scroll, VolumeBegin, VolumeSet, WindowGrab,
+    WindowMove, WindowRelease, WindowSendTo,
 )
 from gesturekey.actions.window_physics import WindowAnimator
 
 _STOP = object()
 FRAME_S = 1 / 120   # window animation rate, independent of the camera's ~30 fps
+CURSOR_TAU = 0.035  # s: the cursor glides to where the hand says (camera steps → smooth motion)
 
 
 class ActionExecutor:
@@ -22,7 +25,8 @@ class ActionExecutor:
 
     While a window is being dragged or is gliding after a flick, the loop
     also animates it at FRAME_S (see window_physics), so it moves at display
-    rate instead of stepping with each camera frame.
+    rate instead of stepping with each camera frame. The mouse cursor glides
+    the same way.
     """
 
     def __init__(self, on_error: Callable[[str], None] = print, speed: float = 1.0) -> None:
@@ -37,6 +41,8 @@ class ActionExecutor:
         self.volume_level: Optional[float] = None
         #: snap zone of the window being dragged (see window_physics), for the overlay
         self.window_zone: Optional[str] = None
+        self._cursor: Optional[list] = None          # [x, y] shown
+        self._cursor_to: Optional[list] = None       # [x, y] target
         self._thread = threading.Thread(target=self._loop, name="actions", daemon=True)
         self._thread.start()
 
@@ -54,7 +60,7 @@ class ActionExecutor:
         pending: Optional[object] = None
         last = time.perf_counter()
         while True:
-            animating = self._anim is not None and self._anim.active
+            animating = (self._anim is not None and self._anim.active) or self._cursor_gliding
             if pending is not None:
                 item, pending = pending, None
             else:
@@ -90,7 +96,22 @@ class ActionExecutor:
                 except Exception as exc:
                     self._on_error(f"[ACTION] window animation failed: {exc}")
                     self._anim = None
+            if self._cursor_gliding:
+                self._glide_cursor(min(now - last, 0.05))
             last = now
+
+    @property
+    def _cursor_gliding(self) -> bool:
+        c, to = self._cursor, self._cursor_to
+        return c is not None and to is not None and (abs(c[0] - to[0]) >= 0.5 or abs(c[1] - to[1]) >= 0.5)
+
+    def _glide_cursor(self, dt: float, snap: bool = False) -> None:
+        c, to = self._cursor, self._cursor_to
+        k = 1.0 if snap else 1.0 - math.exp(-dt / CURSOR_TAU)
+        c[0] += (to[0] - c[0]) * k
+        c[1] += (to[1] - c[1]) * k
+        if win32.AVAILABLE:
+            win32.set_cursor_pos(round(c[0]), round(c[1]))
 
     def _animate(self, dt: float) -> None:
         anim, hwnd = self._anim, self._hwnd
@@ -108,6 +129,15 @@ class ActionExecutor:
                 win32.maximize(hwnd)
             elif landing and landing.action in ("left", "right"):
                 win32.hotkey(("win", landing.action))
+
+    @staticmethod
+    def _monitor_at(x: float, y: float):
+        mons = win32.monitors()
+        for mon in mons:
+            l, t, r, b = mon[0]
+            if l <= x < r and t <= y < b:
+                return mon
+        return mons[0]
 
     def _run(self, action: Action) -> None:
         if not win32.AVAILABLE:
@@ -144,6 +174,20 @@ class ActionExecutor:
                 anim.finish()
                 self._hwnd = None
                 win32.maximize(hwnd)
+        elif isinstance(action, CursorBegin):
+            self._cursor = [float(v) for v in win32.cursor_pos()]
+            self._cursor_to = list(self._cursor)
+        elif isinstance(action, CursorMove):
+            if self._cursor_to is None:
+                return
+            (l, t, r, b), _work = self._monitor_at(*self._cursor_to)
+            vl, vt, vw, vh = win32.virtual_screen()
+            self._cursor_to[0] = min(max(self._cursor_to[0] + action.dx * (r - l) * self.speed, vl), vl + vw - 1)
+            self._cursor_to[1] = min(max(self._cursor_to[1] + action.dy * (r - l) * self.speed, vt), vt + vh - 1)
+        elif isinstance(action, MouseButton):
+            if self._cursor_gliding:
+                self._glide_cursor(0.0, snap=True)          # click where the cursor is shown
+            win32.mouse_button(action.button, action.down)
         elif isinstance(action, VolumeBegin):
             self._volume_ref = self.volume_level = self._volume.get()
         elif isinstance(action, VolumeSet):

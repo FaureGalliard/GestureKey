@@ -63,4 +63,23 @@ class VolumeSet:
     delta: float              # level = reference ± delta, clamped to 0..1
 
 
-Action = Union[Hotkey, Scroll, WindowGrab, WindowMove, WindowRelease, WindowSendTo, VolumeBegin, VolumeSet]
+@dataclass(frozen=True)
+class CursorBegin:
+    """Start driving the mouse cursor from where it is now."""
+
+
+@dataclass(frozen=True)
+class CursorMove:
+    dx: float                 # normalised like WindowMove: 1.0 = width of the cursor's monitor
+    dy: float
+
+
+@dataclass(frozen=True)
+class MouseButton:
+    """Press / release a button where the cursor is shown (the glide is finished first)."""
+    button: Literal["left", "right"]
+    down: bool
+
+
+Action = Union[Hotkey, Scroll, WindowGrab, WindowMove, WindowRelease, WindowSendTo, VolumeBegin, VolumeSet,
+               CursorBegin, CursorMove, MouseButton]

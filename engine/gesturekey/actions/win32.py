@@ -22,6 +22,8 @@ _EXTENDED = {0x25, 0x26, 0x27, 0x28, 0x5B, 0x2C}
 _KEYEVENTF_EXTENDEDKEY = 0x0001
 _KEYEVENTF_KEYUP       = 0x0002
 _MOUSEEVENTF_WHEEL     = 0x0800
+_MOUSE_BUTTON = {("left", True): 0x0002, ("left", False): 0x0004,
+                 ("right", True): 0x0008, ("right", False): 0x0010}
 _SWP_NOSIZE, _SWP_NOZORDER, _SWP_NOACTIVATE = 0x0001, 0x0004, 0x0010
 _SW_RESTORE, _SW_MAXIMIZE = 9, 3
 
@@ -37,6 +39,8 @@ if AVAILABLE:
     _user32.keybd_event.argtypes = [wintypes.BYTE, wintypes.BYTE, wintypes.DWORD, ctypes.c_size_t]
     _user32.mouse_event.argtypes = [wintypes.DWORD, wintypes.DWORD, wintypes.DWORD,
                                     wintypes.DWORD, ctypes.c_size_t]
+    _user32.GetCursorPos.argtypes = [ctypes.POINTER(wintypes.POINT)]
+    _user32.SetCursorPos.argtypes = [ctypes.c_int, ctypes.c_int]
 
 
 def enable_dpi_awareness() -> None:
@@ -68,6 +72,21 @@ def hotkey(keys: Sequence[str]) -> None:
 
 def scroll(amount: int) -> None:
     _user32.mouse_event(_MOUSEEVENTF_WHEEL, 0, 0, amount & 0xFFFFFFFF, 0)   # signed delta as DWORD
+
+
+def cursor_pos() -> Tuple[int, int]:
+    p = wintypes.POINT()
+    _user32.GetCursorPos(ctypes.byref(p))
+    return (p.x, p.y)
+
+
+def set_cursor_pos(x: int, y: int) -> None:
+    _user32.SetCursorPos(x, y)
+
+
+def mouse_button(button: str, down: bool) -> None:
+    """Press or release at the cursor; Windows turns two quick clicks into a double click."""
+    _user32.mouse_event(_MOUSE_BUTTON[(button, down)], 0, 0, 0, 0)
 
 
 def screen_size() -> Tuple[int, int]:
