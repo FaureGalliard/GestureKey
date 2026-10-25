@@ -78,3 +78,28 @@ centred on the hand), so new features can be tried without recording again —
 e.g. joint flexion angles in 3D, thumb-to-fingertip distances, palm orientation.
 Those are far less sensitive to camera, distance and wrist rotation than the
 current 2D features.
+
+## Model history
+
+| Model | Data | Classes | On the MX Brio session |
+|---|---|---|---|
+| `models/hand_state_rf_v2.pkl` | v2 (old webcam, one session; the exact data isn't in git) | 6 + UNKNOWN | 87.5 % (palm 80 %, pinch 77 %; a relaxed hand read as fist 182×) |
+| `models/hand_state_rf.pkl` (2026-10-25) | v2 dataset + Brio session 1 | 6 + OTHER | 95.9 % held-out time blocks; 94.1 % cross-camera (trained on v2 data only) |
+
+POINT, THUMB_UP and THUMB_DOWN are recorded but excluded by default: with them the
+fist's recall dropped to 67 % (a fist with a loose thumb looks like 👍). Add them
+back (`--exclude OK ROCK`) once a gesture uses them and there are more sessions.
+
+## Pretrained alternatives (researched 2026-10-25)
+
+- **MediaPipe Gesture Recognizer** (Tasks API): canned classes None, Closed_Fist,
+  Open_Palm, Pointing_Up, Thumb_Down, Thumb_Up, Victory, ILoveYou — no pinch, three or
+  four fingers. Retraining needs Model Maker (unmaintained, needs WSL/Colab on Windows).
+  Worth it as a second opinion and as the path off the legacy `mp.solutions` API, which
+  MediaPipe removed from 0.10.30 on (we pin 0.10.9).
+- **HaGRID v2** (github.com/hukenovs/hagrid): ~1M images, 33 classes + `no_gesture`, with
+  MediaPipe 2D landmark annotations — the best source of cross-person / cross-camera data
+  for 9 of our 10 poses (no exact pinch). License is CC BY-SA 4.0-style: check before
+  shipping a model trained on it. Only the annotation JSONs are needed, not the images.
+- Skipped: kinivi/hand-gesture-recognition-mediapipe (4 classes, small dataset), Jester
+  (dynamic gestures, no landmarks).
