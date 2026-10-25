@@ -7,8 +7,9 @@
 //!
 //! The engine also gets `--parent-pid` and exits by itself if we die.
 
+use std::io::{BufRead, BufReader, Read};
 use std::path::PathBuf;
-use std::process::{Child, Command};
+use std::process::{Child, Command, Stdio};
 use std::sync::Mutex;
 
 use tauri::{AppHandle, Manager};
@@ -64,10 +65,32 @@ pub fn spawn(app: &AppHandle) -> Result<(), String> {
         println!("[ENGINE] GESTUREKEY_NO_ENGINE set — not spawning");
         return Ok(());
     }
-    let child = command(app)?.spawn().map_err(|e| format!("no se pudo lanzar el motor: {e}"))?;
+    // Pipe the engine's output instead of inheriting it: with CREATE_NO_WINDOW an inherited
+    // console handle is invalid in the child and its first print fails with EBADF.
+    let mut child = command(app)?
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .map_err(|e| format!("no se pudo lanzar el motor: {e}"))?;
     println!("[ENGINE] pid {}", child.id());
+    if let Some(out) = child.stdout.take() {
+        forward(out);
+    }
+    if let Some(err) = child.stderr.take() {
+        forward(err);
+    }
     *app.state::<EngineProcess>().0.lock().unwrap() = Some(child);
     Ok(())
+}
+
+/// Copy the engine's output lines to ours (visible in the `tauri dev` terminal).
+fn forward(stream: impl Read + Send + 'static) {
+    std::thread::spawn(move || {
+        for line in BufReader::new(stream).lines().map_while(Result::ok) {
+            println!("[py] {line}");
+        }
+    });
 }
 
 pub fn kill(app: &AppHandle) {

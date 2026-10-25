@@ -23,6 +23,7 @@ def main() -> None:
     parser.add_argument("--version", action="version", version=__version__)
     args = parser.parse_args()
 
+    _ensure_writable_stdio()
     if args.parent_pid:
         _exit_with_parent(args.parent_pid)
     enable_dpi_awareness()
@@ -41,6 +42,18 @@ def main() -> None:
     except OSError as exc:
         print(f"[ENGINE] {exc}", file=sys.stderr)
         sys.exit(1)
+
+
+def _ensure_writable_stdio() -> None:
+    """A process without a console can inherit dead stdio handles; logging must never crash it."""
+    import os
+    for name in ("stdout", "stderr"):
+        stream = getattr(sys, name)
+        try:
+            stream.write("")
+            stream.flush()
+        except (AttributeError, OSError, ValueError):
+            setattr(sys, name, open(os.devnull, "w", encoding="utf-8"))
 
 
 def _exit_with_parent(pid: int) -> None:
