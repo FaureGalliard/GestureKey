@@ -34,29 +34,40 @@ export interface EventMsg { type: "event"; event: string; t: number }
 export interface StatusMsg { type: "status"; level: "info" | "warn" | "error"; message: string }
 export interface PreviewMsg { type: "preview"; jpeg: string }
 export interface CameraMsg { type: "camera"; device: number; width: number; height: number; fps: number }
+export interface CameraStatusMsg {
+  type: "camera_status";
+  status: "opening" | "ok" | "reconnecting" | "busy" | "missing";
+  device: number;
+  name: string;
+  message: string;
+  low_light?: boolean;
+  measured_fps?: number;
+}
 export interface CamerasMsg { type: "cameras"; devices: { index: number; name: string }[]; active: number }
 export interface ConfigMsg { type: "config"; config: EngineConfig }
 export interface EnabledMsg { type: "enabled"; enabled: boolean }
 export interface HelloMsg {
   type: "hello"; version: string; config: EngineConfig; enabled: boolean; camera: CameraMsg | null;
+  camera_status: CameraStatusMsg | null;
 }
 
 export type EngineMsg =
   | HelloMsg | FrameMsg | EventMsg | StatusMsg | PreviewMsg
-  | CameraMsg | CamerasMsg | ConfigMsg | EnabledMsg;
+  | CameraMsg | CameraStatusMsg | CamerasMsg | ConfigMsg | EnabledMsg;
 
 export type Command =
   | { cmd: "set_config"; patch: DeepPartial<EngineConfig> }
   | { cmd: "set_enabled"; enabled: boolean }
   | { cmd: "preview"; on: boolean }
-  | { cmd: "list_cameras" };
+  | { cmd: "list_cameras" }
+  | { cmd: "reconnect_camera" };
 
 export type DeepPartial<T> = { [K in keyof T]?: T[K] extends object ? DeepPartial<T[K]> : T[K] };
 
 export interface GestureToggle { enabled: boolean; [param: string]: number | boolean }
 
 export interface EngineConfig {
-  camera: { device: number; width: number; height: number; fps: number; mirror: boolean };
+  camera: { name: string; device: number; width: number; height: number; fps: number; mirror: boolean };
   tracking: { model_complexity: number; min_detection_confidence: number; min_tracking_confidence: number };
   states: { switch_rate: number; enter: number; floor: number };
   gestures: { cooldown: number } & Record<GestureKey, GestureToggle>;

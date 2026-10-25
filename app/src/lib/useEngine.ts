@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  ENGINE_URL, type CameraMsg, type CamerasMsg, type Command, type EngineConfig, type EngineMsg, type FrameMsg,
+  ENGINE_URL, type CameraMsg, type CameraStatusMsg, type CamerasMsg, type Command, type EngineConfig, type EngineMsg, type FrameMsg,
 } from "./protocol";
 
 export interface LogEntry { id: number; t: number; kind: "event" | "info" | "warn" | "error"; text: string }
@@ -12,6 +12,7 @@ export interface EngineState {
   enabled: boolean;
   frame: FrameMsg | null;
   camera: CameraMsg | null;
+  cameraStatus: CameraStatusMsg | null;
   preview: string | null;
   cameras: CamerasMsg["devices"];
   log: LogEntry[];
@@ -29,6 +30,7 @@ export function useEngine(): EngineState {
   const [enabled, setEnabled]     = useState(true);
   const [frame, setFrame]         = useState<FrameMsg | null>(null);
   const [camera, setCamera]       = useState<CameraMsg | null>(null);
+  const [cameraStatus, setCameraStatus] = useState<CameraStatusMsg | null>(null);
   const [preview, setPreview]     = useState<string | null>(null);
   const [cameras, setCameras]     = useState<CamerasMsg["devices"]>([]);
   const [log, setLog]             = useState<LogEntry[]>([]);
@@ -62,6 +64,7 @@ export function useEngine(): EngineState {
             setConfig(msg.config);
             setEnabled(msg.enabled);
             setCamera(msg.camera);
+            setCameraStatus(msg.camera_status);
             break;
           case "frame":
             // frames can arrive at 60 Hz: render at most once per animation frame
@@ -74,6 +77,7 @@ export function useEngine(): EngineState {
           case "config":  setConfig(msg.config); break;
           case "enabled": setEnabled(msg.enabled); break;
           case "cameras": setCameras(msg.devices); break;
+          case "camera_status": setCameraStatus(msg); break;
           case "camera":
             setCamera(msg);
             push("info", `Cámara ${msg.device}: ${msg.width}×${msg.height} @ ${Math.round(msg.fps)} fps`);
@@ -96,5 +100,5 @@ export function useEngine(): EngineState {
     if (ws?.readyState === WebSocket.OPEN) ws.send(JSON.stringify(cmd));
   }, []);
 
-  return { connected, version, config, enabled, frame, camera, preview, cameras, log, send };
+  return { connected, version, config, enabled, frame, camera, cameraStatus, preview, cameras, log, send };
 }

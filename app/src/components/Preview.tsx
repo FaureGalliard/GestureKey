@@ -29,7 +29,7 @@ export function Preview({ frame, connected, preview = null, toast = null }: Prop
       {!hasHand && (
         <div className="pointer-events-none absolute inset-0 grid place-items-center">
           <p className="text-[13px] text-fg-faint">
-            {connected ? "Muestra una mano a la cámara" : "Iniciando la cámara…"}
+            {connected ? "Muestra una mano a la cámara" : "Sin imagen de la cámara"}
           </p>
         </div>
       )}

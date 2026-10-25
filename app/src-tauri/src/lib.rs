@@ -20,6 +20,9 @@ fn show_main(app: &tauri::AppHandle) {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let app = tauri::Builder::default()
+        // must be first: a second launch focuses this one instead of starting another
+        // engine that would fight over the camera and the port
+        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| show_main(app)))
         .manage(EngineProcess::default())
         .invoke_handler(tauri::generate_handler![overlay::overlay_place])
         .setup(|app| {
