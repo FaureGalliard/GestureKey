@@ -37,7 +37,7 @@ def main() -> None:
 
     cfg = AppConfig.load()
     session = time.strftime("%Y%m%d-%H%M%S")
-    path = data_dir(args.out) / f"session-{session}.csv"
+    path = data_dir(args.out) / f"session-{session}.csv.gz"   # ~5× smaller, fine for git
     camera = Camera(cfg.camera, device=args.camera)
     tracker = HandTracker(cfg.tracking)
     label, recording, pending, counts = "PALM", False, [], Counter()

@@ -15,6 +15,8 @@ learns matches what it sees.
 """
 from __future__ import annotations
 import csv
+import gzip
+import io
 from pathlib import Path
 from typing import Dict, Iterator, List, Optional, Tuple
 
@@ -58,9 +60,23 @@ def row(session: str, t: float, label: str, size: Tuple[int, int], hands: Dict[s
     return out
 
 
+def _open(path: Path) -> io.TextIOBase:
+    if path.suffix == ".gz":
+        return gzip.open(path, "rt", newline="", encoding="utf-8")
+    return path.open(newline="", encoding="utf-8")
+
+
+def data_files(folder: Path) -> List[Path]:
+    """Every dataset in the folder, plain or gzipped (a .csv and its .csv.gz count once)."""
+    files = {p.name.removesuffix(".gz"): p for p in sorted(folder.glob("*.csv.gz"))}
+    for p in sorted(folder.glob("*.csv")):
+        files.setdefault(p.name, p)
+    return [files[k] for k in sorted(files)]
+
+
 def read(path: Path) -> Iterator[Tuple[str, str, List[float]]]:
-    """(session, label, 20 classifier features) per row; legacy feature-only CSVs too."""
-    with path.open(newline="", encoding="utf-8") as fh:
+    """(session, label, 20 classifier features) per row, in recording order; legacy feature-only CSVs too."""
+    with _open(path) as fh:
         reader = csv.DictReader(fh)
         cols = reader.fieldnames or []
         legacy = "state" in cols and "right_x0" not in cols
@@ -84,9 +100,11 @@ def read(path: Path) -> Iterator[Tuple[str, str, List[float]]]:
 
 
 def append_rows(path: Path, rows: List[List[object]]) -> None:
+    """Append (gzip when the name ends in .gz: appended members read back as one file)."""
     new = not path.exists()
     path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("a", newline="", encoding="utf-8") as fh:
+    opener = (lambda: gzip.open(path, "at", newline="", encoding="utf-8")) if path.suffix == ".gz"         else (lambda: path.open("a", newline="", encoding="utf-8"))
+    with opener() as fh:
         writer = csv.writer(fh)
         if new:
             writer.writerow(header())

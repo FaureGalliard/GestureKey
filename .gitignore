@@ -25,3 +25,5 @@ arquitecture.txt
 *.log
 engine/pyinstaller.log
 app/tauri-build.log
+engine/training/data/session-*.csv
+*.bak
