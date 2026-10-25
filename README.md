@@ -20,7 +20,7 @@ move windows between monitors, task view and more.
 | …open the hand **tilted** towards a side | Send it to that monitor and maximize it there |
 | …park the hand at the camera's edge | Push it on to the next monitor |
 | …flick up | Maximize |
-| …flick down, then open | Close |
+| …drag it down to the bottom edge, open | Close (the overlay warns first) |
 | …open the hand upright | Let go where it is (taken to the top of a monitor = maximize) |
 | ✋✋ bring the palms together | Task view (Win+Tab) |
 | … then ☝️ point and 🤏 pinch | Open that window (a click) |

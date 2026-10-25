@@ -31,7 +31,7 @@ type Item =
   | { kind: "toast"; key: string; icon: LucideIcon; label: string };
 
 /** While dragging a window: what letting go now would do (like Windows' snap preview). */
-const ZONES: Record<string, LucideIcon> = { maximize: Maximize2, left: PanelLeft, right: PanelRight };
+const ZONES: Record<string, LucideIcon> = { maximize: Maximize2, left: PanelLeft, right: PanelRight, close: X };
 
 function pick(frame: FrameMsg | null, toast: Item | null, t: Dict): Item | null {
   if (frame?.arming) return { kind: "ring", key: "ring", arming: frame.arming };

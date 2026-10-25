@@ -79,7 +79,7 @@ export const es: Dict = {
     task_view:   { label: "Vista de tareas", hint: "Dos palmas abiertas separadas, júntalas. Dentro: ☝️ apunta a una ventana y 🤏 pellizca para abrirla, o separa las palmas para salir" },
     grab_window: {
       label: "Mover ventanas",
-      hint: "Palma, cierra el puño y arrastra; ábrela para soltar. Ábrela inclinada hacia un lado para mandar la ventana a ese monitor; golpe arriba para maximizar; golpe abajo y abrir para cerrar",
+      hint: "Palma, cierra el puño y arrastra; ábrela para soltar. Ábrela inclinada hacia un lado para mandar la ventana a ese monitor; golpe arriba para maximizar; llévala al borde inferior y suelta para cerrar",
     },
     volume:      { label: "Volumen", hint: "Tres dedos, sube o baja la mano" },
     mute:        { label: "Silenciar", hint: "Palma, puño rápido y palma otra vez (choca con mover ventanas)" },
@@ -138,7 +138,7 @@ export const es: Dict = {
       POWER_OFF: "GestureKey apagado",
       POWER_ON: "GestureKey encendido",
     },
-    zones: {
+    zones: { close: "Suelta para cerrar",
       maximize: "Suelta para maximizar",
       left: "Suelta para acoplar a la izquierda",
       right: "Suelta para acoplar a la derecha",

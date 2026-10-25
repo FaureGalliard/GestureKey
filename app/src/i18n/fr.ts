@@ -79,7 +79,7 @@ export const fr: Dict = {
     task_view:   { label: "Vue des tâches", hint: "Deux paumes ouvertes écartées, puis rapprochez-les. Ensuite : ☝️ pointez une fenêtre et 🤏 pincez pour l’ouvrir, ou écartez les paumes pour quitter" },
     grab_window: {
       label: "Déplacer les fenêtres",
-      hint: "Paume, fermez le poing et faites glisser ; ouvrez-le pour lâcher. Ouvrez la main inclinée vers un côté pour envoyer la fenêtre sur cet écran ; un coup vers le haut l’agrandit ; un coup vers le bas puis ouvrir la ferme",
+      hint: "Paume, fermez le poing et faites glisser ; ouvrez-le pour lâcher. Ouvrez la main inclinée vers un côté pour envoyer la fenêtre sur cet écran ; un coup vers le haut l’agrandit ; amenez-la au bord inférieur et lâchez pour la fermer",
     },
     volume:      { label: "Volume", hint: "Trois doigts, levez ou baissez la main" },
     mute:        { label: "Couper le son", hint: "Paume, poing rapide, paume à nouveau (gêne le déplacement des fenêtres)" },
@@ -138,7 +138,7 @@ export const fr: Dict = {
       POWER_OFF: "GestureKey désactivé",
       POWER_ON: "GestureKey activé",
     },
-    zones: {
+    zones: { close: "Lâchez pour fermer",
       maximize: "Lâchez pour agrandir",
       left: "Lâchez pour ancrer à gauche",
       right: "Lâchez pour ancrer à droite",

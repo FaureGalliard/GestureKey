@@ -27,7 +27,7 @@ export interface FrameMsg {
 export interface OwnerInfo {
   volume?: number;                          // VOLUME: current level 0..1
   rate?: number;                            // SCROLL
-  zone?: "maximize" | "left" | "right";     // GRAB_WINDOW: what letting go now would do
+  zone?: "maximize" | "left" | "right" | "close";     // GRAB_WINDOW: what letting go now would do
   hold?: number;                            // MOUSE: still pinch on its way to a right click, 0..1
 }
 

@@ -78,7 +78,7 @@ export const en = {
     task_view:   { label: "Task view", hint: "Two open palms apart, then bring them together. Inside: ☝️ point at a window and 🤏 pinch to open it, or move the palms apart to leave" },
     grab_window: {
       label: "Move windows",
-      hint: "Palm, close your fist and drag; open it to let go. Open it tilted towards a side to send the window to that monitor; flick up to maximize; flick down and open to close",
+      hint: "Palm, close your fist and drag; open it to let go. Open it tilted towards a side to send the window to that monitor; flick up to maximize; drag it to the bottom edge and let go to close",
     },
     volume:      { label: "Volume", hint: "Three fingers, raise or lower your hand" },
     mute:        { label: "Mute", hint: "Palm, quick fist, palm again (clashes with moving windows)" },
@@ -137,7 +137,7 @@ export const en = {
       POWER_OFF: "GestureKey off",
       POWER_ON: "GestureKey on",
     } as Record<string, string>,
-    zones: { maximize: "Let go to maximize", left: "Let go to snap left", right: "Let go to snap right" },
+    zones: { close: "Let go to close", maximize: "Let go to maximize", left: "Let go to snap left", right: "Let go to snap right" },
     holdOff: "Hold to turn GestureKey off",
     holdOn: "Hold to turn GestureKey on",
   },
