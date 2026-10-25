@@ -72,6 +72,7 @@ export const en = {
   },
 
   gestures: {
+    mouse:       { label: "Mouse", hint: "Point with your index: the cursor follows. Pinch thumb and index to click, pinch and move to drag, hold the pinch for a right click" },
     scroll:      { label: "Scroll", hint: "Two fingers and move your hand: the page follows; a quick flick goes further" },
     zoom:        { label: "Zoom", hint: "Pinch thumb and index, then open or close them" },
     task_view:   { label: "Task view", hint: "Two open palms apart, then bring them together. Inside: ✌️ move to pick, ✊ to open, palms apart to leave" },
@@ -123,7 +124,7 @@ export const en = {
   } as Record<string, string>,
 
   overlay: {
-    live: { SCROLL: "Scrolling", VOLUME: "Volume", ZOOM: "Zoom", GRAB_WINDOW: "Moving window", TASK_VIEW: "✌️ move · ✊ open · ✋✋ apart to leave" } as Record<string, string>,
+    live: { MOUSE: "Mouse · 🤏 to click", SCROLL: "Scrolling", VOLUME: "Volume", ZOOM: "Zoom", GRAB_WINDOW: "Moving window", TASK_VIEW: "✌️ move · ✊ open · ✋✋ apart to leave" } as Record<string, string>,
     toasts: {
       CLOSE_WINDOW: "Window closed",
       WINDOW_TO_MONITOR: "Window moved to the other monitor",

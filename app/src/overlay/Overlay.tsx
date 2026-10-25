@@ -1,7 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  ArrowUpDown, Camera, LayoutGrid, Maximize2, MonitorUp, Move, Pause, PanelLeft, PanelRight, Power, PowerOff,
+  ArrowUpDown, Camera, LayoutGrid, Maximize2, MonitorUp, MousePointer2, Move, Pause, PanelLeft, PanelRight, Power, PowerOff,
   Volume2, VolumeX, X, ZoomIn,
   type LucideIcon,
 } from "lucide-react";
@@ -16,7 +16,7 @@ const EASE = [0.32, 0.72, 0, 1] as const;
 
 /** Continuous gestures: shown for as long as they own the hand. */
 const LIVE: Record<string, LucideIcon> = {
-  SCROLL: ArrowUpDown, VOLUME: Volume2, ZOOM: ZoomIn, GRAB_WINDOW: Move, TASK_VIEW: LayoutGrid,
+  SCROLL: ArrowUpDown, VOLUME: Volume2, ZOOM: ZoomIn, GRAB_WINDOW: Move, TASK_VIEW: LayoutGrid, MOUSE: MousePointer2,
 };
 
 /** One-shot gestures: a short toast. Continuous ones are covered by LIVE. */
@@ -40,7 +40,7 @@ function pick(frame: FrameMsg | null, toast: Item | null, t: Dict): Item | null 
   const live = frame?.owner ? LIVE[frame.owner] : undefined;
   if (live) {
     return { kind: "live", key: `live-${frame!.owner}`, icon: live, label: t.overlay.live[frame!.owner!] ?? frame!.owner!,
-             level: frame!.owner_info?.volume };
+             level: frame!.owner_info?.volume ?? frame!.owner_info?.hold };
   }
   return toast;
 }

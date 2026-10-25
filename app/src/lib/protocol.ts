@@ -28,6 +28,7 @@ export interface OwnerInfo {
   volume?: number;                          // VOLUME: current level 0..1
   rate?: number;                            // SCROLL
   zone?: "maximize" | "left" | "right";     // GRAB_WINDOW: what letting go now would do
+  hold?: number;                            // MOUSE: still pinch on its way to a right click, 0..1
 }
 
 export interface ArmingInfo {
@@ -82,13 +83,13 @@ export interface EngineConfig {
 
 /** Gestures the user can switch on/off, in display order. Their texts live in i18n. */
 export const GESTURE_KEYS = [
-  "scroll", "zoom", "task_view", "grab_window", "volume", "mute", "pause", "power", "screenshot",
+  "mouse", "scroll", "zoom", "task_view", "grab_window", "volume", "mute", "pause", "power", "screenshot",
 ] as const;
 
 export type GestureKey = (typeof GESTURE_KEYS)[number];
 
 export const GESTURE_GROUPS: { id: "navigate" | "windows" | "media" | "other"; keys: GestureKey[] }[] = [
-  { id: "navigate", keys: ["scroll", "zoom", "task_view"] },
+  { id: "navigate", keys: ["mouse", "scroll", "zoom", "task_view"] },
   { id: "windows",  keys: ["grab_window"] },
   { id: "media",    keys: ["volume", "mute", "pause"] },
   { id: "other",    keys: ["screenshot", "power"] },

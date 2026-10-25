@@ -73,6 +73,7 @@ export const fr: Dict = {
   },
 
   gestures: {
+    mouse:       { label: "Souris", hint: "Pointez avec l’index : le curseur suit. Pincez pouce et index pour cliquer, pincez et bougez pour glisser, maintenez pour un clic droit" },
     scroll:      { label: "Défiler", hint: "Deux doigts et bougez la main : la page suit ; un geste rapide va plus loin" },
     zoom:        { label: "Zoom", hint: "Pincez le pouce et l’index, puis écartez-les ou rapprochez-les" },
     task_view:   { label: "Vue des tâches", hint: "Deux paumes ouvertes écartées, puis rapprochez-les. Ensuite : ✌️ bougez pour choisir, ✊ pour ouvrir, écartez les paumes pour quitter" },
@@ -124,7 +125,7 @@ export const fr: Dict = {
   },
 
   overlay: {
-    live: { SCROLL: "Défilement", VOLUME: "Volume", ZOOM: "Zoom", GRAB_WINDOW: "Déplacement de la fenêtre", TASK_VIEW: "✌️ choisir · ✊ ouvrir · ✋✋ écarter pour quitter" },
+    live: { MOUSE: "Souris · 🤏 pour cliquer", SCROLL: "Défilement", VOLUME: "Volume", ZOOM: "Zoom", GRAB_WINDOW: "Déplacement de la fenêtre", TASK_VIEW: "✌️ choisir · ✊ ouvrir · ✋✋ écarter pour quitter" },
     toasts: {
       CLOSE_WINDOW: "Fenêtre fermée",
       WINDOW_TO_MONITOR: "Fenêtre envoyée sur l’autre écran",
