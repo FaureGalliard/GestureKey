@@ -24,3 +24,4 @@ arquitecture.txt
 *.tsbuildinfo
 *.log
 engine/pyinstaller.log
+app/tauri-build.log
