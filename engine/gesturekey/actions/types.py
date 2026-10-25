@@ -75,6 +75,14 @@ class CursorMove:
 
 
 @dataclass(frozen=True)
+class CursorJump:
+    """Take back (undo_dx, undo_dy) — the start of the flick — then hop to the next monitor that way."""
+    direction: Literal["left", "right"]
+    undo_dx: float = 0.0
+    undo_dy: float = 0.0
+
+
+@dataclass(frozen=True)
 class MouseButton:
     """Press / release a button where the cursor is shown (the glide is finished first)."""
     button: Literal["left", "right"]
@@ -82,4 +90,4 @@ class MouseButton:
 
 
 Action = Union[Hotkey, Scroll, WindowGrab, WindowMove, WindowRelease, WindowSendTo, VolumeBegin, VolumeSet,
-               CursorBegin, CursorMove, MouseButton]
+               CursorBegin, CursorMove, CursorJump, MouseButton]

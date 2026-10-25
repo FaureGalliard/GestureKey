@@ -62,3 +62,27 @@ def test_opening_the_hand_lets_go_of_the_cursor(clock):
     _point(clock, 0.3)
     clock.run(PALM, 0.1)
     assert clock.arbiter.owner is None
+
+
+def test_quick_sideways_flick_jumps_to_the_next_monitor(clock):
+    from gesturekey.actions.types import CursorJump
+    _point(clock, 0.3)
+    _point(clock, 0.1, wrist=(0.5, 0.7), to=(0.75, 0.7))          # 2.5 image widths/s
+    jumps = [a for a in clock.actions if isinstance(a, CursorJump)]
+    assert [j.direction for j in jumps] == ["right"]
+    assert "MOUSE_TO_MONITOR" in clock.events
+
+
+def test_moving_at_a_normal_pace_never_jumps(clock):
+    from gesturekey.actions.types import CursorJump
+    _point(clock, 0.3)
+    _point(clock, 0.6, wrist=(0.5, 0.7), to=(0.8, 0.7))           # 0.5 image widths/s
+    assert not [a for a in clock.actions if isinstance(a, CursorJump)]
+
+
+def test_jump_target_keeps_the_relative_spot():
+    from gesturekey.actions.executor import cursor_jump_target
+    mons = [((0, 0, 1366, 768), None), ((1366, 0, 2732, 768), None), ((-1366, 0, 0, 768), None)]
+    assert cursor_jump_target(mons, (683, 384), "right") == (2049, 384)
+    assert cursor_jump_target(mons, (683, 384), "left") == (-683, 384)
+    assert cursor_jump_target(mons, (2000, 100), "right") == (2000, 100)   # no monitor beyond

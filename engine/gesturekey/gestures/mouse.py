@@ -3,13 +3,16 @@ import math
 from collections import deque
 from typing import Any, Deque, Dict, Optional, Tuple
 
-from gesturekey.actions.types import CursorBegin, CursorMove, MouseButton
+from gesturekey.actions.types import CursorBegin, CursorJump, CursorMove, MouseButton
 from gesturekey.config import ContinuousConfig, MouseConfig
 from gesturekey.core.geometry import dist, palm_center, palm_length
 from gesturekey.core.types import GestureEvent, Hand, HandState, Point
 from gesturekey.gestures.base import Output
 from gesturekey.gestures.continuous import ContinuousGesture
 
+FLICK_SPAN  = 0.05   # s of motion that measure a flick's speed
+FLICK_BLOCK = 0.35   # s: the rest of that same motion does not move the cursor
+DOMINANCE   = 1.5    # a flick's sideways speed must beat the vertical one by this much
 POINTING_REACH = 1.30   # index tip ↔ wrist (palm lengths) to count as ☝️: fists stay below ~0.95, pointing ~1.96
 
 
@@ -38,6 +41,8 @@ class Pointer:
       pinch and let go                 → left click (twice quickly = double click)
       pinch and move                   → drag (left button held)
       pinch held still `right_hold`    → right click
+    A quick sideways flick jumps the cursor to the monitor that way, like
+    flicking a window there (same relative spot on the new monitor).
     """
 
     def __init__(self, cfg: MouseConfig) -> None:
@@ -63,6 +68,7 @@ class Pointer:
         here = palm_center(hand)
         dx, dy = here[0] - self._last[0], here[1] - self._last[1]
         self._last = here
+        self._trail.append((now, here))
 
         gap = pinch_gap(hand)
         pinching = self._pinch_at is not None
@@ -85,8 +91,32 @@ class Pointer:
                 return "right"
             else:
                 return None                                       # held still: the cursor stays put
+        if self._flick(now, out) or now < self._block_until:
+            return None
         self._move(dx, dy, dt, out)
         return None
+
+    def _flick(self, now: float, out: Output) -> bool:
+        cfg = self._cfg
+        t1, p1 = self._trail[-1]
+        past = [(t, p) for t, p in self._trail if t1 - t >= FLICK_SPAN]
+        if not past:
+            return False
+        t0, p0 = past[-1]
+        vx, vy = (p1[0] - p0[0]) / (t1 - t0), (p1[1] - p0[1]) / (t1 - t0)
+        if not self._flick_ready:
+            self._flick_ready = abs(vx) < 0.5 * cfg.flick_speed     # the previous flick is over
+            return False
+        if abs(vx) < cfg.flick_speed or abs(vx) < DOMINANCE * abs(vy):
+            return False
+        # the start of the flick already moved the cursor: take that back, then jump
+        undo = [m for t, m in self._sent if now - t <= FLICK_SPAN * 3]
+        out.emit(GestureEvent.MOUSE_TO_MONITOR,
+                 CursorJump("right" if vx > 0 else "left",
+                            -sum(m[0] for m in undo), -sum(m[1] for m in undo)))
+        self._sent.clear()
+        self._flick_ready, self._block_until = False, now + FLICK_BLOCK
+        return True
 
     def end(self, now: float, out: Output) -> None:
         """The hand is done: release a drag and undo the moment of putting the hand down."""
@@ -125,6 +155,9 @@ class Pointer:
         self._dragging = False
         self._consumed = False
         self._closing = 0
+        self._flick_ready = True
+        self._block_until = 0.0
+        self._trail: Deque[Tuple[float, Point]] = deque(maxlen=12)
         self._sent: Deque[Tuple[float, Tuple[float, float]]] = deque(maxlen=120)
 
 

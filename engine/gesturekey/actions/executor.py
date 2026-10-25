@@ -8,7 +8,7 @@ from typing import Callable, Iterable, Optional
 from gesturekey.actions import win32
 from gesturekey.actions.audio import MasterVolume
 from gesturekey.actions.types import (
-    Action, CursorBegin, CursorMove, Hotkey, MouseButton, Scroll, VolumeBegin, VolumeSet, WindowGrab,
+    Action, CursorBegin, CursorJump, CursorMove, Hotkey, MouseButton, Scroll, VolumeBegin, VolumeSet, WindowGrab,
     WindowMove, WindowRelease, WindowSendTo,
 )
 from gesturekey.actions.window_physics import WindowAnimator
@@ -132,6 +132,14 @@ class ActionExecutor:
             elif landing and landing.action in ("left", "right"):
                 win32.hotkey(("win", landing.action))
 
+    def _jump(self, action: CursorJump):
+        """Same relative spot on the neighbouring monitor (or stay, at the desktop's edge)."""
+        mons = win32.monitors()
+        (l, t, r, b), _work = self._monitor_at(*self._cursor_to)
+        x = min(max(self._cursor_to[0] + action.undo_dx * (r - l) * self.speed, l), r - 1)
+        y = min(max(self._cursor_to[1] + action.undo_dy * (r - l) * self.speed, t), b - 1)
+        return cursor_jump_target(mons, (x, y), action.direction)
+
     @staticmethod
     def _monitor_at(x: float, y: float):
         mons = win32.monitors()
@@ -186,6 +194,9 @@ class ActionExecutor:
             vl, vt, vw, vh = win32.virtual_screen()
             self._cursor_to[0] = min(max(self._cursor_to[0] + action.dx * (r - l) * self.speed, vl), vl + vw - 1)
             self._cursor_to[1] = min(max(self._cursor_to[1] + action.dy * (r - l) * self.speed, vt), vt + vh - 1)
+        elif isinstance(action, CursorJump):
+            if self._cursor_to is not None:
+                self._cursor_to = list(self._jump(action))
         elif isinstance(action, MouseButton):
             if self._cursor_gliding:
                 self._glide_cursor(0.0, snap=True)          # click where the cursor is shown
@@ -206,3 +217,19 @@ class ActionExecutor:
             self._anim.release(action.vx * (r - l) * self.speed, action.vy * (b - t) * self.speed,
                                action.throw)
             # the animation loop glides it to the landing spot and applies the result
+
+
+def cursor_jump_target(monitors, pos, direction: str):
+    """Where a cursor at `pos` lands when flicked `direction`: same relative spot one monitor over."""
+    x, y = pos
+    here = next((m for m in monitors if m[0][0] <= x < m[0][2] and m[0][1] <= y < m[0][3]), monitors[0])
+    l, t, r, b = here[0]
+    sign = 1 if direction == "right" else -1
+    others = [m for m in monitors
+              if m is not here and sign * ((m[0][0] + m[0][2]) / 2 - (l + r) / 2) > 0
+              and m[0][1] < b and m[0][3] > t]
+    if not others:
+        return (x, y)
+    nl, nt, nr, nb = min(others, key=lambda m: abs((m[0][0] + m[0][2]) / 2 - (l + r) / 2))[0]
+    fx, fy = (x - l) / (r - l), (y - t) / (b - t)
+    return (nl + fx * (nr - nl), nt + fy * (nb - nt))

@@ -32,6 +32,7 @@ class GestureEvent(str, Enum):
     MOUSE_CLICK          = "MOUSE_CLICK"
     MOUSE_RIGHT_CLICK    = "MOUSE_RIGHT_CLICK"
     MOUSE_DRAG           = "MOUSE_DRAG"
+    MOUSE_TO_MONITOR     = "MOUSE_TO_MONITOR"
     MUTE_TOGGLE          = "MUTE_TOGGLE"
     TASK_VIEW            = "TASK_VIEW"
     TASK_VIEW_OPEN       = "TASK_VIEW_OPEN"
