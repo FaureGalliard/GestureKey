@@ -1220,7 +1220,7 @@ dependencies = [
 
 [[package]]
 name = "gesturekey"
-version = "3.0.0"
+version = "3.0.0-beta.1"
 dependencies = [
  "serde",
  "serde_json",
