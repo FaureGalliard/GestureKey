@@ -77,7 +77,7 @@ export const GESTURES = {
   scroll:       { label: "Desplazar",        hint: "Dos dedos y mueve la mano: la página la sigue; rápido llega más lejos" },
   zoom:         { label: "Zoom",             hint: "Junta el pulgar y el índice, ábrelos o ciérralos" },
   task_view:    { label: "Vista de tareas",  hint: "Dos palmas abiertas separadas, júntalas" },
-  grab_window:  { label: "Mover ventanas",   hint: "Palma, cierra el puño y arrastra; ábrela para soltar. Lánzala hacia otro monitor, contra el borde para acoplar, súbela arriba para maximizar, abajo para cerrar" },
+  grab_window:  { label: "Mover ventanas",   hint: "Palma, cierra el puño y arrastra; ábrela para soltar. Con el puño cerrado: golpe a un lado = otro monitor, arriba = maximizar, abajo y abrir = cerrar" },
   volume:       { label: "Volumen",          hint: "Tres dedos hacia la cámara, sube o baja la mano" },
   mute:         { label: "Silenciar",        hint: "Palma, puño rápido y palma otra vez (choca con mover ventanas)" },
   pause:        { label: "Reproducir / pausar", hint: "Cuatro dedos un momento y cierra el puño" },
@@ -119,6 +119,8 @@ export const EVENT_LABELS: Record<string, string> = {
   MEDIA_PLAY_PAUSE: "Reproducir / pausar",
   GRAB_WINDOW_START: "Ventana agarrada",
   GRAB_WINDOW_RELEASED: "Ventana soltada",
+  WINDOW_TO_MONITOR: "Ventana al otro monitor",
+  WINDOW_MAXIMIZED: "Ventana maximizada",
   POWER_OFF: "GestureKey apagado",
   POWER_ON: "GestureKey encendido",
 };

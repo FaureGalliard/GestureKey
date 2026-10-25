@@ -74,6 +74,20 @@ def test_upward_throw_maximizes():
     assert _settle(a).action == "maximize"
 
 
+def test_send_right_and_back_keeps_the_relative_position():
+    a = _anim()                                          # x = 400 on the centre monitor
+    assert a.send("right") == "moved"
+    assert 1366 <= a.tx and a.tx + 600 <= 2732
+    assert abs((a.tx - 1366) - 400) < 2                  # same spot on the new monitor
+    assert a.send("left") == "moved" and abs(a.tx - 400) < 2
+    assert a.send("left") == "moved" and -1366 <= a.tx < 0
+
+
+def test_send_past_the_last_monitor_is_an_edge():
+    a = _anim((1800, 200, 2400, 600))
+    assert a.send("right") == "edge"
+
+
 def test_window_never_leaves_the_desktop():
     a = _anim()
     for _ in range(100):
@@ -116,3 +130,25 @@ def test_executor_animates_the_window_at_display_rate(monkeypatch):
     moves = [c for c in calls if len(c) == 3]
     assert len(moves) > 30                                # many more updates than camera frames
     assert 1366 <= moves[-1][1] <= 2732 - 600             # landed inside the right monitor
+
+
+def test_executor_sends_the_held_window_to_the_next_monitor(monkeypatch):
+    import time
+    from gesturekey.actions import executor as ex_mod
+    from gesturekey.actions.types import WindowGrab, WindowSendTo
+
+    calls = []
+    fake = ex_mod.win32
+    monkeypatch.setattr(fake, "AVAILABLE", True)
+    monkeypatch.setattr(fake, "foreground_window", lambda: 42)
+    monkeypatch.setattr(fake, "restore_if_maximized", lambda h: None)
+    monkeypatch.setattr(fake, "monitors", lambda: LAYOUT)
+    monkeypatch.setattr(fake, "window_rect", lambda h: (400, 200, 1000, 600))
+    monkeypatch.setattr(fake, "set_window_pos", lambda h, x, y: calls.append((x, y)))
+    monkeypatch.setattr(fake, "hotkey", lambda keys: calls.append(keys))
+
+    ex = ex_mod.ActionExecutor()
+    ex.submit([WindowGrab(), WindowSendTo("right")])
+    time.sleep(0.5)
+    ex.stop()
+    assert calls and 1366 <= calls[-1][0] <= 2732 - 600     # animated into the right monitor

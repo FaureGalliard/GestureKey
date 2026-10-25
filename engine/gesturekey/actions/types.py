@@ -43,6 +43,12 @@ class WindowRelease:
 
 
 @dataclass(frozen=True)
+class WindowSendTo:
+    """While dragging: jump to the neighbouring monitor (left/right) or maximize (up)."""
+    direction: Literal["left", "right", "up"]
+
+
+@dataclass(frozen=True)
 class VolumeBegin:
     """Remember the current system volume as the reference for VolumeSet."""
 
@@ -52,4 +58,4 @@ class VolumeSet:
     delta: float              # level = reference ± delta, clamped to 0..1
 
 
-Action = Union[Hotkey, Scroll, WindowGrab, WindowMove, WindowRelease, VolumeBegin, VolumeSet]
+Action = Union[Hotkey, Scroll, WindowGrab, WindowMove, WindowRelease, WindowSendTo, VolumeBegin, VolumeSet]

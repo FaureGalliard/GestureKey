@@ -1,7 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  ArrowUpDown, Camera, LayoutGrid, Move, Pause, Power, PowerOff, Volume2, VolumeX, X, ZoomIn,
+  ArrowUpDown, Camera, LayoutGrid, Maximize2, MonitorUp, Move, Pause, Power, PowerOff, Volume2, VolumeX, X, ZoomIn,
   type LucideIcon,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -22,6 +22,8 @@ const LIVE: Record<string, { icon: LucideIcon; label: string }> = {
 /** One-shot gestures: a short toast. Continuous ones are covered by LIVE. */
 const TOASTS: Record<string, { icon: LucideIcon; label: string }> = {
   CLOSE_WINDOW:     { icon: X,          label: "Ventana cerrada" },
+  WINDOW_TO_MONITOR: { icon: MonitorUp, label: "Ventana al otro monitor" },
+  WINDOW_MAXIMIZED: { icon: Maximize2,  label: "Ventana maximizada" },
   SCREENSHOT:       { icon: Camera,     label: "Captura guardada" },
   TASK_VIEW:        { icon: LayoutGrid, label: "Vista de tareas" },
   MUTE_TOGGLE:      { icon: VolumeX,    label: "Silenciar" },

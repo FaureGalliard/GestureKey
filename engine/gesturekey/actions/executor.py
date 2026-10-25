@@ -7,7 +7,7 @@ from typing import Callable, Iterable, Optional
 from gesturekey.actions import win32
 from gesturekey.actions.audio import MasterVolume
 from gesturekey.actions.types import (
-    Action, Hotkey, Scroll, VolumeBegin, VolumeSet, WindowGrab, WindowMove, WindowRelease,
+    Action, Hotkey, Scroll, VolumeBegin, VolumeSet, WindowGrab, WindowMove, WindowRelease, WindowSendTo,
 )
 from gesturekey.actions.window_physics import WindowAnimator
 
@@ -123,6 +123,20 @@ class ActionExecutor:
             if self._anim and self._anim.active:
                 (l, t, r, b), _work = self._anim.start_monitor
                 self._anim.move(action.dx * (r - l) * self.speed, action.dy * (b - t) * self.speed)
+        elif isinstance(action, WindowSendTo):
+            hwnd, anim = self._hwnd, self._anim
+            if hwnd is None or anim is None or not anim.active:
+                return
+            if action.direction == "up":
+                anim.finish()
+                self._hwnd = None
+                win32.maximize(hwnd)
+            elif anim.send(action.direction) == "edge":
+                # no monitor that way: snap to that half of this one and let go
+                anim.finish()
+                self._hwnd = None
+                win32.set_window_pos(hwnd, round(anim.tx), round(anim.ty))
+                win32.hotkey(("win", action.direction))
         elif isinstance(action, VolumeBegin):
             self._volume_ref = self.volume_level = self._volume.get()
         elif isinstance(action, VolumeSet):

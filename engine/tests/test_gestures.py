@@ -185,18 +185,60 @@ def test_fast_drag_moves_the_window_further_than_slow(clock):
     slow = Clock(clock.arbiter.__class__(__import__("gesturekey.config", fromlist=["x"]).GesturesConfig()))
     slow.run(PALM, 0.3, wrist=(0.3, 0.7)).run(FIST, 0.2, wrist=(0.3, 0.7)).run(FIST, 1.0, wrist=(0.3, 0.7), to=(0.5, 0.7))
     fast = Clock(clock.arbiter.__class__(__import__("gesturekey.config", fromlist=["x"]).GesturesConfig()))
-    fast.run(PALM, 0.3, wrist=(0.3, 0.7)).run(FIST, 0.2, wrist=(0.3, 0.7)).run(FIST, 0.1, wrist=(0.3, 0.7), to=(0.5, 0.7))
+    # fast, but below the flick speed (≈ 1.2 image units/s): accelerated drag, not a flick
+    fast.run(PALM, 0.3, wrist=(0.3, 0.7)).run(FIST, 0.2, wrist=(0.3, 0.7)).run(FIST, 0.17, wrist=(0.3, 0.7), to=(0.5, 0.7))
     travel = lambda c: sum(a.dx for a in c.actions if isinstance(a, WindowMove))
     assert travel(slow) == pytest.approx(0.2, rel=0.15)      # slow: 1:1
-    assert travel(fast) > 2 * travel(slow)                   # fast: accelerated, crosses monitors
+    assert travel(fast) > 1.8 * travel(slow)                 # fast: accelerated
 
 
-def test_throwing_a_window_down_closes_it(clock):
-    clock.run(PALM, 0.3, wrist=(0.5, 0.4)).run(FIST, 0.2, wrist=(0.5, 0.4))
-    clock.run(FIST, 0.1, wrist=(0.5, 0.4), to=(0.5, 0.7))    # 3 image heights/s, downwards
-    clock.run(PALM, 0.05, wrist=(0.5, 0.7))
+def _grab(clock, at=(0.5, 0.5)):
+    clock.run(PALM, 0.3, wrist=at).run(FIST, 0.2, wrist=at)
+
+
+def test_flick_sideways_sends_the_window_to_the_next_monitor(clock):
+    from gesturekey.actions.types import WindowSendTo
+    _grab(clock)
+    clock.run(FIST, 0.1, wrist=(0.5, 0.5), to=(0.75, 0.5))   # 2.5 image widths/s to the right
+    sends = [a for a in clock.actions if isinstance(a, WindowSendTo)]
+    assert [a.direction for a in sends] == ["right"]          # once, not once per frame
+    assert owner(clock) == "GRAB_WINDOW"                      # still holding: can flick again
+    clock.run(FIST, 0.4, wrist=(0.75, 0.5))                   # hand stops…
+    clock.run(FIST, 0.1, wrist=(0.75, 0.5), to=(0.5, 0.5))    # …and flicks back
+    sends = [a for a in clock.actions if isinstance(a, WindowSendTo)]
+    assert [a.direction for a in sends] == ["right", "left"]
+
+
+def test_flick_up_maximizes(clock):
+    from gesturekey.actions.types import WindowSendTo
+    _grab(clock, at=(0.5, 0.7))
+    clock.run(FIST, 0.1, wrist=(0.5, 0.7), to=(0.5, 0.45))
+    assert [a.direction for a in clock.actions if isinstance(a, WindowSendTo)] == ["up"]
+    assert "WINDOW_MAXIMIZED" in clock.events
+
+
+def test_flick_down_then_open_closes(clock):
+    _grab(clock, at=(0.5, 0.4))
+    clock.run(FIST, 0.1, wrist=(0.5, 0.4), to=(0.5, 0.65))   # fast, downwards: arms closing
+    clock.run(PALM, 0.05, wrist=(0.5, 0.65))
     assert _release(clock.actions)[-1].snap == "close"
     assert "CLOSE_WINDOW" in clock.events
+
+
+def test_dragging_down_calmly_never_closes(clock):
+    _grab(clock, at=(0.5, 0.3))
+    clock.run(FIST, 1.0, wrist=(0.5, 0.3), to=(0.5, 0.8))    # 0.5 image heights/s
+    clock.run(PALM, 0.05, wrist=(0.5, 0.8))
+    assert "CLOSE_WINDOW" not in clock.events
+    assert _release(clock.actions)[-1].snap is None
+
+
+def test_flick_down_without_opening_does_not_close(clock):
+    _grab(clock, at=(0.5, 0.4))
+    clock.run(FIST, 0.1, wrist=(0.5, 0.4), to=(0.5, 0.65))
+    clock.run(FIST, 0.8, wrist=(0.5, 0.65))                   # keeps the fist: changed its mind
+    clock.run(PALM, 0.05, wrist=(0.5, 0.65))
+    assert "CLOSE_WINDOW" not in clock.events
 
 
 def test_pause_tolerates_a_pose_in_passing(clock):

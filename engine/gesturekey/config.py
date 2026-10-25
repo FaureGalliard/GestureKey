@@ -8,7 +8,7 @@ from typing import Any, Dict
 
 
 #: Bump when tuning defaults change meaning, so old settings files don't pin stale values.
-SCHEMA = 3
+SCHEMA = 4
 
 
 def resource_path(relative: str) -> Path:
@@ -142,8 +142,9 @@ class GrabWindowConfig:
     accel_from:   float = 0.35   # image units/s; slower than this moves 1:1
     max_gain:     float = 5.0
     deadzone:     float = 0.0015
-    throw_speed:  float = 1.4    # release velocity (image units/s) that snaps / maximizes
-    close_speed:  float = 1.8    # a downward throw this fast closes the window (destructive: higher)
+    flick_speed:  float = 1.5    # image units/s: a flick while holding sends to a monitor / maximizes
+    throw_speed:  float = 1.4    # release velocity that counts as a throw for the glide
+    close_speed:  float = 1.8    # a downward flick this fast arms closing (destructive: higher)
     lost_timeout: float = 0.60   # release if the fist is lost this long (motion blur)
     cooldown:     float = 0.40
 

@@ -3,7 +3,7 @@ import math
 from collections import deque
 from typing import Deque, Optional, Tuple
 
-from gesturekey.actions.types import WindowGrab, WindowMove, WindowRelease
+from gesturekey.actions.types import WindowGrab, WindowMove, WindowRelease, WindowSendTo
 from gesturekey.config import GrabWindowConfig
 from gesturekey.core.cooldown import CooldownManager
 from gesturekey.core.types import FrameData, GestureEvent, HandState, Point
@@ -11,6 +11,9 @@ from gesturekey.gestures.base import Gesture, Output
 
 THROW_WINDOW = 0.15   # seconds of motion before the release that define the throw
 THROW_SPAN   = 0.05   # velocity is measured over spans this long, and the peak wins
+DOMINANCE    = 1.5    # a flick's main axis must be this much faster than the other
+FLICK_BLOCK  = 0.35   # s: after a flick, the rest of that same motion does not drag
+CLOSE_WINDOW = 0.5    # s: after a downward flick, opening the hand this soon closes
 
 
 class _Phase:
@@ -23,15 +26,17 @@ class _Phase:
 class GrabWindowGesture(Gesture):
     """
     PALM (≥ min_arm_time) → FIST (≥ hold_time) : grab the foreground window
-    FIST + move                                : drag it
-    FIST → PALM                                : release where it is — or, if the
-                                                 hand was thrown fast, snap to that
-                                                 side, maximize (up) or close (down)
-
-    Drag uses pointer-style acceleration: slow moves are 1:1 with one screen,
-    fast moves go further, so a window crosses several monitors without the
-    camera having to see the whole desktop.
+    FIST + move                                : drag it (pointer acceleration)
+    flick → / ← while holding                  : send it to the next monitor that way
+                                                 (at the desktop edge: snap to that half)
+    flick ↑ while holding                      : maximize
+    flick ↓, then open the hand within 0.5 s   : close
+    FIST → PALM                                : release where it is
     fist lost ≥ lost_timeout                   : release in place
+
+    Flicks are detected *while* holding, every frame, from the last ~50 ms of
+    motion. Judging them at release missed them: the hand slows down as it
+    opens and the open palm is confirmed a few frames later, after the peak.
 
     Landmarks arrive already smoothed by the tracker. Fast moves blur the fist
     and the classifier briefly loses it, so only a clear PALM releases at
@@ -91,6 +96,11 @@ class GrabWindowGesture(Gesture):
                 self._last_seen = now
             elif now - self._last_seen > cfg.lost_timeout:
                 return self._drop(out)
+            if self._flick(now, out):
+                return
+            if now < self._block_until:              # still inside a flick: do not drag with it
+                self._last, self._last_t = wrist, now
+                return
             # keep following the wrist even through a blurred frame
             if self._last is not None:
                 dx, dy = wrist[0] - self._last[0], wrist[1] - self._last[1]
@@ -98,6 +108,36 @@ class GrabWindowGesture(Gesture):
                     gain = self._gain(math.hypot(dx, dy), now - self._last_t)
                     out.actions.append(WindowMove(dx * gain, dy * gain))
                     self._last, self._last_t = wrist, now
+
+    def _velocity(self, now: float) -> Tuple[float, float]:
+        """Wrist velocity (image units/s) over the last ~THROW_SPAN."""
+        last_t, last_p = self._trail[-1]
+        for t, p in reversed(self._trail):
+            if last_t - t >= THROW_SPAN:
+                return (last_p[0] - p[0]) / (last_t - t), (last_p[1] - p[1]) / (last_t - t)
+        return 0.0, 0.0
+
+    def _flick(self, now: float, out: Output) -> bool:
+        """Returns True when the grab ended because of the flick."""
+        cfg = self._cfg
+        vx, vy = self._velocity(now)
+        speed = math.hypot(vx, vy)
+        if not self._flick_ready:
+            self._flick_ready = speed < 0.5 * cfg.flick_speed     # the previous flick is over
+            return False
+        if abs(vx) >= cfg.flick_speed and abs(vx) >= DOMINANCE * abs(vy):
+            out.emit(GestureEvent.WINDOW_TO_MONITOR, WindowSendTo("right" if vx > 0 else "left"))
+        elif vy <= -cfg.flick_speed and abs(vy) >= DOMINANCE * abs(vx):
+            out.emit(GestureEvent.WINDOW_MAXIMIZED, WindowSendTo("up"))
+            self.reset()                              # maximized: nothing left to drag
+            return True
+        elif vy >= cfg.close_speed and vy >= DOMINANCE * abs(vx):
+            self._close_until = now + CLOSE_WINDOW    # armed; opening the hand now closes
+        else:
+            return False
+        self._flick_ready = False
+        self._block_until = now + FLICK_BLOCK
+        return False
 
     def on_lost(self, now: float, out: Output) -> None:
         if self._phase == _Phase.GRABBED:
@@ -124,13 +164,13 @@ class GrabWindowGesture(Gesture):
         return vx, vy
 
     def _let_go(self, now: float, out: Output) -> None:
-        vx, vy = self._throw(now)
-        speed = math.hypot(vx, vy)
-        if vy >= self._cfg.close_speed and vy >= abs(vx):     # thrown away downwards
+        if now <= self._close_until:                  # flicked down, then opened: throw it away
             out.emit(GestureEvent.CLOSE_WINDOW, WindowRelease("close"))
             return self.reset()
-        # the window glides with the (accelerated) release velocity; where it lands —
-        # another monitor, a desktop edge, the top — is decided by the window physics
+        vx, vy = self._throw(now)
+        speed = math.hypot(vx, vy)
+        # a small glide with the release velocity; the window physics also maximizes
+        # a window that was dragged into the top of a monitor
         gain = self._gain(speed, 1.0)
         out.emit(GestureEvent.GRAB_WINDOW_RELEASED,
                  WindowRelease(None, vx * gain, vy * gain, throw=speed >= self._cfg.throw_speed))
@@ -157,3 +197,6 @@ class GrabWindowGesture(Gesture):
         self._last_t:     float           = 0.0
         self._last_seen:  float           = 0.0
         self._trail: Deque[Tuple[float, Point]] = deque(maxlen=30)
+        self._flick_ready = True
+        self._block_until = 0.0
+        self._close_until = float("-inf")

@@ -90,6 +90,32 @@ class WindowAnimator:
         now = (round(self.x), round(self.y))
         return now if now != before else None
 
+    def send(self, direction: str) -> str:
+        """
+        Jump to the neighbouring monitor (animated), keeping the window's relative
+        position in the work area. Returns "moved", or "edge" when there is no
+        monitor that way.
+        """
+        here = self.monitor_at(self.tx + self.w / 2, self.ty + self.h / 2)
+        hl, ht, hr, hb = here[0]
+        hcx = (hl + hr) / 2
+        sign = 1 if direction == "right" else -1
+        candidates = [m for m in self.monitors
+                      if m is not here
+                      and sign * ((m[0][0] + m[0][2]) / 2 - hcx) > 0          # that way
+                      and m[0][1] < hb and m[0][3] > ht]                      # overlaps vertically
+        if not candidates:
+            return "edge"
+        target = min(candidates, key=lambda m: abs((m[0][0] + m[0][2]) / 2 - hcx))
+        (wl, wt, wr, wb), (nl, nt, nr, nb) = here[1], target[1]
+        rx = (self.tx - wl) / max(1.0, (wr - wl) - self.w)
+        ry = (self.ty - wt) / max(1.0, (wb - wt) - self.h)
+        x = nl + max(0.0, min(1.0, rx)) * max(0.0, (nr - nl) - self.w)
+        y = nt + max(0.0, min(1.0, ry)) * max(0.0, (nb - nt) - self.h)
+        self.tx, self.ty = self._fit(x, y, target)
+        self._pushed_top = False
+        return "moved"
+
     # ── release ──────────────────────────────────────────────────────────────
 
     def release(self, vx: float, vy: float, throw: bool) -> Landing:
