@@ -11,6 +11,7 @@ use std::io::{BufRead, BufReader, Read};
 use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
 use std::sync::Mutex;
+use std::time::{Duration, Instant};
 
 use tauri::{AppHandle, Manager};
 
@@ -68,7 +69,7 @@ pub fn spawn(app: &AppHandle) -> Result<(), String> {
     // Pipe the engine's output instead of inheriting it: with CREATE_NO_WINDOW an inherited
     // console handle is invalid in the child and its first print fails with EBADF.
     let mut child = command(app)?
-        .stdin(Stdio::null())
+        .stdin(Stdio::piped()) // closing it asks the engine to shut down cleanly
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()
@@ -93,9 +94,21 @@ fn forward(stream: impl Read + Send + 'static) {
     });
 }
 
+/// Graceful first (close stdin → the engine releases the camera and the recording),
+/// kill only if it hasn't exited in time.
 pub fn kill(app: &AppHandle) {
-    if let Some(mut child) = app.state::<EngineProcess>().0.lock().unwrap().take() {
-        let _ = child.kill();
-        let _ = child.wait();
+    let Some(mut child) = app.state::<EngineProcess>().0.lock().unwrap().take() else {
+        return;
+    };
+    drop(child.stdin.take());
+    let deadline = Instant::now() + Duration::from_millis(2500);
+    while Instant::now() < deadline {
+        match child.try_wait() {
+            Ok(Some(_)) => return,
+            Ok(None) => std::thread::sleep(Duration::from_millis(50)),
+            Err(_) => break,
+        }
     }
+    let _ = child.kill();
+    let _ = child.wait();
 }

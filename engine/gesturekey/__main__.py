@@ -12,6 +12,7 @@ import sys
 from gesturekey import __version__
 from gesturekey.actions.win32 import enable_dpi_awareness
 from gesturekey.config import AppConfig
+from gesturekey.runtime.log import ensure_writable_stdio, log, silence_stdio
 
 
 def main() -> None:
@@ -19,11 +20,12 @@ def main() -> None:
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8765)
     parser.add_argument("--debug", action="store_true", help="show an OpenCV window instead of serving")
-    parser.add_argument("--parent-pid", type=int, help="exit when this process dies (set by the Tauri app)")
+    parser.add_argument("--parent-pid", type=int,
+                        help="set by the Tauri app: stop when stdin closes, exit if this process dies")
     parser.add_argument("--version", action="version", version=__version__)
     args = parser.parse_args()
 
-    _ensure_writable_stdio()
+    ensure_writable_stdio()
     if args.parent_pid:
         _exit_with_parent(args.parent_pid)
     enable_dpi_awareness()
@@ -35,31 +37,27 @@ def main() -> None:
         return
 
     from gesturekey.runtime.server import serve_engine
+    code = 0
     try:
-        asyncio.run(serve_engine(config, args.host, args.port))
+        asyncio.run(serve_engine(config, args.host, args.port, stop_on_stdin_eof=bool(args.parent_pid)))
     except KeyboardInterrupt:
         pass
     except OSError as exc:
-        print(f"[ENGINE] {exc}", file=sys.stderr)
-        sys.exit(1)
-
-
-def _ensure_writable_stdio() -> None:
-    """A process without a console can inherit dead stdio handles; logging must never crash it."""
-    import os
-    for name in ("stdout", "stderr"):
-        stream = getattr(sys, name)
-        try:
-            stream.write("")
-            stream.flush()
-        except (AttributeError, OSError, ValueError):
-            setattr(sys, name, open(os.devnull, "w", encoding="utf-8"))
+        log(f"[ENGINE] {exc}")
+        code = 1
+    finally:
+        silence_stdio()
+    sys.exit(code)
 
 
 def _exit_with_parent(pid: int) -> None:
-    """Never outlive the app: an orphaned engine would keep the camera busy."""
+    """
+    Fallback for when the app dies without closing our stdin: an orphaned
+    engine would keep the camera busy. Normal shutdown goes through stdin EOF.
+    """
     import os
     import threading
+    import time
 
     def watch() -> None:
         if sys.platform == "win32":
@@ -69,9 +67,10 @@ def _exit_with_parent(pid: int) -> None:
             if handle:
                 ctypes.windll.kernel32.WaitForSingleObject(handle, INFINITE)
         else:
-            import time
             while os.getppid() == pid:
                 time.sleep(1.0)
+        time.sleep(3.0)      # give the graceful stdin path a chance first
+        silence_stdio()
         os._exit(0)
 
     threading.Thread(target=watch, name="parent-watch", daemon=True).start()
