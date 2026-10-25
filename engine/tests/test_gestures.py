@@ -360,8 +360,13 @@ def test_sweep_right(clock):
 
 
 def test_a_fist_misread_as_pointing_still_grabs(clock):
-    clock.run(PALM, 0.3).run(HandState.POINT, 0.2)               # the model says POINT, it's a fist
+    clock.run(PALM, 0.3).run(HandState.POINT, 0.2, pose="fist")  # the model says POINT, it's a fist
     assert "GRAB_WINDOW_START" in clock.events
+
+
+def test_palm_then_real_pointing_is_the_mouse_not_a_grab(clock):
+    clock.run(PALM, 0.3).run(HandState.POINT, 0.3, pose="point")
+    assert "GRAB_WINDOW_START" not in clock.events and clock.arbiter.owner.NAME == "MOUSE"
 
 
 def test_pointing_without_the_palm_first_does_not_grab(clock):
