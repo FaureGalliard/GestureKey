@@ -23,7 +23,8 @@ class Recorder:
     def __init__(self, path: Path) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
         self.path = path
-        self._file: Optional[IO[str]] = path.open("a", encoding="utf-8")
+        # line-buffered: the app kills the engine on exit, so nothing may wait in a buffer
+        self._file: Optional[IO[str]] = path.open("a", encoding="utf-8", buffering=1)
 
     @classmethod
     def from_env(cls) -> Optional["Recorder"]:
