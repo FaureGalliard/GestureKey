@@ -11,4 +11,13 @@ export default defineConfig({
     strictPort: true, // the engine only accepts this origin in dev
     watch: { ignored: ["**/src-tauri/**"] },
   },
+  build: {
+    rollupOptions: {
+      // two windows: the app and the feedback overlay
+      input: {
+        main: "index.html",
+        overlay: "overlay.html",
+      },
+    },
+  },
 });

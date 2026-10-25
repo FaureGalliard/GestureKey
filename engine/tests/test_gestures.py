@@ -10,11 +10,15 @@ def _release(actions):
     return [a for a in actions if isinstance(a, WindowRelease)]
 
 
+def owner(clock):
+    return clock.arbiter.owner.NAME if clock.arbiter.owner else None
+
+
 def test_grab_drag_and_release_in_place(clock):
     clock.run(PALM, 0.3).run(FIST, 0.2)
     assert clock.events == ["GRAB_WINDOW_START"]
     assert any(isinstance(a, WindowGrab) for a in clock.actions)
-    assert clock.arbiter.owner == "GRAB_WINDOW"
+    assert owner(clock) == "GRAB_WINDOW"
 
     clock.run(FIST, 0.3, wrist=(0.5, 0.7), to=(0.55, 0.65))
     moves = [a for a in clock.actions if isinstance(a, WindowMove)]
@@ -23,7 +27,7 @@ def test_grab_drag_and_release_in_place(clock):
     clock.run(PALM, 0.05, wrist=(0.55, 0.65))
     assert clock.events[-1] == "GRAB_WINDOW_RELEASED"
     assert _release(clock.actions)[-1].snap is None          # stays where it was dropped
-    assert clock.arbiter.owner is None
+    assert owner(clock) is None
 
 
 def test_grab_wide_throw_snaps(clock):
@@ -50,10 +54,10 @@ def test_quick_blink_is_mute_not_grab(clock):
 
 def test_grab_releases_when_hand_lost(clock):
     clock.run(PALM, 0.3).run(FIST, 0.2)
-    assert clock.arbiter.owner == "GRAB_WINDOW"
+    assert owner(clock) == "GRAB_WINDOW"
     clock.run(HandState.NO_HANDS, 0.5)
     assert clock.events[-1] == "GRAB_WINDOW_RELEASED"
-    assert clock.arbiter.owner is None
+    assert owner(clock) is None
 
 
 def test_screenshot_on_palm_push(clock):
@@ -67,9 +71,56 @@ def test_steady_palm_takes_no_screenshot(clock):
     assert "SCREENSHOT" not in clock.events
 
 
-def test_pause_blocks_other_gestures(clock):
+def test_four_fingers_then_fist_is_media_play_pause(clock):
     clock.run(HandState.FOUR_FINGERS, 0.4).run(FIST, 1 / 60)
-    assert clock.events == ["PAUSE_TOGGLE_PAUSED"]
-    assert clock.arbiter.paused
-    clock.run(PALM, 0.3).run(FIST, 0.3)
-    assert "GRAB_WINDOW_START" not in clock.events
+    assert clock.events == ["MEDIA_PLAY_PAUSE"]
+    assert any(isinstance(a, Hotkey) and a.keys == ("media_play_pause",) for a in clock.actions)
+
+
+def test_closing_hand_through_four_fingers_is_not_pause(clock):
+    # PALM → FIST often passes through a short FOUR_FINGERS
+    clock.run(PALM, 0.3).run(HandState.FOUR_FINGERS, 0.15).run(FIST, 0.1)
+    assert "MEDIA_PLAY_PAUSE" not in clock.events
+
+
+# ── power (two palms held still) ───────────────────────────────────────────────
+
+def _two_palms(t, left=(0.3, 0.6), right=(0.7, 0.6)):
+    from conftest import make_frame, make_hand
+    return make_frame(PALM, t, hands={"Left": make_hand(left, side="Left"), "Right": make_hand(right)})
+
+
+def _power(hold=1.5):
+    from gesturekey.config import PowerConfig
+    from gesturekey.gestures.power import PowerToggleGesture
+    return PowerToggleGesture(PowerConfig(hold_time=hold))
+
+
+def _run_power(gesture, seconds, t0=0.0, enabled=True, move=0.0):
+    from gesturekey.gestures.base import Output
+    events, t, n = [], t0, round(seconds * 60)
+    for i in range(n):
+        out = Output()
+        dx = move * i / n
+        gesture.update(_two_palms(t, left=(0.3 + dx, 0.6), right=(0.7 - dx, 0.6)), out, enabled=enabled)
+        events += [e.value for e in out.events]
+        t += 1 / 60
+    return events, t
+
+
+def test_two_still_palms_toggle_power_once():
+    g = _power()
+    events, _ = _run_power(g, 1.4)
+    assert events == [] and 0.8 < g.progress < 1.0       # ring is filling
+    events, _ = _run_power(g, 1.0, t0=1.4)
+    assert events == ["POWER_OFF"]                        # fires once, then latches
+
+
+def test_power_turns_back_on_while_disabled():
+    events, _ = _run_power(_power(), 1.6, enabled=False)
+    assert events == ["POWER_ON"]
+
+
+def test_approaching_palms_are_task_view_not_power():
+    events, _ = _run_power(_power(), 2.0, move=0.15)      # hands come together
+    assert events == []

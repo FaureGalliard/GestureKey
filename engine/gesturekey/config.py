@@ -67,7 +67,7 @@ class ZoomConfig:
 @dataclass
 class PauseConfig:
     enabled:  bool  = True
-    min_time: float = 0.20
+    min_time: float = 0.35   # longer than the FOUR_FINGERS a closing hand passes through
     max_time: float = 1.50
     cooldown: float = 0.50
 
@@ -109,6 +109,13 @@ class GrabWindowConfig:
 
 
 @dataclass
+class PowerConfig:
+    enabled:   bool  = True
+    hold_time: float = 1.5     # both palms still this long toggles GestureKey
+    max_drift: float = 0.05    # how far (image units) a wrist may wander while holding
+
+
+@dataclass
 class GesturesConfig:
     cooldown:     float             = 0.6
     scroll:       ScrollConfig      = field(default_factory=ScrollConfig)
@@ -120,6 +127,7 @@ class GesturesConfig:
     screenshot:   ScreenshotConfig  = field(default_factory=ScreenshotConfig)
     close_window: CloseWindowConfig = field(default_factory=CloseWindowConfig)
     grab_window:  GrabWindowConfig  = field(default_factory=GrabWindowConfig)
+    power:        PowerConfig       = field(default_factory=PowerConfig)
 
 
 @dataclass

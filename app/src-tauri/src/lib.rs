@@ -1,4 +1,5 @@
 mod engine;
+mod overlay;
 
 use tauri::{
     menu::{Menu, MenuItem},
@@ -20,10 +21,12 @@ fn show_main(app: &tauri::AppHandle) {
 pub fn run() {
     let app = tauri::Builder::default()
         .manage(EngineProcess::default())
+        .invoke_handler(tauri::generate_handler![overlay::overlay_place])
         .setup(|app| {
             if let Err(err) = engine::spawn(app.handle()) {
                 eprintln!("[ENGINE] {err}");
             }
+            overlay::setup(app.handle());
 
             let show = MenuItem::with_id(app, "show", "Mostrar", true, None::<&str>)?;
             let quit = MenuItem::with_id(app, "quit", "Salir", true, None::<&str>)?;
@@ -54,7 +57,7 @@ pub fn run() {
         })
         .on_window_event(|window, event| {
             // Closing the window keeps GestureKey running in the tray.
-            if let WindowEvent::CloseRequested { api, .. } = event {
+            if let ("main", WindowEvent::CloseRequested { api, .. }) = (window.label(), event) {
                 api.prevent_close();
                 let _ = window.hide();
             }

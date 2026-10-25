@@ -64,6 +64,12 @@ body {
     user-select: none;
 }
 
+/* The overlay window is transparent: only its toast is painted */
+html.overlay,
+body.overlay {
+    background: transparent;
+}
+
 ::selection {
     background-color: var(--color-accent-tint);
 }

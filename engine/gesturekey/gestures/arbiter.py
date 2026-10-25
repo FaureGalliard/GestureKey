@@ -23,18 +23,18 @@ class GestureArbiter:
     Routes each frame to the gestures and decides who owns the hand.
 
     Order per frame:
-      1. pause      — always runs, so the user can always pause/resume
-      2. owner      — if a gesture is engaged, only it gets the frame
-      3. mute       — runs even while paused (v2 behaviour)
-      4. paused?    — stop here
-      5. one-hand gestures (in priority order), then two-hand task view;
+      1. owner  — if a gesture is engaged, only it gets the frame
+      2. mute   — sequence detector, sees every state
+      3. one-hand gestures (in priority order), then two-hand task view;
          the first one that becomes engaged claims the hand and the others
          are reset.
+
+    Turning GestureKey on/off (power gesture) lives in the engine, outside
+    the arbiter, so it keeps working while everything here is off.
     """
 
     def __init__(self, cfg: GesturesConfig) -> None:
         cooldown = CooldownManager(default_cooldown=cfg.cooldown)
-        self.pause = PauseResumeGesture(cooldown, cfg.pause)
         self._mute = MuteToggleGesture(cooldown, cfg.mute)
         self._hand_gestures: List[Gesture] = [
             g for g, enabled in (
@@ -42,25 +42,21 @@ class GestureArbiter:
                 (ScrollGesture(cfg.scroll),                      cfg.scroll.enabled),
                 (VolumeGesture(cfg.volume),                      cfg.volume.enabled),
                 (PinchZoomGesture(cfg.zoom),                     cfg.zoom.enabled),
+                (PauseResumeGesture(cooldown, cfg.pause),        cfg.pause.enabled),
                 (ScreenshotGesture(cooldown, cfg.screenshot),    cfg.screenshot.enabled),
                 (CloseWindowGesture(cooldown, cfg.close_window), cfg.close_window.enabled),
             ) if enabled
         ]
         self._two_hand: List[Gesture] = [TaskViewGesture(cooldown, cfg.task_view)] if cfg.task_view.enabled else []
-        self._pause_enabled = cfg.pause.enabled
-        self._mute_enabled  = cfg.mute.enabled
+        self._mute_enabled = cfg.mute.enabled
         self._owner: Optional[Gesture] = None
 
     @property
-    def paused(self) -> bool:
-        return self.pause.paused
-
-    @property
-    def owner(self) -> Optional[str]:
-        return self._owner.NAME if self._owner else None
+    def owner(self) -> Optional[Gesture]:
+        return self._owner
 
     def _all(self) -> Iterable[Gesture]:
-        return [self.pause, self._mute, *self._hand_gestures, *self._two_hand]
+        return [self._mute, *self._hand_gestures, *self._two_hand]
 
     def process(self, frame: FrameData) -> Output:
         out = Output()
@@ -71,11 +67,6 @@ class GestureArbiter:
                 self._release_if_done()
             return out
 
-        if self._pause_enabled:
-            self.pause.update(frame, out)
-            if out.events:
-                return out
-
         if self._owner is not None:
             self._owner.update(frame, out)
             self._release_if_done()
@@ -85,9 +76,6 @@ class GestureArbiter:
             self._mute.update(frame, out)
             if out.events:
                 return out
-
-        if self.paused:
-            return out
 
         candidates = (self._hand_gestures if frame.main_hand is not None else []) + self._two_hand
         for gesture in candidates:
@@ -100,7 +88,7 @@ class GestureArbiter:
     def _claim(self, gesture: Gesture) -> None:
         self._owner = gesture
         for other in self._all():
-            if other is not gesture and other is not self.pause:
+            if other is not gesture:
                 other.reset()
 
     def _release_if_done(self) -> None:

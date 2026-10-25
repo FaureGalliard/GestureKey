@@ -1,7 +1,7 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import List
+from typing import Any, Dict, List, Optional
 
 from gesturekey.actions.types import Action
 from gesturekey.core.types import FrameData, GestureEvent
@@ -38,6 +38,16 @@ class Gesture(ABC):
     @property
     def engaged(self) -> bool:
         return False
+
+    @property
+    def readout(self) -> Optional[Dict[str, Any]]:
+        """Live values for the overlay while engaged (e.g. {"volume": 0.42}), else None."""
+        return None
+
+    @property
+    def progress(self) -> Optional[float]:
+        """0..1 while a deliberate hold is under way (drives the overlay ring), else None."""
+        return None
 
     def on_lost(self, now: float, out: Output) -> None:
         """Called on frames without a usable hand state (NO_HANDS / UNKNOWN)."""

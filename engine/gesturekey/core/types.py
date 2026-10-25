@@ -27,10 +27,11 @@ class GestureEvent(str, Enum):
     CLOSE_WINDOW         = "CLOSE_WINDOW"
     MUTE_TOGGLE          = "MUTE_TOGGLE"
     TASK_VIEW            = "TASK_VIEW"
-    PAUSE_TOGGLE_PAUSED  = "PAUSE_TOGGLE_PAUSED"
-    PAUSE_TOGGLE_RESUMED = "PAUSE_TOGGLE_RESUMED"
+    MEDIA_PLAY_PAUSE     = "MEDIA_PLAY_PAUSE"
     GRAB_WINDOW_START    = "GRAB_WINDOW_START"
     GRAB_WINDOW_RELEASED = "GRAB_WINDOW_RELEASED"
+    POWER_OFF            = "POWER_OFF"
+    POWER_ON             = "POWER_ON"
 
 
 @dataclass(frozen=True)

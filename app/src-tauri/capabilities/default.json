@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Main window",
-  "windows": ["main"],
+  "description": "Main window and the feedback overlay",
+  "windows": ["main", "overlay"],
   "permissions": ["core:default"]
 }

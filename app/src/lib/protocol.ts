@@ -17,9 +17,17 @@ export interface FrameMsg {
   raw_state: string;
   confidence: number;
   hands: HandMsg[];
-  owner: string | null;
-  paused: boolean;
+  owner: string | null;                         // gesture that owns the hand right now
+  owner_info: Record<string, number> | null;    // its live values, e.g. { volume: 0.42 }
+  arming: ArmingInfo | null;                    // a deliberate hold in progress
+  enabled: boolean;
   fps: number;
+}
+
+export interface ArmingInfo {
+  gesture: string;     // "POWER"
+  progress: number;    // 0..1
+  action: "on" | "off";
 }
 
 export interface EventMsg { type: "event"; event: string; t: number }
@@ -62,7 +70,8 @@ export const GESTURES = {
   close_window: { label: "Cerrar ventana",   hint: "Puño cerrado con un tirón hacia abajo" },
   volume:       { label: "Volumen",          hint: "Tres dedos hacia la cámara, sube o baja la mano" },
   mute:         { label: "Silenciar",        hint: "Palma, puño rápido y palma otra vez" },
-  pause:        { label: "Reproducir / pausar", hint: "Cuatro dedos y cierra el puño" },
+  pause:        { label: "Reproducir / pausar", hint: "Cuatro dedos un momento y cierra el puño" },
+  power:        { label: "Encender / apagar", hint: "Dos palmas abiertas quietas frente a la cámara" },
   screenshot:   { label: "Captura de pantalla", hint: "Empuja la palma abierta lejos de la cámara" },
 } as const;
 
@@ -72,7 +81,7 @@ export const GESTURE_GROUPS: { title: string; keys: GestureKey[] }[] = [
   { title: "Navegar",       keys: ["scroll", "zoom", "task_view"] },
   { title: "Ventanas",      keys: ["grab_window", "close_window"] },
   { title: "Sonido y medios", keys: ["volume", "mute", "pause"] },
-  { title: "Otros",         keys: ["screenshot"] },
+  { title: "Otros",         keys: ["screenshot", "power"] },
 ];
 
 /** Hand states in plain words, for people who don't care about class names. */
@@ -97,8 +106,9 @@ export const EVENT_LABELS: Record<string, string> = {
   CLOSE_WINDOW: "Cerrar ventana",
   MUTE_TOGGLE: "Silenciar",
   TASK_VIEW: "Vista de tareas",
-  PAUSE_TOGGLE_PAUSED: "Pausado",
-  PAUSE_TOGGLE_RESUMED: "Reanudado",
+  MEDIA_PLAY_PAUSE: "Reproducir / pausar",
   GRAB_WINDOW_START: "Ventana agarrada",
   GRAB_WINDOW_RELEASED: "Ventana soltada",
+  POWER_OFF: "GestureKey apagado",
+  POWER_ON: "GestureKey encendido",
 };

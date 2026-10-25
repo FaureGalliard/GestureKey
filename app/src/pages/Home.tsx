@@ -13,16 +13,12 @@ interface Props {
 
 export function Home({ engine, toast, videoOn, onOpenSettings }: Props) {
   const { connected, enabled, frame } = engine;
-  const paused = frame?.paused;
-
-  const title = !connected ? "Iniciando…" : !enabled ? "En pausa" : paused ? "Pausado con un gesto" : "Listo para tus gestos";
+  const title = !connected ? "Iniciando…" : !enabled ? "En pausa" : "Listo para tus gestos";
   const subtitle = !connected
     ? "Preparando la cámara y el reconocimiento."
     : !enabled
-      ? "Los gestos están apagados. Actívalos cuando quieras."
-      : paused
-        ? "Cuatro dedos y puño otra vez para reanudar."
-        : "Mueve la mano frente a la cámara para controlar tu PC.";
+      ? "Los gestos están apagados. Actívalos aquí o con dos palmas quietas frente a la cámara."
+      : "Mueve la mano frente a la cámara para controlar tu PC.";
 
   return (
     <Page

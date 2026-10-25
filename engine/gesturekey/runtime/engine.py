@@ -12,8 +12,10 @@ import numpy as np
 from gesturekey import __version__
 from gesturekey.actions.executor import ActionExecutor
 from gesturekey.config import AppConfig, resource_path
-from gesturekey.core.types import FrameData, HandState
+from gesturekey.core.types import FrameData, GestureEvent, HandState
 from gesturekey.gestures.arbiter import GestureArbiter
+from gesturekey.gestures.base import Output
+from gesturekey.gestures.power import PowerToggleGesture
 from gesturekey.runtime.recorder import Recorder
 from gesturekey.vision.camera import Camera, list_cameras
 from gesturekey.vision.classifier import StateClassifier
@@ -54,6 +56,7 @@ class Engine:
         self._classifier: Optional[StateClassifier] = None
         self._stabilizer: Optional[StateStabilizer] = None
         self._arbiter:    Optional[GestureArbiter]  = None
+        self._power:      Optional[PowerToggleGesture] = None
         self._executor:   Optional[ActionExecutor]  = None
 
     # ── public API (any thread) ───────────────────────────────────────────────
@@ -131,12 +134,23 @@ class Engine:
             self._stabilizer.update(raw_state, confidence)
             state = self._stabilizer.current or HandState.NO_HANDS
 
+            frame_data = FrameData(state=state, hands=hands, timestamp=stamp)
             events: List[str] = []
-            if self._enabled:
-                out = self._arbiter.process(FrameData(state=state, hands=hands, timestamp=stamp))
-                self._executor.submit(out.actions)
-                events = [e.value for e in out.events]
 
+            # power runs even while off, so the same gesture turns GestureKey back on
+            if self._power is not None:
+                power_out = Output()
+                self._power.update(frame_data, power_out, enabled=self._enabled)
+                if power_out.events:
+                    self._set_enabled(GestureEvent.POWER_ON in power_out.events)
+                    events += [e.value for e in power_out.events]
+
+            if self._enabled:
+                out = self._arbiter.process(frame_data)
+                self._executor.submit(out.actions)
+                events += [e.value for e in out.events]
+
+            owner = self._arbiter.owner if self._enabled else None
             fps_n += 1
             if stamp - fps_t >= 1.0:
                 fps, fps_t, fps_n = fps_n / (stamp - fps_t), stamp, 0
@@ -152,9 +166,11 @@ class Engine:
                      "landmarks": [[round(x, 4), round(y, 4)] for x, y in h.img]}
                     for h in hands.values()
                 ],
-                "owner":  self._arbiter.owner,
-                "paused": self._arbiter.paused,
-                "fps":    round(fps, 1),
+                "owner":      owner.NAME if owner else None,
+                "owner_info": owner.readout if owner else None,
+                "arming":     self._arming(),
+                "enabled":    self._enabled,
+                "fps":        round(fps, 1),
             })
             for event in events:
                 self._emit({"type": "event", "event": event, "t": round(stamp, 3)})
@@ -194,10 +210,7 @@ class Engine:
                 self._open_camera(cam.device)
             self._emit({"type": "config", "config": self._config.to_dict()})
         elif cmd == "set_enabled":
-            self._enabled = bool(msg.get("enabled", True))
-            if self._arbiter:
-                self._arbiter.reset_all()
-            self._emit({"type": "enabled", "enabled": self._enabled})
+            self._set_enabled(bool(msg.get("enabled", True)))
         elif cmd == "preview":
             self._preview = bool(msg.get("on", False))
         elif cmd == "list_cameras":
@@ -207,6 +220,19 @@ class Engine:
 
     # ── helpers ───────────────────────────────────────────────────────────────
 
+    def _set_enabled(self, enabled: bool) -> None:
+        self._enabled = enabled
+        if self._arbiter:
+            self._arbiter.reset_all()
+        self._emit({"type": "enabled", "enabled": self._enabled})
+
+    def _arming(self) -> Optional[Message]:
+        """A deliberate hold in progress, for the overlay's progress ring."""
+        p = self._power.progress if self._power else None
+        if p is None or p < 0.1:   # don't flash the ring for a palm that's just passing
+            return None
+        return {"gesture": "POWER", "progress": round(p, 3), "action": "off" if self._enabled else "on"}
+
     def _rebuild(self, tracker: bool = True) -> None:
         cfg = self._config
         if tracker or self._tracker is None:
@@ -215,6 +241,7 @@ class Engine:
             self._tracker = HandTracker(cfg.tracking)
         self._stabilizer = StateStabilizer(cfg.stabilizer)
         self._arbiter    = GestureArbiter(cfg.gestures)
+        self._power      = PowerToggleGesture(cfg.gestures.power) if cfg.gestures.power.enabled else None
         if self._executor:
             self._executor.speed = cfg.gestures.grab_window.speed
 

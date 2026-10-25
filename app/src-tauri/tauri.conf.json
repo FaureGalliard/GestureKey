@@ -20,6 +20,21 @@
         "minHeight": 560,
         "theme": "Dark",
         "backgroundColor": "#141415"
+      },
+      {
+        "label": "overlay",
+        "url": "overlay.html",
+        "title": "GestureKey overlay",
+        "width": 440,
+        "height": 96,
+        "transparent": true,
+        "decorations": false,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "shadow": false,
+        "resizable": false,
+        "focus": false,
+        "visible": true
       }
     ],
     "security": {
