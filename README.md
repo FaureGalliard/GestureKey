@@ -13,8 +13,9 @@ move windows between monitors, task view and more.
 
 | Gesture | Action |
 |---|---|
-| ☝️ point with the index | Mouse — the cursor follows the hand; a quick flick sideways jumps to the next monitor |
+| ☝️ point with the index | Mouse — the cursor follows the hand |
 | …🤏 touch the tips of thumb and index | Click (twice = double click); pinch and move = drag; hold = right click |
+| …point **towards a side** | Jump the cursor to that monitor |
 | ✌️ two fingers, move the hand | Scroll whatever is under the cursor — point at it first, no click needed |
 | 🤟 three fingers, raise / lower | Volume — same height, same level |
 | 🤏 pinch, open / close | Zoom |
@@ -22,13 +23,13 @@ move windows between monitors, task view and more.
 | …open the hand **tilted** towards a side | Send it to that monitor and maximize it there |
 | …park the hand at the camera's edge | Push it on to the next monitor |
 | …flick up | Maximize |
-| …throw it down (or drag it to the bottom edge and open) | Close |
+| …open the hand with the **fingers down** (or drag it to the bottom edge and open) | Close |
 | …open the hand upright | Let go where it is (taken to the top of a monitor = maximize) |
 | ✋✋ bring the palms together | Task view (Win+Tab) |
 | … then ☝️ point and 🤏 pinch | Open that window (a click) |
 | … then ✋✋ move the palms apart | Leave: the window under the cursor if you pointed, else back (Esc) |
 | 🖖 four fingers → ✊ | Play / pause media |
-| ✋ held steady, then pushed away | Screenshot (Win+PrintScreen) |
+| 👆👆 both hands in an L, framing the screen | Screenshot (Win+PrintScreen) |
 | ✋✋ both palms still for 1 s | Turn GestureKey on / off (works while off) |
 
 After any gesture nothing new starts for 0.8 s, so putting the hand down never
