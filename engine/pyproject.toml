@@ -1,0 +1,32 @@
+[project]
+name = "gesturekey"
+version = "3.0.0"
+description = "GestureKey engine — hand-gesture recognition that drives keyboard shortcuts and windows"
+requires-python = ">=3.11,<3.12"
+dependencies = [
+    "mediapipe==0.10.9",          # legacy `solutions.hands` API; pulls opencv-contrib-python
+    "numpy>=1.26",
+    "scikit-learn==1.8.0",        # must match the version that pickled hand_state_rf.pkl
+    "joblib>=1.5",
+    "websockets>=15,<16",
+    "pygrabber>=0.2; sys_platform == 'win32'",   # DirectShow camera names
+]
+
+[project.scripts]
+gesturekey-engine = "gesturekey.__main__:main"
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+    "pyinstaller>=6.19",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["gesturekey"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
