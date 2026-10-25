@@ -14,6 +14,7 @@ from gesturekey.actions.executor import ActionExecutor
 from gesturekey.config import AppConfig, resource_path
 from gesturekey.core.types import FrameData, HandState
 from gesturekey.gestures.arbiter import GestureArbiter
+from gesturekey.runtime.recorder import Recorder
 from gesturekey.vision.camera import Camera, list_cameras
 from gesturekey.vision.classifier import StateClassifier
 from gesturekey.vision.stabilizer import StateStabilizer
@@ -46,6 +47,7 @@ class Engine:
         self._preview  = False
         self._camera_info: Optional[Message] = None
         self._thread: Optional[threading.Thread] = None
+        self._recorder = Recorder.from_env()
 
         self._camera:     Optional[Camera]          = None
         self._tracker:    Optional[HandTracker]     = None
@@ -83,6 +85,8 @@ class Engine:
     def _emit(self, msg: Message) -> None:
         try:
             self._sink(msg)
+            if self._recorder:
+                self._recorder.write(msg)
         except Exception:
             traceback.print_exc()
 
@@ -102,6 +106,8 @@ class Engine:
             return
 
         self._status("Pipeline started")
+        if self._recorder:
+            self._status(f"Grabando sesión en {self._recorder.path}")
         last_preview = 0.0
         fps, fps_t, fps_n = 0.0, time.time(), 0
 
@@ -244,6 +250,8 @@ class Engine:
             self._tracker.release()
         if self._executor:
             self._executor.stop()
+        if self._recorder:
+            self._recorder.close()
         self._status("Pipeline stopped")
 
 
