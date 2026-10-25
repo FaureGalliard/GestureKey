@@ -264,18 +264,12 @@ def _grab(clock, at=(0.5, 0.5)):
     clock.run(PALM, 0.3, wrist=at).run(FIST, 0.2, wrist=at)
 
 
-def test_flick_sideways_sends_the_window_to_the_next_monitor(clock):
+def test_fast_sideways_drag_just_moves_the_window(clock):
     from gesturekey.actions.types import WindowSendTo
     _grab(clock)
-    clock.run(FIST, 0.1, wrist=(0.5, 0.5), to=(0.75, 0.5))   # 2.5 image widths/s to the right
-    sends = [a for a in clock.actions if isinstance(a, WindowSendTo)]
-    assert [a.direction for a in sends] == ["right"]          # once, not once per frame
-    assert owner(clock) == "GRAB_WINDOW"                      # still holding: can flick again
-    clock.run(FIST, 0.4, wrist=(0.75, 0.5))                   # hand stops…
-    clock.run(FIST, 0.1, wrist=(0.75, 0.5), to=(0.5, 0.5))    # …and flicks back
-    sends = [a for a in clock.actions if isinstance(a, WindowSendTo)]
-    assert [a.direction for a in sends] == ["right", "left"]
-
+    clock.run(FIST, 0.1, wrist=(0.5, 0.5), to=(0.75, 0.5))   # 2.5 image widths/s: no flick any more
+    assert not [a for a in clock.actions if isinstance(a, WindowSendTo)]
+    assert owner(clock) == "GRAB_WINDOW"
 
 def test_flick_up_maximizes(clock):
     from gesturekey.actions.types import WindowSendTo
@@ -285,11 +279,10 @@ def test_flick_up_maximizes(clock):
     assert "WINDOW_MAXIMIZED" in clock.events
 
 
-def test_throwing_the_window_down_closes_it(clock):
+def test_fast_downward_drag_never_closes(clock):
     _grab(clock, at=(0.5, 0.4))
     clock.run(FIST, 0.1, wrist=(0.5, 0.4), to=(0.5, 0.65))   # fast, downwards
-    assert _release(clock.actions)[-1].snap == "close"
-    assert "CLOSE_WINDOW" in clock.events and clock.arbiter.owner is None
+    assert "CLOSE_WINDOW" not in clock.events and owner(clock) == "GRAB_WINDOW"
 
 
 def test_dragging_down_calmly_never_closes(clock):

@@ -144,13 +144,12 @@ class GrabWindowConfig:
     accel_from:   float = 0.35   # image units/s; slower than this moves 1:1
     max_gain:     float = 5.0
     deadzone:     float = 0.0015
-    flick_speed:  float = 1.5    # image units/s: a flick while holding sends to a monitor / maximizes
+    flick_speed:  float = 1.5    # image units/s: an upward flick while holding maximizes
     sweep_tilt:   float = 28.0   # degrees: opening the hand tilted this far sideways = send that way
     maximize_on_move: bool = True   # a window sent to another monitor / an edge is maximized there
     edge_zone:    float = 0.12   # hand within this fraction of the camera's left/right edge…
     edge_dwell:   float = 0.25   # …for this long = "keep going that way": next monitor
     throw_speed:  float = 1.4    # release velocity that counts as a throw for the glide
-    close_speed:  float = 1.8    # a downward flick this fast closes the window (destructive: higher)
     lost_timeout: float = 0.60   # release if the fist is lost this long (motion blur)
     cooldown:     float = 0.40
 

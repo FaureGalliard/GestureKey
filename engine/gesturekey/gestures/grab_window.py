@@ -14,7 +14,6 @@ from gesturekey.gestures.mouse import POINTING_REACH, index_reach
 THROW_WINDOW = 0.15   # seconds of motion before the release that define the throw
 THROW_SPAN   = 0.05   # velocity is measured over spans this long, and the peak wins
 DOMINANCE    = 1.5    # a flick's main axis must be this much faster than the other
-FLICK_BLOCK  = 0.35   # s: after a flick, the rest of that same motion does not drag
 OPEN_FRAMES  = 2      # consecutive open-hand frames that agree before deciding
 OPEN_DECIDE  = 0.25   # s: if they never agree, just let go
 
@@ -35,16 +34,13 @@ class GrabWindowGesture(Gesture):
                                                  say "over there"; upright = let go here
     hand held at the camera's left/right edge  : "keep going that way" → next monitor
                                                  (like dragging a mouse past the screen edge)
-    flick → / ← while holding                  : send it to the next monitor that way
-                                                 (at the desktop edge: snap to that half)
     flick ↑ while holding                      : maximize
-    throw it down (fast flick ↓) while holding : close it
     drag it down against the screen's bottom   : the overlay says "let go to close";
                                                  open the hand there to close it (a bin)
     FIST → PALM                                : release where it is
     fist lost ≥ lost_timeout                   : release in place
 
-    Flicks are detected *while* holding, every frame, from the last ~50 ms of
+    The flick is detected *while* holding, every frame, from the last ~50 ms of
     motion. Judging them at release missed them: the hand slows down as it
     opens and the open palm is confirmed a few frames later, after the peak.
 
@@ -114,9 +110,6 @@ class GrabWindowGesture(Gesture):
             if self._flick(now, out):
                 return
             self._edge_push(hand, now, out)
-            if now < self._block_until:              # still inside a flick: do not drag with it
-                self._last, self._last_t = wrist, now
-                return
             # keep following the wrist even through a blurred frame
             if self._last is not None:
                 dx, dy = wrist[0] - self._last[0], wrist[1] - self._last[1]
@@ -183,20 +176,12 @@ class GrabWindowGesture(Gesture):
         if not self._flick_ready:
             self._flick_ready = speed < 0.5 * cfg.flick_speed     # the previous flick is over
             return False
-        if abs(vx) >= cfg.flick_speed and abs(vx) >= DOMINANCE * abs(vy):
-            out.emit(GestureEvent.WINDOW_TO_MONITOR, WindowSendTo("right" if vx > 0 else "left"))
-        elif vy <= -cfg.flick_speed and abs(vy) >= DOMINANCE * abs(vx):
+        # only upwards: sideways and downward flicks were confused with each other and
+        # with plain fast drags; the sweep (open the hand tilted) says "that monitor" better
+        if vy <= -cfg.flick_speed and abs(vy) >= DOMINANCE * abs(vx):
             out.emit(GestureEvent.WINDOW_MAXIMIZED, WindowSendTo("up"))
             self.reset()                              # maximized: nothing left to drag
             return True
-        elif vy >= cfg.close_speed and vy >= DOMINANCE * abs(vx):
-            out.emit(GestureEvent.CLOSE_WINDOW, WindowRelease("close"))   # thrown down: away with it
-            self.reset()
-            return True
-        else:
-            return False
-        self._flick_ready = False
-        self._block_until = now + FLICK_BLOCK
         return False
 
     def on_lost(self, now: float, out: Output) -> None:
@@ -260,4 +245,3 @@ class GrabWindowGesture(Gesture):
         self._edge_ready = True
         self._edge_since: Optional[float] = None
         self._edge_side = ""
-        self._block_until = 0.0
