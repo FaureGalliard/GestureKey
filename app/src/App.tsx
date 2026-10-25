@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { SettingsPanel, type SettingsTab } from "./components/settings/SettingsPanel";
+import { I18nProvider, initialLang, resolveLang } from "./i18n";
 import type { LogEntry } from "./lib/useEngine";
 import { useEngine } from "./lib/useEngine";
 import { Home } from "./pages/Home";
@@ -30,7 +31,11 @@ export default function App() {
 
   const closeSettings = useCallback(() => setSettingsOpen(false), []);
 
+  // language: the engine's config once connected; until then the last one used
+  const lang = engine.config ? resolveLang(engine.config.ui?.language) : initialLang();
+
   return (
+    <I18nProvider lang={lang}>
     <div className="h-full overflow-y-auto">
       <Home engine={engine} toast={toast} videoOn={videoOn} onOpenSettings={() => setSettingsOpen(true)} />
       <SettingsPanel
@@ -43,5 +48,6 @@ export default function App() {
         onVideo={setVideoOn}
       />
     </div>
+    </I18nProvider>
   );
 }

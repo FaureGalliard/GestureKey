@@ -77,56 +77,19 @@ export interface EngineConfig {
   tracking: { model_complexity: number; min_detection_confidence: number; min_tracking_confidence: number };
   states: { switch_rate: number; enter: number; floor: number };
   gestures: { cooldown: number } & Record<GestureKey, GestureToggle>;
+  ui: { language: string };    // "auto" | "en" | "es" | "fr" | "ko"
 }
 
-export const GESTURES = {
-  scroll:       { label: "Desplazar",        hint: "Dos dedos y mueve la mano: la página la sigue; rápido llega más lejos" },
-  zoom:         { label: "Zoom",             hint: "Junta el pulgar y el índice, ábrelos o ciérralos" },
-  task_view:    { label: "Vista de tareas",  hint: "Dos palmas abiertas separadas, júntalas" },
-  grab_window:  { label: "Mover ventanas",   hint: "Palma, cierra el puño y arrastra; ábrela para soltar. Lleva la mano al borde para pasar al otro monitor, súbela para maximizar; golpe abajo y abrir cierra" },
-  volume:       { label: "Volumen",          hint: "Tres dedos hacia la cámara, sube o baja la mano" },
-  mute:         { label: "Silenciar",        hint: "Palma, puño rápido y palma otra vez (choca con mover ventanas)" },
-  pause:        { label: "Reproducir / pausar", hint: "Cuatro dedos un momento y cierra el puño" },
-  power:        { label: "Encender / apagar", hint: "Dos palmas abiertas quietas frente a la cámara" },
-  screenshot:   { label: "Captura de pantalla", hint: "Palma quieta un momento y empújala lejos de la cámara" },
-} as const;
+/** Gestures the user can switch on/off, in display order. Their texts live in i18n. */
+export const GESTURE_KEYS = [
+  "scroll", "zoom", "task_view", "grab_window", "volume", "mute", "pause", "power", "screenshot",
+] as const;
 
-export type GestureKey = keyof typeof GESTURES;
+export type GestureKey = (typeof GESTURE_KEYS)[number];
 
-export const GESTURE_GROUPS: { title: string; keys: GestureKey[] }[] = [
-  { title: "Navegar",       keys: ["scroll", "zoom", "task_view"] },
-  { title: "Ventanas",      keys: ["grab_window"] },
-  { title: "Sonido y medios", keys: ["volume", "mute", "pause"] },
-  { title: "Otros",         keys: ["screenshot", "power"] },
+export const GESTURE_GROUPS: { id: "navigate" | "windows" | "media" | "other"; keys: GestureKey[] }[] = [
+  { id: "navigate", keys: ["scroll", "zoom", "task_view"] },
+  { id: "windows",  keys: ["grab_window"] },
+  { id: "media",    keys: ["volume", "mute", "pause"] },
+  { id: "other",    keys: ["screenshot", "power"] },
 ];
-
-/** Hand states in plain words, for people who don't care about class names. */
-export const STATE_LABELS: Record<string, string> = {
-  PALM: "Mano abierta",
-  FIST: "Puño",
-  PINCH: "Pinza",
-  TWO_FINGERS: "Dos dedos",
-  THREE_FINGERS: "Tres dedos",
-  FOUR_FINGERS: "Cuatro dedos",
-  UNKNOWN: "…",
-  "NO HANDS": "Sin mano",
-};
-
-export const EVENT_LABELS: Record<string, string> = {
-  SCROLL: "Scroll",
-  VOLUME_UP: "Volumen +",
-  VOLUME_DOWN: "Volumen −",
-  ZOOM_IN: "Zoom +",
-  ZOOM_OUT: "Zoom −",
-  SCREENSHOT: "Captura",
-  CLOSE_WINDOW: "Cerrar ventana",
-  MUTE_TOGGLE: "Silenciar",
-  TASK_VIEW: "Vista de tareas",
-  MEDIA_PLAY_PAUSE: "Reproducir / pausar",
-  GRAB_WINDOW_START: "Ventana agarrada",
-  GRAB_WINDOW_RELEASED: "Ventana soltada",
-  WINDOW_TO_MONITOR: "Ventana al otro monitor",
-  WINDOW_MAXIMIZED: "Ventana maximizada",
-  POWER_OFF: "GestureKey apagado",
-  POWER_ON: "GestureKey encendido",
-};

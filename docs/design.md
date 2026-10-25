@@ -58,3 +58,11 @@ la app habla en palabras normales ("Mano abierta", no `PALM`).
 | `font-mono text-[12px]` | Datos y log (solo Avanzado) |
 
 Inter lleva `cv11` (a de un solo piso) y `ss03` (comillas redondas) para un tono más editorial.
+
+## Idiomas (i18n)
+
+Textos en `app/src/i18n/`: `en.ts` es la referencia y define el tipo `Dict`; `es`, `fr` y `ko`
+deben tener exactamente las mismas claves (TypeScript falla si falta una). Los componentes usan
+`const t = useT()`. El idioma se guarda en la config del motor (`ui.language`, por defecto
+`"auto"` = idioma de Windows), así la app y el overlay coinciden. El coreano usa la fuente del
+sistema (Malgun Gothic) como respaldo de Inter, que no trae hangul.

@@ -1,0 +1,148 @@
+import type { Dict } from "./en";
+
+export const ko: Dict = {
+  langName: "한국어",
+
+  home: {
+    starting:     { title: "시작하는 중…", subtitle: "카메라와 인식을 준비하고 있습니다." },
+    opening:      { title: "카메라를 여는 중…", subtitle: "잠시만 기다려 주세요." },
+    reconnecting: { title: "카메라 다시 연결 중…", subtitle: "화면이 끊겼습니다. 곧 돌아옵니다." },
+    busy: {
+      title: "카메라가 사용 중입니다",
+      subtitle: "다른 앱이 카메라를 사용하고 있습니다(Zoom, Discord, Teams, OBS…). 해당 앱을 닫으면 GestureKey가 자동으로 연결됩니다.",
+    },
+    missing: { title: "카메라를 찾을 수 없습니다", subtitle: "카메라를 연결하면 GestureKey가 자동으로 연결됩니다." },
+    paused: {
+      title: "일시 중지됨",
+      subtitle: "제스처가 꺼져 있습니다. 여기에서 켜거나, 카메라 앞에서 두 손바닥을 가만히 들어 주세요.",
+    },
+    ready: { title: "제스처 준비 완료", subtitle: "카메라 앞에서 손을 움직여 PC를 제어하세요." },
+    retry: "다시 시도",
+    retryAlt: "또는 설정 › 카메라에서 다른 카메라를 선택하세요",
+    tip: "팁: 정면에서 밝은 빛이 있으면 인식이 더 안정적입니다.",
+    lowLight: (fps: number) =>
+      `조명이 어둡습니다: 카메라가 ${fps} fps로 동작 중입니다. 정면 조명을 밝히면 제스처가 더 정확해집니다.`,
+    on: "켜짐",
+    off: "꺼짐",
+    toggle: "제스처 켜기",
+    settings: "설정",
+  },
+
+  preview: {
+    showHand: "카메라에 손을 보여 주세요",
+    noImage: "카메라 화면 없음",
+    movingWindow: "창 이동 중",
+  },
+
+  settings: {
+    title: "설정",
+    close: "닫기",
+    tabs: { general: "일반", gestures: "제스처", camera: "카메라", advanced: "고급" },
+    general: {
+      language: "언어",
+      languageHint: "앱과 화면 알림에 사용됩니다.",
+      auto: "자동(시스템)",
+    },
+    gestures: {
+      intro: "사용할 제스처만 켜세요. 제스처가 적을수록 실수가 줄어듭니다.",
+      groups: { navigate: "탐색", windows: "창", media: "소리 및 미디어", other: "기타" },
+    },
+    camera: {
+      section: "카메라",
+      device: "장치",
+      noCameras: "카메라 없음",
+      mirror: "미러 보기",
+      mirrorHint: "손을 오른쪽으로 움직이면 모든 것이 오른쪽으로 움직입니다.",
+      video: "영상 표시",
+      videoHint: "홈 화면에서 손 뒤에 카메라 영상을 표시합니다.",
+      fallback: (i: number) => `카메라 ${i}`,
+    },
+    advanced: {
+      diagnostics: "진단",
+      engine: "엔진",
+      offline: "오프라인",
+      camera: "카메라",
+      processing: "처리 속도",
+      detected: "감지됨",
+      detectedHint: "필터링 전.",
+      owner: "진행 중인 제스처",
+      none: "없음",
+      activity: "활동",
+      noEvents: "아직 이벤트가 없습니다",
+    },
+  },
+
+  gestures: {
+    scroll:      { label: "스크롤", hint: "두 손가락을 펴고 손을 움직이세요. 페이지가 따라오며, 빠르게 튕기면 더 멀리 갑니다" },
+    zoom:        { label: "확대/축소", hint: "엄지와 검지를 모은 뒤 벌리거나 오므리세요" },
+    task_view:   { label: "작업 보기", hint: "두 손바닥을 벌린 상태에서 모으세요" },
+    grab_window: {
+      label: "창 이동",
+      hint: "손바닥을 편 뒤 주먹을 쥐고 끌어오세요. 손을 펴면 놓습니다. 한쪽으로 기울여 펴면 그쪽 모니터로 보내고, 위로 튕기면 최대화, 아래로 튕긴 뒤 펴면 닫습니다",
+    },
+    volume:      { label: "볼륨", hint: "세 손가락을 펴고 손을 올리거나 내리세요" },
+    mute:        { label: "음소거", hint: "손바닥, 빠른 주먹, 다시 손바닥(창 이동과 겹침)" },
+    pause:       { label: "재생/일시정지", hint: "네 손가락을 잠시 편 뒤 주먹을 쥐세요" },
+    power:       { label: "켜기/끄기", hint: "카메라 앞에서 두 손바닥을 편 채 가만히 두세요" },
+    screenshot:  { label: "스크린샷", hint: "손바닥을 잠시 가만히 둔 뒤 카메라에서 멀리 미세요" },
+  },
+
+  states: {
+    PALM: "손바닥",
+    FIST: "주먹",
+    PINCH: "집기",
+    TWO_FINGERS: "두 손가락",
+    THREE_FINGERS: "세 손가락",
+    FOUR_FINGERS: "네 손가락",
+    POINT: "가리키기",
+    THUMB_UP: "엄지 위",
+    THUMB_DOWN: "엄지 아래",
+    ROCK: "락",
+    OK: "OK",
+    OTHER: "편안한 손",
+    UNKNOWN: "…",
+    "NO HANDS": "손 없음",
+  },
+
+  events: {
+    SCROLL: "스크롤",
+    VOLUME_UP: "볼륨 +",
+    VOLUME_DOWN: "볼륨 −",
+    ZOOM_IN: "확대",
+    ZOOM_OUT: "축소",
+    SCREENSHOT: "스크린샷",
+    CLOSE_WINDOW: "창 닫기",
+    MUTE_TOGGLE: "음소거",
+    TASK_VIEW: "작업 보기",
+    MEDIA_PLAY_PAUSE: "재생/일시정지",
+    GRAB_WINDOW_START: "창 잡음",
+    GRAB_WINDOW_RELEASED: "창 놓음",
+    WINDOW_TO_MONITOR: "다른 모니터로 이동",
+    WINDOW_MAXIMIZED: "창 최대화",
+    POWER_OFF: "GestureKey 꺼짐",
+    POWER_ON: "GestureKey 켜짐",
+  },
+
+  overlay: {
+    live: { SCROLL: "스크롤 중", VOLUME: "볼륨", ZOOM: "확대/축소", GRAB_WINDOW: "창 이동 중" },
+    toasts: {
+      CLOSE_WINDOW: "창이 닫혔습니다",
+      WINDOW_TO_MONITOR: "다른 모니터로 이동했습니다",
+      WINDOW_MAXIMIZED: "창이 최대화되었습니다",
+      SCREENSHOT: "스크린샷이 저장되었습니다",
+      TASK_VIEW: "작업 보기",
+      MUTE_TOGGLE: "음소거",
+      MEDIA_PLAY_PAUSE: "재생/일시정지",
+      POWER_OFF: "GestureKey 꺼짐",
+      POWER_ON: "GestureKey 켜짐",
+    },
+    zones: {
+      maximize: "놓으면 최대화됩니다",
+      left: "놓으면 왼쪽에 맞춥니다",
+      right: "놓으면 오른쪽에 맞춥니다",
+    },
+    holdOff: "계속 유지하면 GestureKey가 꺼집니다",
+    holdOn: "계속 유지하면 GestureKey가 켜집니다",
+  },
+
+};

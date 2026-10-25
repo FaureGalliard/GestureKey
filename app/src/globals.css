@@ -9,7 +9,8 @@
  */
 @theme static {
     /* The website's faces. Inter with optical sizing: titles get the Display cut. */
-    --font-sans: "Inter Variable", system-ui, sans-serif;
+    /* Hangul isn't in Inter: Korean falls back to the system face (like the website's Noto Sans KR) */
+    --font-sans: "Inter Variable", "Malgun Gothic", "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif;
     --font-mono: "Fira Code", ui-monospace, monospace;
 
     /* Surfaces, darkest to lightest */

@@ -80,7 +80,7 @@ export function useEngine(): EngineState {
           case "camera_status": setCameraStatus(msg); break;
           case "camera":
             setCamera(msg);
-            push("info", `Cámara ${msg.device}: ${msg.width}×${msg.height} @ ${Math.round(msg.fps)} fps`);
+            push("info", `Camera ${msg.device}: ${msg.width}×${msg.height} @ ${Math.round(msg.fps)} fps`);
             break;
         }
       };

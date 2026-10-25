@@ -33,4 +33,5 @@ coordenadas de imagen 0..1 ya espejadas (x crece hacia la derecha del usuario).
 | `set_enabled`  | `enabled` | apaga/enciende todos los gestos (el tracking sigue) |
 | `preview`      | `on` | activa/desactiva los mensajes `preview` |
 | `list_cameras` | — | busca cámaras (sin tocar la activa) y responde con `cameras` |
+| `set_config` con `ui.language` | `"auto"`, `"en"`, `"es"`, `"fr"`, `"ko"` | idioma de la app y del overlay (los dos lo leen de la config) |
 | `reconnect_camera` | — | reintenta abrir la cámara ahora (el motor ya reintenta solo cada 3 s) |

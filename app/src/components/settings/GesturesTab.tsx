@@ -1,25 +1,26 @@
-import { GESTURE_GROUPS, GESTURES } from "../../lib/protocol";
+import { useT } from "../../i18n";
+import { GESTURE_GROUPS } from "../../lib/protocol";
 import type { EngineState } from "../../lib/useEngine";
 import { Row, Section } from "../ui/Page";
 import { Switch } from "../ui/Switch";
 
 export function GesturesTab({ engine }: { engine: EngineState }) {
+  const t = useT();
   const { config, send } = engine;
   return (
     <>
-      <p className="mb-6 text-[13px] leading-relaxed text-fg-muted">
-        Activa solo los que vayas a usar: menos gestos, menos sorpresas.
-      </p>
+      <p className="mb-6 text-[13px] leading-relaxed text-fg-muted">{t.settings.gestures.intro}</p>
       {GESTURE_GROUPS.map((group) => (
-        <Section key={group.title} title={group.title}>
+        <Section key={group.id} title={t.settings.gestures.groups[group.id]}>
           {group.keys.map((key) => {
             const on = config?.gestures[key]?.enabled ?? false;
+            const text = t.gestures[key];
             return (
-              <Row key={key} title={GESTURES[key].label} hint={GESTURES[key].hint} muted={!on}>
+              <Row key={key} title={text.label} hint={text.hint} muted={!on}>
                 <Switch
                   on={on}
                   disabled={!config}
-                  label={GESTURES[key].label}
+                  label={text.label}
                   onChange={(enabled) => send({ cmd: "set_config", patch: { gestures: { [key]: { enabled } } } })}
                 />
               </Row>

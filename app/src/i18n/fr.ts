@@ -1,0 +1,148 @@
+import type { Dict } from "./en";
+
+export const fr: Dict = {
+  langName: "Français",
+
+  home: {
+    starting:     { title: "Démarrage…", subtitle: "Préparation de la caméra et de la reconnaissance." },
+    opening:      { title: "Ouverture de la caméra…", subtitle: "Un instant." },
+    reconnecting: { title: "Reconnexion de la caméra…", subtitle: "L’image a été perdue ; retour dans un instant." },
+    busy: {
+      title: "La caméra est occupée",
+      subtitle: "Une autre application utilise la caméra (Zoom, Discord, Teams, OBS…). Fermez-la et GestureKey se connectera tout seul.",
+    },
+    missing: { title: "Caméra introuvable", subtitle: "Branchez une caméra et GestureKey se connectera tout seul." },
+    paused: {
+      title: "En pause",
+      subtitle: "Les gestes sont désactivés. Activez-les ici, ou gardez les deux paumes immobiles devant la caméra.",
+    },
+    ready: { title: "Prêt pour vos gestes", subtitle: "Bougez la main devant la caméra pour contrôler votre PC." },
+    retry: "Réessayer",
+    retryAlt: "ou choisissez-en une autre dans Paramètres › Caméra",
+    tip: "Astuce : avec une bonne lumière de face, la reconnaissance est plus stable.",
+    lowLight: (fps: number) =>
+      `Peu de lumière : la caméra tourne à ${fps} i/s. Plus de lumière de face rend les gestes plus précis.`,
+    on: "Activé",
+    off: "Désactivé",
+    toggle: "Activer les gestes",
+    settings: "Paramètres",
+  },
+
+  preview: {
+    showHand: "Montrez une main à la caméra",
+    noImage: "Pas d’image de la caméra",
+    movingWindow: "Déplacement de la fenêtre",
+  },
+
+  settings: {
+    title: "Paramètres",
+    close: "Fermer",
+    tabs: { general: "Général", gestures: "Gestes", camera: "Caméra", advanced: "Avancé" },
+    general: {
+      language: "Langue",
+      languageHint: "Utilisée par l’application et les notifications à l’écran.",
+      auto: "Automatique (système)",
+    },
+    gestures: {
+      intro: "N’activez que ceux que vous utiliserez : moins de gestes, moins de surprises.",
+      groups: { navigate: "Naviguer", windows: "Fenêtres", media: "Son et médias", other: "Autres" },
+    },
+    camera: {
+      section: "Caméra",
+      device: "Appareil",
+      noCameras: "Aucune caméra",
+      mirror: "Vue miroir",
+      mirrorHint: "Bougez la main vers la droite et tout va vers la droite.",
+      video: "Afficher la vidéo",
+      videoHint: "Voir la caméra derrière la main sur l’écran d’accueil.",
+      fallback: (i: number) => `Caméra ${i}`,
+    },
+    advanced: {
+      diagnostics: "Diagnostic",
+      engine: "Moteur",
+      offline: "hors ligne",
+      camera: "Caméra",
+      processing: "Traitement",
+      detected: "Détecté",
+      detectedHint: "Avant filtrage.",
+      owner: "Geste en cours",
+      none: "aucun",
+      activity: "Activité",
+      noEvents: "Aucun événement pour l’instant",
+    },
+  },
+
+  gestures: {
+    scroll:      { label: "Défiler", hint: "Deux doigts et bougez la main : la page suit ; un geste rapide va plus loin" },
+    zoom:        { label: "Zoom", hint: "Pincez le pouce et l’index, puis écartez-les ou rapprochez-les" },
+    task_view:   { label: "Vue des tâches", hint: "Deux paumes ouvertes écartées, puis rapprochez-les" },
+    grab_window: {
+      label: "Déplacer les fenêtres",
+      hint: "Paume, fermez le poing et faites glisser ; ouvrez-le pour lâcher. Ouvrez la main inclinée vers un côté pour envoyer la fenêtre sur cet écran ; un coup vers le haut l’agrandit ; un coup vers le bas puis ouvrir la ferme",
+    },
+    volume:      { label: "Volume", hint: "Trois doigts, levez ou baissez la main" },
+    mute:        { label: "Couper le son", hint: "Paume, poing rapide, paume à nouveau (gêne le déplacement des fenêtres)" },
+    pause:       { label: "Lecture / pause", hint: "Quatre doigts un instant, puis fermez le poing" },
+    power:       { label: "Activer / désactiver", hint: "Deux paumes ouvertes immobiles devant la caméra" },
+    screenshot:  { label: "Capture d’écran", hint: "Gardez la paume immobile un instant, puis éloignez-la de la caméra" },
+  },
+
+  states: {
+    PALM: "Main ouverte",
+    FIST: "Poing",
+    PINCH: "Pince",
+    TWO_FINGERS: "Deux doigts",
+    THREE_FINGERS: "Trois doigts",
+    FOUR_FINGERS: "Quatre doigts",
+    POINT: "Index pointé",
+    THUMB_UP: "Pouce levé",
+    THUMB_DOWN: "Pouce baissé",
+    ROCK: "Rock",
+    OK: "OK",
+    OTHER: "Main détendue",
+    UNKNOWN: "…",
+    "NO HANDS": "Pas de main",
+  },
+
+  events: {
+    SCROLL: "Défilement",
+    VOLUME_UP: "Volume +",
+    VOLUME_DOWN: "Volume −",
+    ZOOM_IN: "Zoom +",
+    ZOOM_OUT: "Zoom −",
+    SCREENSHOT: "Capture",
+    CLOSE_WINDOW: "Fermer la fenêtre",
+    MUTE_TOGGLE: "Couper le son",
+    TASK_VIEW: "Vue des tâches",
+    MEDIA_PLAY_PAUSE: "Lecture / pause",
+    GRAB_WINDOW_START: "Fenêtre saisie",
+    GRAB_WINDOW_RELEASED: "Fenêtre lâchée",
+    WINDOW_TO_MONITOR: "Fenêtre vers l’autre écran",
+    WINDOW_MAXIMIZED: "Fenêtre agrandie",
+    POWER_OFF: "GestureKey désactivé",
+    POWER_ON: "GestureKey activé",
+  },
+
+  overlay: {
+    live: { SCROLL: "Défilement", VOLUME: "Volume", ZOOM: "Zoom", GRAB_WINDOW: "Déplacement de la fenêtre" },
+    toasts: {
+      CLOSE_WINDOW: "Fenêtre fermée",
+      WINDOW_TO_MONITOR: "Fenêtre envoyée sur l’autre écran",
+      WINDOW_MAXIMIZED: "Fenêtre agrandie",
+      SCREENSHOT: "Capture enregistrée",
+      TASK_VIEW: "Vue des tâches",
+      MUTE_TOGGLE: "Couper le son",
+      MEDIA_PLAY_PAUSE: "Lecture / pause",
+      POWER_OFF: "GestureKey désactivé",
+      POWER_ON: "GestureKey activé",
+    },
+    zones: {
+      maximize: "Lâchez pour agrandir",
+      left: "Lâchez pour ancrer à gauche",
+      right: "Lâchez pour ancrer à droite",
+    },
+    holdOff: "Maintenez pour désactiver GestureKey",
+    holdOn: "Maintenez pour activer GestureKey",
+  },
+
+};

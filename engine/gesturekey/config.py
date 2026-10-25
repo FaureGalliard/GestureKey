@@ -178,11 +178,17 @@ class GesturesConfig:
 
 
 @dataclass
+class UIConfig:
+    language: str = "auto"   # "auto" (system) | "en" | "es" | "fr" | "ko" — read by the app and overlay
+
+
+@dataclass
 class AppConfig:
     camera:     CameraConfig     = field(default_factory=CameraConfig)
     tracking:   TrackingConfig   = field(default_factory=TrackingConfig)
     states:     StatesConfig     = field(default_factory=StatesConfig)
     gestures:   GesturesConfig   = field(default_factory=GesturesConfig)
+    ui:         UIConfig         = field(default_factory=UIConfig)
 
     # ── (de)serialisation ────────────────────────────────────────────────────
 
@@ -220,6 +226,7 @@ def _choices_only(data: Dict[str, Any]) -> Dict[str, Any]:
     gestures = data.get("gestures") if isinstance(data.get("gestures"), dict) else {}
     return {
         "camera": data.get("camera") if isinstance(data.get("camera"), dict) else {},
+        "ui": data.get("ui") if isinstance(data.get("ui"), dict) else {},
         "gestures": {name: {"enabled": section["enabled"]}
                      for name, section in gestures.items()
                      if isinstance(section, dict) and "enabled" in section},

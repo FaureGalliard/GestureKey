@@ -31,10 +31,10 @@ RETRY_GAP_S      = 0.75   # between attempts when opening
 STALL_S          = 2.5    # no frame for this long → reconnect
 LOW_FPS          = 15.0   # below this the camera is probably starved of light
 
-# User-facing copy: shown as-is by the (Spanish) app UI.
+# Log text only: the app shows its own translated copy for each camera status.
 _CAMERA_HELP = {
-    "busy":    "Otra aplicación está usando la cámara (Zoom, Discord, Teams, OBS…). Ciérrala y se conectará sola.",
-    "missing": "No encontramos la cámara. Conéctala y se conectará sola.",
+    "busy":    "Another application is using the camera (Zoom, Discord, Teams, OBS…); it will connect once it's free.",
+    "missing": "No camera found; it will connect once one is plugged in.",
 }
 PREVIEW_WIDTH    = 480
 PREVIEW_INTERVAL = 1 / 12

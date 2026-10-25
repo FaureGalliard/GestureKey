@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { EVENT_LABELS, STATE_LABELS, type FrameMsg } from "../lib/protocol";
+import { useT } from "../i18n";
+import type { FrameMsg } from "../lib/protocol";
 import type { LogEntry } from "../lib/useEngine";
 import { HandCanvas } from "./HandCanvas";
 
@@ -12,6 +13,7 @@ interface Props {
 
 /** The hand inside a quiet framed stage. */
 export function Preview({ frame, connected, preview = null, toast = null }: Props) {
+  const t = useT();
   const hasHand = !!frame?.hands.length;
   const state = frame?.state ?? "NO HANDS";
 
@@ -29,14 +31,14 @@ export function Preview({ frame, connected, preview = null, toast = null }: Prop
       {!hasHand && (
         <div className="pointer-events-none absolute inset-0 grid place-items-center">
           <p className="text-[13px] text-fg-faint">
-            {connected ? "Muestra una mano a la cámara" : "Sin imagen de la cámara"}
+            {connected ? t.preview.showHand : t.preview.noImage}
           </p>
         </div>
       )}
 
       {hasHand && (
         <div className="pointer-events-none absolute bottom-4 left-4 rounded-full bg-black/40 px-3 py-1.5 text-[12px] font-medium text-fg backdrop-blur-md">
-          {frame?.owner === "GRAB_WINDOW" ? "Moviendo ventana" : STATE_LABELS[state] ?? state}
+          {frame?.owner === "GRAB_WINDOW" ? t.preview.movingWindow : t.states[state] ?? state}
         </div>
       )}
 
@@ -51,7 +53,7 @@ export function Preview({ frame, connected, preview = null, toast = null }: Prop
               transition={{ duration: 0.28, ease: [0.32, 0.72, 0, 1] }}
               className="rounded-full bg-accent px-3.5 py-1.5 text-[12px] font-medium text-fg shadow-lg"
             >
-              {EVENT_LABELS[toast.text] ?? toast.text}
+              {t.events[toast.text] ?? toast.text}
             </motion.div>
           )}
         </AnimatePresence>

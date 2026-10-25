@@ -6,6 +6,8 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { I18nProvider, initialLang, resolveLang, useT } from "../i18n";
+import type { Dict } from "../i18n/en";
 import type { ArmingInfo, FrameMsg } from "../lib/protocol";
 import { useEngine } from "../lib/useEngine";
 
@@ -13,24 +15,14 @@ const TOAST_MS = 1400;
 const EASE = [0.32, 0.72, 0, 1] as const;
 
 /** Continuous gestures: shown for as long as they own the hand. */
-const LIVE: Record<string, { icon: LucideIcon; label: string }> = {
-  SCROLL:      { icon: ArrowUpDown, label: "Desplazando" },
-  VOLUME:      { icon: Volume2,     label: "Volumen" },
-  ZOOM:        { icon: ZoomIn,      label: "Zoom" },
-  GRAB_WINDOW: { icon: Move,        label: "Moviendo ventana" },
+const LIVE: Record<string, LucideIcon> = {
+  SCROLL: ArrowUpDown, VOLUME: Volume2, ZOOM: ZoomIn, GRAB_WINDOW: Move,
 };
 
 /** One-shot gestures: a short toast. Continuous ones are covered by LIVE. */
-const TOASTS: Record<string, { icon: LucideIcon; label: string }> = {
-  CLOSE_WINDOW:     { icon: X,          label: "Ventana cerrada" },
-  WINDOW_TO_MONITOR: { icon: MonitorUp, label: "Ventana al otro monitor" },
-  WINDOW_MAXIMIZED: { icon: Maximize2,  label: "Ventana maximizada" },
-  SCREENSHOT:       { icon: Camera,     label: "Captura guardada" },
-  TASK_VIEW:        { icon: LayoutGrid, label: "Vista de tareas" },
-  MUTE_TOGGLE:      { icon: VolumeX,    label: "Silenciar" },
-  MEDIA_PLAY_PAUSE: { icon: Pause,      label: "Reproducir / pausar" },
-  POWER_OFF:        { icon: PowerOff,   label: "GestureKey apagado" },
-  POWER_ON:         { icon: Power,      label: "GestureKey encendido" },
+const TOASTS: Record<string, LucideIcon> = {
+  CLOSE_WINDOW: X, WINDOW_TO_MONITOR: MonitorUp, WINDOW_MAXIMIZED: Maximize2, SCREENSHOT: Camera,
+  TASK_VIEW: LayoutGrid, MUTE_TOGGLE: VolumeX, MEDIA_PLAY_PAUSE: Pause, POWER_OFF: PowerOff, POWER_ON: Power,
 };
 
 type Item =
@@ -39,35 +31,45 @@ type Item =
   | { kind: "toast"; key: string; icon: LucideIcon; label: string };
 
 /** While dragging a window: what letting go now would do (like Windows' snap preview). */
-const ZONES: Record<string, { icon: LucideIcon; label: string }> = {
-  maximize: { icon: Maximize2,  label: "Suelta para maximizar" },
-  left:     { icon: PanelLeft,  label: "Suelta para acoplar a la izquierda" },
-  right:    { icon: PanelRight, label: "Suelta para acoplar a la derecha" },
-};
+const ZONES: Record<string, LucideIcon> = { maximize: Maximize2, left: PanelLeft, right: PanelRight };
 
-function pick(frame: FrameMsg | null, toast: Item | null): Item | null {
+function pick(frame: FrameMsg | null, toast: Item | null, t: Dict): Item | null {
   if (frame?.arming) return { kind: "ring", key: "ring", arming: frame.arming };
   const zone = frame?.owner === "GRAB_WINDOW" ? frame.owner_info?.zone : undefined;
-  if (zone) return { kind: "live", key: `zone-${zone}`, ...ZONES[zone] };
+  if (zone) return { kind: "live", key: `zone-${zone}`, icon: ZONES[zone], label: t.overlay.zones[zone] };
   const live = frame?.owner ? LIVE[frame.owner] : undefined;
-  if (live) return { kind: "live", key: `live-${frame!.owner}`, ...live, level: frame!.owner_info?.volume };
+  if (live) {
+    return { kind: "live", key: `live-${frame!.owner}`, icon: live, label: t.overlay.live[frame!.owner!] ?? frame!.owner!,
+             level: frame!.owner_info?.volume };
+  }
   return toast;
 }
 
 export function Overlay() {
   const engine = useEngine();
+  const lang = engine.config ? resolveLang(engine.config.ui?.language) : initialLang();
+  return (
+    <I18nProvider lang={lang}>
+      <OverlayView engine={engine} />
+    </I18nProvider>
+  );
+}
+
+function OverlayView({ engine }: { engine: ReturnType<typeof useEngine> }) {
+  const t = useT();
   const [toast, setToast] = useState<Item | null>(null);
 
   // newest one-shot event → toast
   const newest = engine.log.find((e) => e.kind === "event" && TOASTS[e.text]);
   useEffect(() => {
     if (!newest) return;
-    setToast({ kind: "toast", key: `toast-${newest.id}`, ...TOASTS[newest.text] });
+    setToast({ kind: "toast", key: `toast-${newest.id}`, icon: TOASTS[newest.text],
+               label: t.overlay.toasts[newest.text] ?? newest.text });
     const timer = window.setTimeout(() => setToast(null), TOAST_MS);
     return () => window.clearTimeout(timer);
   }, [newest?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const item = pick(engine.frame, toast);
+  const item = pick(engine.frame, toast, t);
 
   // move to the monitor under the cursor whenever something appears
   const visible = useRef(false);
@@ -91,7 +93,7 @@ export function Overlay() {
             {item.kind === "ring" ? <Ring info={item.arming} /> : <Badge icon={item.icon} />}
             <span className="text-[13.5px] font-medium tracking-[-0.005em]">
               {item.kind === "ring"
-                ? item.arming.action === "off" ? "Mantén para apagar GestureKey" : "Mantén para encender GestureKey"
+                ? item.arming.action === "off" ? t.overlay.holdOff : t.overlay.holdOn
                 : item.label}
             </span>
             {item.kind === "live" && item.level !== undefined && <Level value={item.level} />}

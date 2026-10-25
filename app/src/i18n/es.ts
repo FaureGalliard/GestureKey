@@ -1,0 +1,148 @@
+import type { Dict } from "./en";
+
+export const es: Dict = {
+  langName: "Español",
+
+  home: {
+    starting:     { title: "Iniciando…", subtitle: "Preparando la cámara y el reconocimiento." },
+    opening:      { title: "Abriendo la cámara…", subtitle: "Un momento." },
+    reconnecting: { title: "Reconectando la cámara…", subtitle: "Se perdió la imagen; volvemos enseguida." },
+    busy: {
+      title: "La cámara está ocupada",
+      subtitle: "Otra aplicación está usando la cámara (Zoom, Discord, Teams, OBS…). Ciérrala y GestureKey se conectará solo.",
+    },
+    missing: { title: "No encontramos la cámara", subtitle: "Conecta una cámara y GestureKey se conectará solo." },
+    paused: {
+      title: "En pausa",
+      subtitle: "Los gestos están apagados. Actívalos aquí o con dos palmas quietas frente a la cámara.",
+    },
+    ready: { title: "Listo para tus gestos", subtitle: "Mueve la mano frente a la cámara para controlar tu PC." },
+    retry: "Reintentar ahora",
+    retryAlt: "o elige otra en Ajustes › Cámara",
+    tip: "Consejo: con buena luz de frente el reconocimiento es más estable.",
+    lowLight: (fps: number) =>
+      `Hay poca luz: la cámara va a ${fps} fps. Con más luz de frente los gestos son más precisos.`,
+    on: "Activo",
+    off: "Apagado",
+    toggle: "Activar gestos",
+    settings: "Ajustes",
+  },
+
+  preview: {
+    showHand: "Muestra una mano a la cámara",
+    noImage: "Sin imagen de la cámara",
+    movingWindow: "Moviendo ventana",
+  },
+
+  settings: {
+    title: "Ajustes",
+    close: "Cerrar",
+    tabs: { general: "General", gestures: "Gestos", camera: "Cámara", advanced: "Avanzado" },
+    general: {
+      language: "Idioma",
+      languageHint: "Lo usan la app y los avisos en pantalla.",
+      auto: "Automático (sistema)",
+    },
+    gestures: {
+      intro: "Activa solo los que vayas a usar: menos gestos, menos sorpresas.",
+      groups: { navigate: "Navegar", windows: "Ventanas", media: "Sonido y medios", other: "Otros" },
+    },
+    camera: {
+      section: "Cámara",
+      device: "Dispositivo",
+      noCameras: "Sin cámaras",
+      mirror: "Vista espejo",
+      mirrorHint: "Al mover la mano a la derecha, todo va a la derecha.",
+      video: "Mostrar video",
+      videoHint: "Ver la cámara detrás de la mano en la pantalla principal.",
+      fallback: (i: number) => `Cámara ${i}`,
+    },
+    advanced: {
+      diagnostics: "Diagnóstico",
+      engine: "Motor",
+      offline: "sin conexión",
+      camera: "Cámara",
+      processing: "Procesando",
+      detected: "Detectado",
+      detectedHint: "Antes de filtrar.",
+      owner: "Gesto en curso",
+      none: "ninguno",
+      activity: "Actividad",
+      noEvents: "Sin eventos todavía",
+    },
+  },
+
+  gestures: {
+    scroll:      { label: "Desplazar", hint: "Dos dedos y mueve la mano: la página la sigue; rápido llega más lejos" },
+    zoom:        { label: "Zoom", hint: "Junta el pulgar y el índice, ábrelos o ciérralos" },
+    task_view:   { label: "Vista de tareas", hint: "Dos palmas abiertas separadas, júntalas" },
+    grab_window: {
+      label: "Mover ventanas",
+      hint: "Palma, cierra el puño y arrastra; ábrela para soltar. Ábrela inclinada hacia un lado para mandar la ventana a ese monitor; golpe arriba para maximizar; golpe abajo y abrir para cerrar",
+    },
+    volume:      { label: "Volumen", hint: "Tres dedos, sube o baja la mano" },
+    mute:        { label: "Silenciar", hint: "Palma, puño rápido y palma otra vez (choca con mover ventanas)" },
+    pause:       { label: "Reproducir / pausar", hint: "Cuatro dedos un momento y cierra el puño" },
+    power:       { label: "Encender / apagar", hint: "Dos palmas abiertas quietas frente a la cámara" },
+    screenshot:  { label: "Captura de pantalla", hint: "Palma quieta un momento y empújala lejos de la cámara" },
+  },
+
+  states: {
+    PALM: "Mano abierta",
+    FIST: "Puño",
+    PINCH: "Pinza",
+    TWO_FINGERS: "Dos dedos",
+    THREE_FINGERS: "Tres dedos",
+    FOUR_FINGERS: "Cuatro dedos",
+    POINT: "Señalando",
+    THUMB_UP: "Pulgar arriba",
+    THUMB_DOWN: "Pulgar abajo",
+    ROCK: "Rock",
+    OK: "OK",
+    OTHER: "Mano relajada",
+    UNKNOWN: "…",
+    "NO HANDS": "Sin mano",
+  },
+
+  events: {
+    SCROLL: "Scroll",
+    VOLUME_UP: "Volumen +",
+    VOLUME_DOWN: "Volumen −",
+    ZOOM_IN: "Zoom +",
+    ZOOM_OUT: "Zoom −",
+    SCREENSHOT: "Captura",
+    CLOSE_WINDOW: "Cerrar ventana",
+    MUTE_TOGGLE: "Silenciar",
+    TASK_VIEW: "Vista de tareas",
+    MEDIA_PLAY_PAUSE: "Reproducir / pausar",
+    GRAB_WINDOW_START: "Ventana agarrada",
+    GRAB_WINDOW_RELEASED: "Ventana soltada",
+    WINDOW_TO_MONITOR: "Ventana al otro monitor",
+    WINDOW_MAXIMIZED: "Ventana maximizada",
+    POWER_OFF: "GestureKey apagado",
+    POWER_ON: "GestureKey encendido",
+  },
+
+  overlay: {
+    live: { SCROLL: "Desplazando", VOLUME: "Volumen", ZOOM: "Zoom", GRAB_WINDOW: "Moviendo ventana" },
+    toasts: {
+      CLOSE_WINDOW: "Ventana cerrada",
+      WINDOW_TO_MONITOR: "Ventana al otro monitor",
+      WINDOW_MAXIMIZED: "Ventana maximizada",
+      SCREENSHOT: "Captura guardada",
+      TASK_VIEW: "Vista de tareas",
+      MUTE_TOGGLE: "Silenciar",
+      MEDIA_PLAY_PAUSE: "Reproducir / pausar",
+      POWER_OFF: "GestureKey apagado",
+      POWER_ON: "GestureKey encendido",
+    },
+    zones: {
+      maximize: "Suelta para maximizar",
+      left: "Suelta para acoplar a la izquierda",
+      right: "Suelta para acoplar a la derecha",
+    },
+    holdOff: "Mantén para apagar GestureKey",
+    holdOn: "Mantén para encender GestureKey",
+  },
+
+};
