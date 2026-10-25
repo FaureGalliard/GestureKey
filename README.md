@@ -13,7 +13,9 @@ move windows between monitors, task view and more.
 
 | Gesture | Action |
 |---|---|
-| ✌️ two fingers, move the hand | Scroll — the page follows the hand; a quick flick goes further |
+| ☝️ point with the index | Mouse — the cursor follows the hand, across all monitors |
+| …🤏 pinch thumb and index | Click (twice = double click); pinch and move = drag; hold = right click |
+| ✌️ two fingers, move the hand | Scroll whatever is under the cursor — point at it first, no click needed |
 | 🤟 three fingers, raise / lower | Volume — same height, same level |
 | 🤏 pinch, open / close | Zoom |
 | ✋ → ✊ and drag | Move the window (smooth, accelerated, across monitors) |
