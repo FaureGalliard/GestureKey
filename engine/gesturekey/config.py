@@ -170,7 +170,8 @@ class MouseConfig:
     drag_start:  float = 0.25    # palm lengths moved while pinching = drag instead of click
     right_hold:  float = 0.70    # still pinch this long = right click
     rollback:    float = 0.15    # s of cursor motion undone when the hand goes away
-    flick_speed: float = 1.5     # image units/s sideways: jump to the next monitor that way
+    jump_tilt:   float = 45.0    # degrees the index leans to a side: jump to the monitor that way
+    rearm_tilt:  float = 20.0    # back under this (pointing up again) before the next jump
 
 
 @dataclass

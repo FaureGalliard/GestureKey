@@ -10,15 +10,20 @@ from gesturekey.core.types import GestureEvent, Hand, HandState, Point
 from gesturekey.gestures.base import Output
 from gesturekey.gestures.continuous import ContinuousGesture
 
-FLICK_SPAN  = 0.05   # s of motion that measure a flick's speed
-FLICK_BLOCK = 0.35   # s: the rest of that same motion does not move the cursor
-DOMINANCE   = 1.5    # a flick's sideways speed must beat the vertical one by this much
+TILT_FRAMES = 2      # consecutive tilted frames before the cursor jumps
+TILT_UNDO   = 0.30   # s of cursor motion taken back on a jump (tilting moves the palm a bit)
 POINTING_REACH = 1.30   # index tip ↔ wrist (palm lengths) to count as ☝️: fists stay below ~0.95, pointing ~1.96
 
 
 def pinch_gap(hand: Hand) -> float:
     """Thumb tip ↔ index tip, in palm lengths."""
     return dist(hand.img[4], hand.img[8]) / palm_length(hand)
+
+
+def index_tilt(hand: Hand) -> float:
+    """Degrees the index (knuckle → tip) leans from straight up: + = towards the user's right."""
+    (x5, y5), (x8, y8) = hand.img[5], hand.img[8]
+    return math.degrees(math.atan2(x8 - x5, -(y8 - y5)))
 
 
 def index_reach(hand: Hand) -> float:
@@ -41,8 +46,9 @@ class Pointer:
       pinch and let go                 → left click (twice quickly = double click)
       pinch and move                   → drag (left button held)
       pinch held still `right_hold`    → right click
-    A quick sideways flick jumps the cursor to the monitor that way, like
-    flicking a window there (same relative spot on the new monitor).
+    Pointing *towards a side* (index leaning ≥ `jump_tilt`) jumps the cursor to
+    the monitor that way, like opening the hand tilted sends a window there
+    (same relative spot on the new monitor). Straighten it to go on pointing.
     """
 
     def __init__(self, cfg: MouseConfig) -> None:
@@ -68,7 +74,6 @@ class Pointer:
         here = palm_center(hand)
         dx, dy = here[0] - self._last[0], here[1] - self._last[1]
         self._last = here
-        self._trail.append((now, here))
 
         gap = pinch_gap(hand)
         pinching = self._pinch_at is not None
@@ -91,31 +96,30 @@ class Pointer:
                 return "right"
             else:
                 return None                                       # held still: the cursor stays put
-        if self._flick(now, out) or now < self._block_until:
+        if self._tilt_jump(hand, now, out):
             return None
         self._move(dx, dy, dt, out)
         return None
 
-    def _flick(self, now: float, out: Output) -> bool:
+    def _tilt_jump(self, hand: Hand, now: float, out: Output) -> bool:
+        """True while the index leans to a side: the cursor jumped (or will) and stays put."""
         cfg = self._cfg
-        t1, p1 = self._trail[-1]
-        past = [(t, p) for t, p in self._trail if t1 - t >= FLICK_SPAN]
-        if not past:
+        tilt = index_tilt(hand)
+        if not self._jump_ready:
+            self._jump_ready = abs(tilt) < cfg.rearm_tilt         # straightened: point again
+            return not self._jump_ready
+        if abs(tilt) < cfg.jump_tilt:
+            self._tilted = 0
             return False
-        t0, p0 = past[-1]
-        vx, vy = (p1[0] - p0[0]) / (t1 - t0), (p1[1] - p0[1]) / (t1 - t0)
-        if not self._flick_ready:
-            self._flick_ready = abs(vx) < 0.5 * cfg.flick_speed     # the previous flick is over
-            return False
-        if abs(vx) < cfg.flick_speed or abs(vx) < DOMINANCE * abs(vy):
-            return False
-        # the start of the flick already moved the cursor: take that back, then jump
-        undo = [m for t, m in self._sent if now - t <= FLICK_SPAN * 3]
+        self._tilted += 1
+        if self._tilted < TILT_FRAMES:
+            return True
+        undo = [m for t, m in self._sent if now - t <= TILT_UNDO]  # leaning nudged the cursor
         out.emit(GestureEvent.MOUSE_TO_MONITOR,
-                 CursorJump("right" if vx > 0 else "left",
+                 CursorJump("right" if tilt > 0 else "left",
                             -sum(m[0] for m in undo), -sum(m[1] for m in undo)))
         self._sent.clear()
-        self._flick_ready, self._block_until = False, now + FLICK_BLOCK
+        self._jump_ready, self._tilted = False, 0
         return True
 
     def end(self, now: float, out: Output) -> None:
@@ -155,9 +159,8 @@ class Pointer:
         self._dragging = False
         self._consumed = False
         self._closing = 0
-        self._flick_ready = True
-        self._block_until = 0.0
-        self._trail: Deque[Tuple[float, Point]] = deque(maxlen=12)
+        self._jump_ready = True
+        self._tilted = 0
         self._sent: Deque[Tuple[float, Tuple[float, float]]] = deque(maxlen=120)
 
 

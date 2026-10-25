@@ -64,20 +64,36 @@ def test_opening_the_hand_lets_go_of_the_cursor(clock):
     assert clock.arbiter.owner is None
 
 
-def test_quick_sideways_flick_jumps_to_the_next_monitor(clock):
+def _jumps(clock):
     from gesturekey.actions.types import CursorJump
+    return [a.direction for a in clock.actions if isinstance(a, CursorJump)]
+
+
+def test_pointing_towards_a_side_jumps_to_that_monitor(clock):
     _point(clock, 0.3)
-    _point(clock, 0.1, wrist=(0.5, 0.7), to=(0.75, 0.7))          # 2.5 image widths/s
-    jumps = [a for a in clock.actions if isinstance(a, CursorJump)]
-    assert [j.direction for j in jumps] == ["right"]
+    _point(clock, 0.3, tilt=60)                                  # index leaning right
+    assert _jumps(clock) == ["right"]                            # once, however long it leans
     assert "MOUSE_TO_MONITOR" in clock.events
 
 
-def test_moving_at_a_normal_pace_never_jumps(clock):
-    from gesturekey.actions.types import CursorJump
+def test_straighten_then_lean_again_for_the_next_monitor(clock):
     _point(clock, 0.3)
-    _point(clock, 0.6, wrist=(0.5, 0.7), to=(0.8, 0.7))           # 0.5 image widths/s
-    assert not [a for a in clock.actions if isinstance(a, CursorJump)]
+    _point(clock, 0.2, tilt=-60)
+    _point(clock, 0.2)                                           # upright again
+    _point(clock, 0.2, tilt=-60)
+    assert _jumps(clock) == ["left", "left"]
+
+
+def test_a_slight_lean_keeps_pointing(clock):
+    _point(clock, 0.3)
+    _point(clock, 0.3, tilt=25)
+    assert _jumps(clock) == []
+
+
+def test_moving_fast_sideways_never_jumps(clock):
+    _point(clock, 0.3)
+    _point(clock, 0.1, wrist=(0.5, 0.7), to=(0.75, 0.7))         # 2.5 image widths/s, upright
+    assert _jumps(clock) == []
 
 
 def test_jump_target_keeps_the_relative_spot():
