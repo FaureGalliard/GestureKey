@@ -9,6 +9,7 @@ from gesturekey.core.cooldown import CooldownManager
 from gesturekey.core.geometry import palm_center
 from gesturekey.core.types import FrameData, GestureEvent, HandState, Point
 from gesturekey.gestures.base import Gesture, Output
+from gesturekey.gestures.mouse import POINTING_REACH, index_reach
 
 THROW_WINDOW = 0.15   # seconds of motion before the release that define the throw
 THROW_SPAN   = 0.05   # velocity is measured over spans this long, and the peak wins
@@ -68,9 +69,10 @@ class GrabWindowGesture(Gesture):
         if hand is None:
             return self.on_lost(now, out)
         wrist = hand.wrist
-        # Once the palm has armed a grab, a "pointing" hand is almost surely a fist the
-        # 2D features misread (loose index): count it as one. POINT stays free otherwise.
-        fist = state == HandState.FIST or (state == HandState.POINT and self._phase != _Phase.IDLE)
+        # Once the palm has armed a grab, a "pointing" hand with a curled index is a fist
+        # the classifier misread: count it as one. A real ☝️ (index out) is the mouse.
+        fist = state == HandState.FIST or (state == HandState.POINT and self._phase != _Phase.IDLE
+                                           and index_reach(hand) < POINTING_REACH)
 
         if self._phase == _Phase.IDLE:
             if state == HandState.PALM:
