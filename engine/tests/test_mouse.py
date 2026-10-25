@@ -69,30 +69,31 @@ def _jumps(clock):
     return [a.direction for a in clock.actions if isinstance(a, CursorJump)]
 
 
-def test_pointing_towards_a_side_jumps_to_that_monitor(clock):
+def test_quick_sideways_flick_jumps_to_the_next_monitor(clock):
     _point(clock, 0.3)
-    _point(clock, 0.3, tilt=60)                                  # index leaning right
-    assert _jumps(clock) == ["right"]                            # once, however long it leans
+    _point(clock, 0.1, wrist=(0.5, 0.7), to=(0.75, 0.7))          # 2.5 image widths/s
+    assert _jumps(clock) == ["right"]
     assert "MOUSE_TO_MONITOR" in clock.events
 
 
-def test_straighten_then_lean_again_for_the_next_monitor(clock):
+def test_moving_at_a_normal_pace_never_jumps(clock):
     _point(clock, 0.3)
-    _point(clock, 0.2, tilt=-60)
-    _point(clock, 0.2)                                           # upright again
-    _point(clock, 0.2, tilt=-60)
-    assert _jumps(clock) == ["left", "left"]
-
-
-def test_a_slight_lean_keeps_pointing(clock):
-    _point(clock, 0.3)
-    _point(clock, 0.3, tilt=25)
+    _point(clock, 0.6, wrist=(0.5, 0.7), to=(0.8, 0.7))           # 0.5 image widths/s
     assert _jumps(clock) == []
 
 
-def test_moving_fast_sideways_never_jumps(clock):
+def test_leaning_the_index_towards_a_corner_does_not_jump(clock):
     _point(clock, 0.3)
-    _point(clock, 0.1, wrist=(0.5, 0.7), to=(0.75, 0.7))         # 2.5 image widths/s, upright
+    _point(clock, 0.4, tilt=55)
+    assert _jumps(clock) == []
+
+
+def test_hand_parked_at_the_edge_keeps_the_cursor_going(clock):
+    _point(clock, 0.3, wrist=(0.5, 0.7))
+    _point(clock, 0.3, wrist=(0.5, 0.7), to=(0.95, 0.7))          # slowly to the camera's right edge
+    before = _moved(clock)[0]
+    _point(clock, 1.0, wrist=(0.95, 0.7))                          # and keep it there
+    assert _moved(clock)[0] - before > 0.5                         # glided most of a monitor further
     assert _jumps(clock) == []
 
 
