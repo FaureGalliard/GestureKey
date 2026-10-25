@@ -152,3 +152,26 @@ def test_executor_sends_the_held_window_to_the_next_monitor(monkeypatch):
     time.sleep(0.5)
     ex.stop()
     assert calls and 1366 <= calls[-1][0] <= 2732 - 600     # animated into the right monitor
+
+
+# ── drop zones (Windows-like snap preview) ────────────────────────────────────
+
+def test_zone_maximize_when_taken_to_the_top():
+    a = _anim()
+    for _ in range(10):
+        a.move(0, -60)
+    assert a.zone == "maximize"
+
+
+def test_zone_left_at_the_outer_edge_of_the_desktop_and_snap_on_release():
+    a = _anim((-1000, 200, -400, 600))                # on the left monitor
+    for _ in range(20):
+        a.move(-80, 0)                                 # push past the desktop's left edge
+    assert a.zone == "left"
+    a.release(0, 0, throw=False)
+    assert _settle(a).action == "left"
+
+
+def test_no_zone_between_two_monitors():
+    a = _anim((1000, 200, 1600, 600))                 # straddling centre and right
+    assert a.zone is None

@@ -244,3 +244,29 @@ def test_flick_down_without_opening_does_not_close(clock):
 def test_pause_tolerates_a_pose_in_passing(clock):
     clock.run(HandState.FOUR_FINGERS, 0.5).run(HandState.THREE_FINGERS, 1 / 30).run(FIST, 1 / 30)
     assert "MEDIA_PLAY_PAUSE" in clock.events
+
+
+# ── after a gesture: calm, and the edge push ──────────────────────────────────
+
+def test_putting_the_hand_down_after_a_grab_does_not_grab_again(clock):
+    _grab(clock)
+    clock.run(PALM, 0.1)                                       # let go…
+    assert clock.events.count("GRAB_WINDOW_RELEASED") == 1
+    clock.run(PALM, 0.2).run(FIST, 0.3)                        # …lowering the hand: palm → fist
+    assert clock.events.count("GRAB_WINDOW_START") == 1        # no second grab
+    clock.run(HandState.NO_HANDS, 0.5).run(PALM, 0.3).run(FIST, 0.2)
+    assert clock.events.count("GRAB_WINDOW_START") == 2        # a deliberate new grab still works
+
+
+def test_parking_the_hand_at_the_camera_edge_sends_the_window_on(clock):
+    from gesturekey.actions.types import WindowSendTo
+    _grab(clock, at=(0.6, 0.5))
+    clock.run(FIST, 0.4, wrist=(0.6, 0.5), to=(0.95, 0.5))     # calm drag to the right edge
+    clock.run(FIST, 0.4, wrist=(0.95, 0.5))                    # …and wait there
+    sends = [a.direction for a in clock.actions if isinstance(a, WindowSendTo)]
+    assert sends == ["right"]                                  # once
+    clock.run(FIST, 0.5, wrist=(0.95, 0.5))
+    assert [a.direction for a in clock.actions if isinstance(a, WindowSendTo)] == ["right"]
+    clock.run(FIST, 0.4, wrist=(0.95, 0.5), to=(0.5, 0.5))     # back towards the centre…
+    clock.run(FIST, 0.4, wrist=(0.5, 0.5), to=(0.95, 0.5)).run(FIST, 0.4, wrist=(0.95, 0.5))
+    assert [a.direction for a in clock.actions if isinstance(a, WindowSendTo)] == ["right", "right"]

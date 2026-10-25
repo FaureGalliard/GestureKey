@@ -18,10 +18,16 @@ export interface FrameMsg {
   confidence: number;
   hands: HandMsg[];
   owner: string | null;                         // gesture that owns the hand right now
-  owner_info: Record<string, number> | null;    // its live values, e.g. { volume: 0.42 }
+  owner_info: OwnerInfo | null;                 // its live values, e.g. { volume: 0.42 }
   arming: ArmingInfo | null;                    // a deliberate hold in progress
   enabled: boolean;
   fps: number;
+}
+
+export interface OwnerInfo {
+  volume?: number;                          // VOLUME: current level 0..1
+  rate?: number;                            // SCROLL
+  zone?: "maximize" | "left" | "right";     // GRAB_WINDOW: what letting go now would do
 }
 
 export interface ArmingInfo {
@@ -77,7 +83,7 @@ export const GESTURES = {
   scroll:       { label: "Desplazar",        hint: "Dos dedos y mueve la mano: la página la sigue; rápido llega más lejos" },
   zoom:         { label: "Zoom",             hint: "Junta el pulgar y el índice, ábrelos o ciérralos" },
   task_view:    { label: "Vista de tareas",  hint: "Dos palmas abiertas separadas, júntalas" },
-  grab_window:  { label: "Mover ventanas",   hint: "Palma, cierra el puño y arrastra; ábrela para soltar. Con el puño cerrado: golpe a un lado = otro monitor, arriba = maximizar, abajo y abrir = cerrar" },
+  grab_window:  { label: "Mover ventanas",   hint: "Palma, cierra el puño y arrastra; ábrela para soltar. Lleva la mano al borde para pasar al otro monitor, súbela para maximizar; golpe abajo y abrir cierra" },
   volume:       { label: "Volumen",          hint: "Tres dedos hacia la cámara, sube o baja la mano" },
   mute:         { label: "Silenciar",        hint: "Palma, puño rápido y palma otra vez (choca con mover ventanas)" },
   pause:        { label: "Reproducir / pausar", hint: "Cuatro dedos un momento y cierra el puño" },

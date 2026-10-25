@@ -29,6 +29,10 @@ class GestureArbiter:
          the first one that becomes engaged claims the hand and the others
          are reset.
 
+    After a gesture finishes (an owner lets go, or a one-shot fires) nothing
+    new may start for `refractory` seconds: putting the hand back down passes
+    through poses (palm → fist…) that would otherwise start another gesture.
+
     Turning GestureKey on/off (power gesture) lives in the engine, outside
     the arbiter, so it keeps working while everything here is off.
     """
@@ -49,6 +53,8 @@ class GestureArbiter:
         ]
         self._two_hand: List[Gesture] = [TaskViewGesture(cooldown, cfg.task_view)] if cfg.task_view.enabled else []
         self._mute_enabled = cfg.mute.enabled
+        self._refractory = cfg.refractory
+        self._quiet_until = float("-inf")
         self._owner: Optional[Gesture] = None
 
     @property
@@ -61,23 +67,25 @@ class GestureArbiter:
     def process(self, frame: FrameData) -> Output:
         out = Output()
 
+        now = frame.timestamp
         if frame.state in _LOST:
             if self._owner is not None:
-                self._owner.on_lost(frame.timestamp, out)
-                self._release_if_done()
+                self._owner.on_lost(now, out)
+                self._release_if_done(now)
             return out
 
         if self._owner is not None:
             self._owner.update(frame, out)   # the owner decides what an UNKNOWN frame means
-            self._release_if_done()
+            self._release_if_done(now)
             return out
 
-        if frame.state == HandState.UNKNOWN:
+        if frame.state == HandState.UNKNOWN or now < self._quiet_until:
             return out
 
         if self._mute_enabled:
             self._mute.update(frame, out)
             if out.events:
+                self._quiet(now)
                 return out
 
         candidates = (self._hand_gestures if frame.main_hand is not None else []) + self._two_hand
@@ -86,7 +94,14 @@ class GestureArbiter:
             if gesture.engaged:
                 self._claim(gesture)
                 break
+        if out.events and self._owner is None:       # a one-shot fired
+            self._quiet(now)
         return out
+
+    def _quiet(self, now: float) -> None:
+        self._quiet_until = now + self._refractory
+        for gesture in self._all():
+            gesture.reset()
 
     def _claim(self, gesture: Gesture) -> None:
         self._owner = gesture
@@ -94,9 +109,10 @@ class GestureArbiter:
             if other is not gesture:
                 other.reset()
 
-    def _release_if_done(self) -> None:
+    def _release_if_done(self, now: float) -> None:
         if self._owner is not None and not self._owner.engaged:
             self._owner = None
+            self._quiet(now)
 
     def reset_all(self) -> None:
         self._owner = None

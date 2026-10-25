@@ -35,6 +35,8 @@ class ActionExecutor:
         self._volume_ref = 0.0
         #: last level set by a volume gesture, read by the engine for the overlay
         self.volume_level: Optional[float] = None
+        #: snap zone of the window being dragged (see window_physics), for the overlay
+        self.window_zone: Optional[str] = None
         self._thread = threading.Thread(target=self._loop, name="actions", daemon=True)
         self._thread.start()
 
@@ -97,9 +99,11 @@ class ActionExecutor:
         pos = anim.step(min(dt, 0.05))
         if pos:
             win32.set_window_pos(hwnd, *pos)
+        self.window_zone = anim.zone
         if anim.settled:
             landing = anim.finish()
             self._hwnd = None
+            self.window_zone = None
             if landing and landing.action == "maximize":
                 win32.maximize(hwnd)
             elif landing and landing.action in ("left", "right"):

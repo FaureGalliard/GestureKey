@@ -35,6 +35,7 @@ class PhysicsConfig:
     settle_tau:     float = 0.06    # s: approach to the landing spot
     max_glide:      float = 1.0     # flick travels at most this many monitor widths
     top_margin:     int   = 10      # px: top this close to a monitor's top → maximize
+    edge_margin:    int   = 8       # px: title bar this close to the desktop's outer edge → snap
     keep_visible:   int   = 120     # px of the window that always stay on screen
 
 
@@ -121,6 +122,12 @@ class WindowAnimator:
     def release(self, vx: float, vy: float, throw: bool) -> Landing:
         """vx, vy in px/s at the moment the hand opened. Starts the settle animation."""
         cfg = self.cfg
+        zone = self.zone
+        if zone is not None:                          # dropped in a snap zone: no glide
+            x, y = self._fit(self.tx, self.ty, self.monitor_at(self.tx + self.w / 2, self.ty + 15))
+            self.tx, self.ty = (self.tx, self.ty) if zone == "maximize" else (x, y)
+            self._landing = Landing(self.tx, self.ty, zone)
+            return self._landing
         cap = cfg.max_glide * self.px_per_unit
         gx = max(-cap, min(cap, vx * cfg.glide_tau))
         gy = max(-cap, min(cap, vy * cfg.glide_tau))
@@ -150,6 +157,27 @@ class WindowAnimator:
         self.tx, self.ty = x, y
         self._landing = Landing(x, y, action)
         return self._landing
+
+    @property
+    def zone(self) -> Optional[str]:
+        """
+        Where letting go *now* would put the window, like Windows' snap preview:
+        "maximize" when taken to the top of a monitor, "left"/"right" when its
+        title bar is pushed against the outer edge of the desktop. None otherwise.
+        """
+        if not self.active or self._landing is not None:
+            return None
+        cx, cy = self.tx + self.w / 2, self.ty + 15          # a point on the title bar
+        work = self.monitor_at(cx, max(cy, self.ty))[1]
+        if self._pushed_top and self.ty <= work[1] + self.cfg.top_margin:
+            return "maximize"
+        left = min(m[0][0] for m in self.monitors)
+        right = max(m[0][2] for m in self.monitors)
+        if cx <= left + self.cfg.edge_margin:
+            return "left"
+        if cx >= right - self.cfg.edge_margin:
+            return "right"
+        return None
 
     @property
     def settled(self) -> bool:

@@ -143,6 +143,8 @@ class GrabWindowConfig:
     max_gain:     float = 5.0
     deadzone:     float = 0.0015
     flick_speed:  float = 1.5    # image units/s: a flick while holding sends to a monitor / maximizes
+    edge_zone:    float = 0.12   # hand within this fraction of the camera's left/right edge…
+    edge_dwell:   float = 0.25   # …for this long = "keep going that way": next monitor
     throw_speed:  float = 1.4    # release velocity that counts as a throw for the glide
     close_speed:  float = 1.8    # a downward flick this fast arms closing (destructive: higher)
     lost_timeout: float = 0.60   # release if the fist is lost this long (motion blur)
@@ -159,6 +161,7 @@ class PowerConfig:
 @dataclass
 class GesturesConfig:
     cooldown:     float             = 0.6
+    refractory:   float             = 0.8    # after a gesture ends, nothing new starts for this long
     continuous:   ContinuousConfig  = field(default_factory=ContinuousConfig)
     scroll:       ScrollConfig      = field(default_factory=ScrollConfig)
     volume:       VolumeConfig      = field(default_factory=VolumeConfig)

@@ -6,6 +6,7 @@ from typing import Deque, Optional, Tuple
 from gesturekey.actions.types import WindowGrab, WindowMove, WindowRelease, WindowSendTo
 from gesturekey.config import GrabWindowConfig
 from gesturekey.core.cooldown import CooldownManager
+from gesturekey.core.geometry import palm_center
 from gesturekey.core.types import FrameData, GestureEvent, HandState, Point
 from gesturekey.gestures.base import Gesture, Output
 
@@ -27,6 +28,8 @@ class GrabWindowGesture(Gesture):
     """
     PALM (≥ min_arm_time) → FIST (≥ hold_time) : grab the foreground window
     FIST + move                                : drag it (pointer acceleration)
+    hand held at the camera's left/right edge  : "keep going that way" → next monitor
+                                                 (like dragging a mouse past the screen edge)
     flick → / ← while holding                  : send it to the next monitor that way
                                                  (at the desktop edge: snap to that half)
     flick ↑ while holding                      : maximize
@@ -98,6 +101,7 @@ class GrabWindowGesture(Gesture):
                 return self._drop(out)
             if self._flick(now, out):
                 return
+            self._edge_push(hand, now, out)
             if now < self._block_until:              # still inside a flick: do not drag with it
                 self._last, self._last_t = wrist, now
                 return
@@ -116,6 +120,24 @@ class GrabWindowGesture(Gesture):
             if last_t - t >= THROW_SPAN:
                 return (last_p[0] - p[0]) / (last_t - t), (last_p[1] - p[1]) / (last_t - t)
         return 0.0, 0.0
+
+    def _edge_push(self, hand, now: float, out: Output) -> None:
+        """Hand parked at the edge of the camera's view: the user wants to go beyond it."""
+        cfg = self._cfg
+        x = palm_center(hand)[0]
+        side = "right" if x >= 1 - cfg.edge_zone else "left" if x <= cfg.edge_zone else None
+        if side is None:
+            self._edge_since = None
+            if 1.5 * cfg.edge_zone < x < 1 - 1.5 * cfg.edge_zone:
+                self._edge_ready = True                  # came back inwards: may push again
+            return
+        if not self._edge_ready:
+            return
+        if self._edge_since is None or self._edge_side != side:
+            self._edge_since, self._edge_side = now, side
+        elif now - self._edge_since >= cfg.edge_dwell:
+            out.emit(GestureEvent.WINDOW_TO_MONITOR, WindowSendTo(side))
+            self._edge_ready, self._edge_since = False, None
 
     def _flick(self, now: float, out: Output) -> bool:
         """Returns True when the grab ended because of the flick."""
@@ -198,5 +220,8 @@ class GrabWindowGesture(Gesture):
         self._last_seen:  float           = 0.0
         self._trail: Deque[Tuple[float, Point]] = deque(maxlen=30)
         self._flick_ready = True
+        self._edge_ready = True
+        self._edge_since: Optional[float] = None
+        self._edge_side = ""
         self._block_until = 0.0
         self._close_until = float("-inf")

@@ -270,6 +270,8 @@ class Engine:
         info = dict(owner.readout or {})
         if owner.NAME == "VOLUME" and self._executor and self._executor.volume_level is not None:
             info["volume"] = round(self._executor.volume_level, 3)
+        if owner.NAME == "GRAB_WINDOW" and self._executor and self._executor.window_zone:
+            info["zone"] = self._executor.window_zone
         return info or None
 
     def _arming(self) -> Optional[Message]:

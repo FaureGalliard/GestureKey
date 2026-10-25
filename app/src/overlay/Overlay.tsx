@@ -1,7 +1,8 @@
 import { invoke } from "@tauri-apps/api/core";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  ArrowUpDown, Camera, LayoutGrid, Maximize2, MonitorUp, Move, Pause, Power, PowerOff, Volume2, VolumeX, X, ZoomIn,
+  ArrowUpDown, Camera, LayoutGrid, Maximize2, MonitorUp, Move, Pause, PanelLeft, PanelRight, Power, PowerOff,
+  Volume2, VolumeX, X, ZoomIn,
   type LucideIcon,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -37,8 +38,17 @@ type Item =
   | { kind: "live"; key: string; icon: LucideIcon; label: string; level?: number }
   | { kind: "toast"; key: string; icon: LucideIcon; label: string };
 
+/** While dragging a window: what letting go now would do (like Windows' snap preview). */
+const ZONES: Record<string, { icon: LucideIcon; label: string }> = {
+  maximize: { icon: Maximize2,  label: "Suelta para maximizar" },
+  left:     { icon: PanelLeft,  label: "Suelta para acoplar a la izquierda" },
+  right:    { icon: PanelRight, label: "Suelta para acoplar a la derecha" },
+};
+
 function pick(frame: FrameMsg | null, toast: Item | null): Item | null {
   if (frame?.arming) return { kind: "ring", key: "ring", arming: frame.arming };
+  const zone = frame?.owner === "GRAB_WINDOW" ? frame.owner_info?.zone : undefined;
+  if (zone) return { kind: "live", key: `zone-${zone}`, ...ZONES[zone] };
   const live = frame?.owner ? LIVE[frame.owner] : undefined;
   if (live) return { kind: "live", key: `live-${frame!.owner}`, ...live, level: frame!.owner_info?.volume };
   return toast;
