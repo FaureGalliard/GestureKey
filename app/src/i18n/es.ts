@@ -75,7 +75,7 @@ export const es: Dict = {
   gestures: {
     scroll:      { label: "Desplazar", hint: "Dos dedos y mueve la mano: la página la sigue; rápido llega más lejos" },
     zoom:        { label: "Zoom", hint: "Junta el pulgar y el índice, ábrelos o ciérralos" },
-    task_view:   { label: "Vista de tareas", hint: "Dos palmas abiertas separadas, júntalas" },
+    task_view:   { label: "Vista de tareas", hint: "Dos palmas abiertas separadas, júntalas. Dentro: ✌️ mueve para elegir, ✊ para abrir, separa las palmas para salir" },
     grab_window: {
       label: "Mover ventanas",
       hint: "Palma, cierra el puño y arrastra; ábrela para soltar. Ábrela inclinada hacia un lado para mandar la ventana a ese monitor; golpe arriba para maximizar; golpe abajo y abrir para cerrar",
@@ -111,6 +111,9 @@ export const es: Dict = {
     CLOSE_WINDOW: "Cerrar ventana",
     MUTE_TOGGLE: "Silenciar",
     TASK_VIEW: "Vista de tareas",
+    TASK_VIEW_MOVE: "Vista de tareas: siguiente ventana",
+    TASK_VIEW_OPEN: "Vista de tareas: ventana abierta",
+    TASK_VIEW_CLOSED: "Vista de tareas cerrada",
     MEDIA_PLAY_PAUSE: "Reproducir / pausar",
     GRAB_WINDOW_START: "Ventana agarrada",
     GRAB_WINDOW_RELEASED: "Ventana soltada",
@@ -121,13 +124,15 @@ export const es: Dict = {
   },
 
   overlay: {
-    live: { SCROLL: "Desplazando", VOLUME: "Volumen", ZOOM: "Zoom", GRAB_WINDOW: "Moviendo ventana" },
+    live: { SCROLL: "Desplazando", VOLUME: "Volumen", ZOOM: "Zoom", GRAB_WINDOW: "Moviendo ventana", TASK_VIEW: "✌️ mover · ✊ abrir · ✋✋ separar para salir" },
     toasts: {
       CLOSE_WINDOW: "Ventana cerrada",
       WINDOW_TO_MONITOR: "Ventana al otro monitor",
       WINDOW_MAXIMIZED: "Ventana maximizada",
       SCREENSHOT: "Captura guardada",
       TASK_VIEW: "Vista de tareas",
+      TASK_VIEW_OPEN: "Ventana abierta",
+      TASK_VIEW_CLOSED: "Vista de tareas cerrada",
       MUTE_TOGGLE: "Silenciar",
       MEDIA_PLAY_PAUSE: "Reproducir / pausar",
       POWER_OFF: "GestureKey apagado",

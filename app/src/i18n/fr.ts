@@ -75,7 +75,7 @@ export const fr: Dict = {
   gestures: {
     scroll:      { label: "Défiler", hint: "Deux doigts et bougez la main : la page suit ; un geste rapide va plus loin" },
     zoom:        { label: "Zoom", hint: "Pincez le pouce et l’index, puis écartez-les ou rapprochez-les" },
-    task_view:   { label: "Vue des tâches", hint: "Deux paumes ouvertes écartées, puis rapprochez-les" },
+    task_view:   { label: "Vue des tâches", hint: "Deux paumes ouvertes écartées, puis rapprochez-les. Ensuite : ✌️ bougez pour choisir, ✊ pour ouvrir, écartez les paumes pour quitter" },
     grab_window: {
       label: "Déplacer les fenêtres",
       hint: "Paume, fermez le poing et faites glisser ; ouvrez-le pour lâcher. Ouvrez la main inclinée vers un côté pour envoyer la fenêtre sur cet écran ; un coup vers le haut l’agrandit ; un coup vers le bas puis ouvrir la ferme",
@@ -111,6 +111,9 @@ export const fr: Dict = {
     CLOSE_WINDOW: "Fermer la fenêtre",
     MUTE_TOGGLE: "Couper le son",
     TASK_VIEW: "Vue des tâches",
+    TASK_VIEW_MOVE: "Vue des tâches : fenêtre suivante",
+    TASK_VIEW_OPEN: "Vue des tâches : fenêtre ouverte",
+    TASK_VIEW_CLOSED: "Vue des tâches fermée",
     MEDIA_PLAY_PAUSE: "Lecture / pause",
     GRAB_WINDOW_START: "Fenêtre saisie",
     GRAB_WINDOW_RELEASED: "Fenêtre lâchée",
@@ -121,13 +124,15 @@ export const fr: Dict = {
   },
 
   overlay: {
-    live: { SCROLL: "Défilement", VOLUME: "Volume", ZOOM: "Zoom", GRAB_WINDOW: "Déplacement de la fenêtre" },
+    live: { SCROLL: "Défilement", VOLUME: "Volume", ZOOM: "Zoom", GRAB_WINDOW: "Déplacement de la fenêtre", TASK_VIEW: "✌️ choisir · ✊ ouvrir · ✋✋ écarter pour quitter" },
     toasts: {
       CLOSE_WINDOW: "Fenêtre fermée",
       WINDOW_TO_MONITOR: "Fenêtre envoyée sur l’autre écran",
       WINDOW_MAXIMIZED: "Fenêtre agrandie",
       SCREENSHOT: "Capture enregistrée",
       TASK_VIEW: "Vue des tâches",
+      TASK_VIEW_OPEN: "Fenêtre ouverte",
+      TASK_VIEW_CLOSED: "Vue des tâches fermée",
       MUTE_TOGGLE: "Couper le son",
       MEDIA_PLAY_PAUSE: "Lecture / pause",
       POWER_OFF: "GestureKey désactivé",

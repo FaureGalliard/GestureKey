@@ -75,7 +75,7 @@ export const ko: Dict = {
   gestures: {
     scroll:      { label: "스크롤", hint: "두 손가락을 펴고 손을 움직이세요. 페이지가 따라오며, 빠르게 튕기면 더 멀리 갑니다" },
     zoom:        { label: "확대/축소", hint: "엄지와 검지를 모은 뒤 벌리거나 오므리세요" },
-    task_view:   { label: "작업 보기", hint: "두 손바닥을 벌린 상태에서 모으세요" },
+    task_view:   { label: "작업 보기", hint: "두 손바닥을 벌린 상태에서 모으세요. 그다음 ✌️ 움직여 선택, ✊ 열기, 손바닥을 벌려 나가기" },
     grab_window: {
       label: "창 이동",
       hint: "손바닥을 편 뒤 주먹을 쥐고 끌어오세요. 손을 펴면 놓습니다. 한쪽으로 기울여 펴면 그쪽 모니터로 보내고, 위로 튕기면 최대화, 아래로 튕긴 뒤 펴면 닫습니다",
@@ -111,6 +111,9 @@ export const ko: Dict = {
     CLOSE_WINDOW: "창 닫기",
     MUTE_TOGGLE: "음소거",
     TASK_VIEW: "작업 보기",
+    TASK_VIEW_MOVE: "작업 보기: 다음 창",
+    TASK_VIEW_OPEN: "작업 보기: 창 열림",
+    TASK_VIEW_CLOSED: "작업 보기 닫힘",
     MEDIA_PLAY_PAUSE: "재생/일시정지",
     GRAB_WINDOW_START: "창 잡음",
     GRAB_WINDOW_RELEASED: "창 놓음",
@@ -121,13 +124,15 @@ export const ko: Dict = {
   },
 
   overlay: {
-    live: { SCROLL: "스크롤 중", VOLUME: "볼륨", ZOOM: "확대/축소", GRAB_WINDOW: "창 이동 중" },
+    live: { SCROLL: "스크롤 중", VOLUME: "볼륨", ZOOM: "확대/축소", GRAB_WINDOW: "창 이동 중", TASK_VIEW: "✌️ 선택 · ✊ 열기 · ✋✋ 벌려서 나가기" },
     toasts: {
       CLOSE_WINDOW: "창이 닫혔습니다",
       WINDOW_TO_MONITOR: "다른 모니터로 이동했습니다",
       WINDOW_MAXIMIZED: "창이 최대화되었습니다",
       SCREENSHOT: "스크린샷이 저장되었습니다",
       TASK_VIEW: "작업 보기",
+      TASK_VIEW_OPEN: "창 열림",
+      TASK_VIEW_CLOSED: "작업 보기 닫힘",
       MUTE_TOGGLE: "음소거",
       MEDIA_PLAY_PAUSE: "재생/일시정지",
       POWER_OFF: "GestureKey 꺼짐",

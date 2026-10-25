@@ -74,7 +74,7 @@ export const en = {
   gestures: {
     scroll:      { label: "Scroll", hint: "Two fingers and move your hand: the page follows; a quick flick goes further" },
     zoom:        { label: "Zoom", hint: "Pinch thumb and index, then open or close them" },
-    task_view:   { label: "Task view", hint: "Two open palms apart, then bring them together" },
+    task_view:   { label: "Task view", hint: "Two open palms apart, then bring them together. Inside: ✌️ move to pick, ✊ to open, palms apart to leave" },
     grab_window: {
       label: "Move windows",
       hint: "Palm, close your fist and drag; open it to let go. Open it tilted towards a side to send the window to that monitor; flick up to maximize; flick down and open to close",
@@ -110,6 +110,9 @@ export const en = {
     CLOSE_WINDOW: "Close window",
     MUTE_TOGGLE: "Mute",
     TASK_VIEW: "Task view",
+    TASK_VIEW_MOVE: "Task view: next window",
+    TASK_VIEW_OPEN: "Task view: window opened",
+    TASK_VIEW_CLOSED: "Task view closed",
     MEDIA_PLAY_PAUSE: "Play / pause",
     GRAB_WINDOW_START: "Window grabbed",
     GRAB_WINDOW_RELEASED: "Window released",
@@ -120,13 +123,15 @@ export const en = {
   } as Record<string, string>,
 
   overlay: {
-    live: { SCROLL: "Scrolling", VOLUME: "Volume", ZOOM: "Zoom", GRAB_WINDOW: "Moving window" } as Record<string, string>,
+    live: { SCROLL: "Scrolling", VOLUME: "Volume", ZOOM: "Zoom", GRAB_WINDOW: "Moving window", TASK_VIEW: "✌️ move · ✊ open · ✋✋ apart to leave" } as Record<string, string>,
     toasts: {
       CLOSE_WINDOW: "Window closed",
       WINDOW_TO_MONITOR: "Window moved to the other monitor",
       WINDOW_MAXIMIZED: "Window maximized",
       SCREENSHOT: "Screenshot saved",
       TASK_VIEW: "Task view",
+      TASK_VIEW_OPEN: "Window opened",
+      TASK_VIEW_CLOSED: "Task view closed",
       MUTE_TOGGLE: "Mute",
       MEDIA_PLAY_PAUSE: "Play / pause",
       POWER_OFF: "GestureKey off",

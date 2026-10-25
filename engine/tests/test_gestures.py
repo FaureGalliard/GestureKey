@@ -6,6 +6,7 @@ from gesturekey.actions.types import Hotkey, WindowGrab, WindowMove, WindowRelea
 from gesturekey.core.types import HandState
 
 PALM, FIST = HandState.PALM, HandState.FIST
+TWO_FINGERS, NO_HANDS = HandState.TWO_FINGERS, HandState.NO_HANDS
 
 
 def _release(actions):
@@ -168,6 +169,63 @@ def test_task_view_when_palms_come_together():
         t += 1 / 60
     assert events == ["TASK_VIEW"]
 
+
+
+def _open_task_view():
+    """Arbiter + clock with task view just opened by ✋✋ coming together."""
+    from conftest import Clock, make_frame, make_hand
+    from gesturekey.config import GesturesConfig
+    from gesturekey.gestures.arbiter import GestureArbiter
+    clock = Clock(GestureArbiter(GesturesConfig()))
+
+    def palms(gap_from, gap_to, seconds):
+        n = round(seconds / clock.dt)
+        for i in range(n):
+            gap = gap_from + (gap_to - gap_from) * (i + 1) / n
+            hands = {"Left": make_hand((0.5 - gap / 2, 0.6), side="Left"), "Right": make_hand((0.5 + gap / 2, 0.6))}
+            out = clock.arbiter.process(make_frame(PALM, clock.t, hands=hands))
+            clock.events += [e.value for e in out.events]
+            clock.actions += out.actions
+            clock.t += clock.dt
+    clock.palms = palms
+    palms(0.6, 0.6, 0.35)
+    palms(0.6, 0.3, 0.5)
+    assert clock.events == ["TASK_VIEW"]
+    assert clock.arbiter.owner is not None and clock.arbiter.owner.NAME == "TASK_VIEW"
+    return clock
+
+
+def _keys(clock):
+    return [a.keys for a in clock.actions if a.__class__.__name__ == "Hotkey"][1:]   # skip Win+Tab
+
+
+def test_task_view_two_fingers_move_the_selection():
+    clock = _open_task_view()
+    clock.run(TWO_FINGERS, 0.1, wrist=(0.4, 0.6))
+    clock.run(TWO_FINGERS, 0.4, wrist=(0.4, 0.6), to=(0.6, 0.6))       # ~1.8 palm lengths right
+    clock.run(TWO_FINGERS, 0.3, wrist=(0.6, 0.6), to=(0.6, 0.48))      # ~1.1 up
+    assert _keys(clock) == [("right",), ("right",), ("up",)]
+    assert clock.arbiter.owner is not None                             # still driving
+
+
+def test_task_view_fist_opens_the_selected_window():
+    clock = _open_task_view()
+    clock.run(FIST, 0.3)
+    assert _keys(clock) == [("enter",)]
+    assert "TASK_VIEW_OPEN" in clock.events and clock.arbiter.owner is None
+
+
+def test_task_view_palms_apart_leave_it():
+    clock = _open_task_view()
+    clock.palms(0.3, 0.6, 0.4)
+    assert _keys(clock) == [("esc",)]
+    assert "TASK_VIEW_CLOSED" in clock.events and clock.arbiter.owner is None
+
+
+def test_task_view_lets_go_when_the_hand_is_gone():
+    clock = _open_task_view()
+    clock.run(NO_HANDS, 3.5)
+    assert _keys(clock) == [] and clock.arbiter.owner is None
 
 def _clock_with(tweak):
     from conftest import Clock

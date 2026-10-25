@@ -16,13 +16,13 @@ const EASE = [0.32, 0.72, 0, 1] as const;
 
 /** Continuous gestures: shown for as long as they own the hand. */
 const LIVE: Record<string, LucideIcon> = {
-  SCROLL: ArrowUpDown, VOLUME: Volume2, ZOOM: ZoomIn, GRAB_WINDOW: Move,
+  SCROLL: ArrowUpDown, VOLUME: Volume2, ZOOM: ZoomIn, GRAB_WINDOW: Move, TASK_VIEW: LayoutGrid,
 };
 
 /** One-shot gestures: a short toast. Continuous ones are covered by LIVE. */
 const TOASTS: Record<string, LucideIcon> = {
   CLOSE_WINDOW: X, WINDOW_TO_MONITOR: MonitorUp, WINDOW_MAXIMIZED: Maximize2, SCREENSHOT: Camera,
-  TASK_VIEW: LayoutGrid, MUTE_TOGGLE: VolumeX, MEDIA_PLAY_PAUSE: Pause, POWER_OFF: PowerOff, POWER_ON: Power,
+  TASK_VIEW: LayoutGrid, TASK_VIEW_OPEN: LayoutGrid, TASK_VIEW_CLOSED: LayoutGrid, MUTE_TOGGLE: VolumeX, MEDIA_PLAY_PAUSE: Pause, POWER_OFF: PowerOff, POWER_ON: Power,
 };
 
 type Item =
