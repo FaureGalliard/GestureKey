@@ -29,6 +29,7 @@ def settings_path() -> Path:
 
 @dataclass
 class CameraConfig:
+    name:   str  = ""   # remembered by name: indexes shift when devices are plugged in
     device: int  = 0
     width:  int  = 1280
     height: int  = 720

@@ -73,11 +73,25 @@ async def serve_engine(config: AppConfig, host: str = "127.0.0.1", port: int = 8
         threading.Thread(target=_wait_for_stdin_eof, name="stdin-watch", daemon=True,
                          args=(lambda: loop.call_soon_threadsafe(request_stop),)).start()
 
+    server = await _bind(handler, host, port)   # before the engine grabs the camera
     engine.start()
     try:
-        async with serve(handler, host, port, origins=ALLOWED_ORIGINS, max_size=2**20):
+        async with server:
             log(f"[ENGINE] ws://{host}:{port}")
             await stop
             log("[ENGINE] stopping")
     finally:
         engine.stop()
+
+
+async def _bind(handler, host: str, port: int, wait_s: float = 6.0):
+    """A previous engine may still be releasing the port after a quick restart: wait for it."""
+    deadline = asyncio.get_running_loop().time() + wait_s
+    while True:
+        try:
+            return await serve(handler, host, port, origins=ALLOWED_ORIGINS, max_size=2**20)
+        except OSError:
+            if asyncio.get_running_loop().time() >= deadline:
+                log(f"[ENGINE] el puerto {port} sigue ocupado: ¿hay otro GestureKey abierto?")
+                raise
+            await asyncio.sleep(0.25)

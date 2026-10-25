@@ -17,7 +17,7 @@ from gesturekey.gestures.arbiter import GestureArbiter
 from gesturekey.gestures.base import Output
 from gesturekey.gestures.power import PowerToggleGesture
 from gesturekey.runtime.recorder import Recorder
-from gesturekey.vision.camera import Camera, list_cameras
+from gesturekey.vision.camera import Camera, CameraError, device_names, list_cameras, resolve_device
 from gesturekey.vision.classifier import StateClassifier
 from gesturekey.vision.states import StateFilter
 from gesturekey.vision.tracker import HandTracker
@@ -26,6 +26,15 @@ Message = Dict[str, Any]
 Sink    = Callable[[Message], None]
 
 MODEL_PATH       = resource_path("models/hand_state_rf.pkl")
+RETRY_S          = 3.0    # retry a missing/busy camera this often
+RETRY_GAP_S      = 0.75   # between attempts when opening
+STALL_S          = 2.5    # no frame for this long → reconnect
+LOW_FPS          = 15.0   # below this the camera is probably starved of light
+
+_CAMERA_HELP = {
+    "busy":    "Otra aplicación está usando la cámara (Zoom, Discord, Teams, OBS…). Ciérrala y se conectará sola.",
+    "missing": "No encontramos la cámara. Conéctala y se conectará sola.",
+}
 PREVIEW_WIDTH    = 480
 PREVIEW_INTERVAL = 1 / 12
 
@@ -48,6 +57,9 @@ class Engine:
         self._enabled  = True
         self._preview  = False
         self._camera_info: Optional[Message] = None
+        self._cam_status:  Optional[Message] = None
+        self._next_attempt = 0.0
+        self._low_light    = False
         self._thread: Optional[threading.Thread] = None
         self._recorder = Recorder.from_env()
 
@@ -81,6 +93,7 @@ class Engine:
             "config":  self._config.to_dict(),
             "enabled": self._enabled,
             "camera":  self._camera_info,
+            "camera_status": self._cam_status,
         }
 
     # ── loop ──────────────────────────────────────────────────────────────────
@@ -101,13 +114,13 @@ class Engine:
             self._classifier = StateClassifier(MODEL_PATH)
             self._executor   = ActionExecutor(on_error=lambda m: self._status(m, "warn"))
             self._rebuild()
-            self._open_camera(self._config.camera.device)
         except Exception as exc:
             traceback.print_exc()
             self._status(f"No se pudo iniciar el motor: {exc}", "error")
             self._running = False
             return
 
+        self._open_camera()   # never raises; retries on its own if the camera isn't there
         self._status("Pipeline started")
         if self._recorder:
             self._status(f"Grabando sesión en {self._recorder.path}")
@@ -118,10 +131,16 @@ class Engine:
             self._drain_commands()
 
             if self._camera is None:
-                time.sleep(0.1)
+                if time.time() >= self._next_attempt:
+                    self._open_camera(attempts=1, reconnecting=True)
+                else:
+                    time.sleep(0.1)
                 continue
-            got = self._camera.read(timeout=1.0)
+            got = self._camera.read(timeout=0.5)
             if got is None:
+                if time.time() - self._camera.last_frame_at > STALL_S:
+                    self._status("La cámara dejó de enviar imagen; reconectando…", "warn")
+                    self._open_camera(self._camera.device, attempts=2, reconnecting=True)
                 continue
             frame, stamp = got
 
@@ -156,6 +175,7 @@ class Engine:
             fps_n += 1
             if stamp - fps_t >= 1.0:
                 fps, fps_t, fps_n = fps_n / (stamp - fps_t), stamp, 0
+                self._check_light(fps)
 
             self._emit({
                 "type":       "frame",
@@ -209,14 +229,20 @@ class Engine:
             cam = self._config.camera
             self._rebuild(tracker=vars(self._config.tracking) != old_tracking)
             if (cam.device, cam.width, cam.height, cam.fps, cam.mirror) != old_cam:
-                self._open_camera(cam.device)
+                names = device_names()
+                if "device" in (msg.get("patch") or {}).get("camera", {}) and cam.device < len(names):
+                    cam.name = names[cam.device]
+                self._open_camera(cam.device, fallback=old_cam[0])
             self._emit({"type": "config", "config": self._config.to_dict()})
         elif cmd == "set_enabled":
             self._set_enabled(bool(msg.get("enabled", True)))
         elif cmd == "preview":
             self._preview = bool(msg.get("on", False))
         elif cmd == "list_cameras":
-            self._emit({"type": "cameras", "devices": list_cameras(), "active": self._config.camera.device})
+            active = self._camera.device if self._camera else None
+            self._emit({"type": "cameras", "devices": list_cameras(active=active), "active": self._config.camera.device})
+        elif cmd == "reconnect_camera":
+            self._open_camera(attempts=2, reconnecting=True)
         else:
             self._status(f"Comando desconocido: {cmd!r}", "warn")
 
@@ -256,30 +282,71 @@ class Engine:
         if self._executor:
             self._executor.speed = cfg.gestures.grab_window.speed
 
-    def _open_camera(self, device: int) -> None:
-        previous = self._camera.device if self._camera else None
+    # ── camera lifecycle ──────────────────────────────────────────────────────
+    #
+    # opening → ok ⇄ reconnecting, or → busy / missing, from which the loop keeps
+    # retrying every RETRY_S. Nothing here may raise: a camera problem must
+    # never take the engine down, it must show up in the UI and heal itself.
+
+    def _camera_status(self, status: str, device: int, message: str = "", **extra: Any) -> None:
+        self._cam_status = {"type": "camera_status", "status": status, "device": device,
+                            "name": self._config.camera.name, "message": message, **extra}
+        self._emit(self._cam_status)
+
+    def _open_camera(self, device: Optional[int] = None, attempts: int = 3,
+                     reconnecting: bool = False, fallback: Optional[int] = None) -> bool:
         if self._camera:
             self._camera.release()
             self._camera = None
         cam_cfg = self._config.camera
-        try:
+        device = resolve_device(cam_cfg) if device is None else device
+        self._camera_status("reconnecting" if reconnecting else "opening", device)
+
+        error: Optional[CameraError] = None
+        for attempt in range(attempts):
+            try:
+                self._camera = Camera(cam_cfg, device=device)
+                break
+            except CameraError as exc:
+                error = exc
+            except Exception as exc:              # anything from OpenCV
+                error = CameraError(str(exc), "missing")
+            if attempt < attempts - 1:
+                time.sleep(RETRY_GAP_S)
+
+        if self._camera is None and fallback is not None and fallback != device:
+            return self._open_camera(fallback, attempts=1, reconnecting=reconnecting)
+
+        if self._camera is None:
+            assert error is not None
+            self._next_attempt = time.time() + RETRY_S
+            self._camera_status(error.reason, device, _CAMERA_HELP[error.reason])
+            self._status(str(error), "warn")
+        else:
             cam_cfg.device = device
-            self._camera = Camera(cam_cfg)
-        except Exception as exc:
-            self._status(f"No se pudo abrir la cámara {device}: {exc}", "error")
-            if previous is not None and previous != device:
-                cam_cfg.device = previous
-                self._camera = Camera(cam_cfg)
-        if self._camera:
+            names = device_names()
+            if device < len(names):
+                cam_cfg.name = names[device]
             w, h, fps = self._camera.actual
-            self._status(f"Cámara {self._camera.device}: {w}×{h} @ {fps:.0f} fps")
-            self._camera_info = {"type": "camera", "device": self._camera.device,
-                                 "width": w, "height": h, "fps": fps}
+            self._low_light = False
+            self._status(f"Cámara {cam_cfg.name or device}: {w}×{h} @ {fps:.0f} fps ({self._camera.backend})")
+            self._camera_info = {"type": "camera", "device": device, "width": w, "height": h, "fps": fps}
             self._emit(self._camera_info)
+            self._camera_status("ok", device, width=w, height=h, fps=fps, backend=self._camera.backend)
+
         if self._states:
             self._states.reset()
         if self._arbiter:
             self._arbiter.reset_all()
+        return self._camera is not None
+
+    def _check_light(self, fps: float) -> None:
+        """Low light makes the camera lengthen exposure and drop frames: tell the user."""
+        low = 0 < fps < LOW_FPS
+        if low != self._low_light and self._cam_status and self._cam_status.get("status") == "ok":
+            self._low_light = low
+            self._cam_status = {**self._cam_status, "low_light": low, "measured_fps": round(fps)}
+            self._emit(self._cam_status)
 
     def _cleanup(self) -> None:
         if self._camera:
