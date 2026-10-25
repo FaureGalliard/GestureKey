@@ -1,0 +1,17 @@
+@import "tailwindcss";
+
+:root {
+  color-scheme: dark;
+  font-family: ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+}
+
+body {
+  margin: 0;
+  background: #121212;
+  color: rgba(255, 255, 255, 0.85);
+  user-select: none;
+}
+
+select option {
+  background: #1a1a1a;
+}
