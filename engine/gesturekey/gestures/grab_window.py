@@ -38,6 +38,7 @@ class GrabWindowGesture(Gesture):
     flick → / ← while holding                  : send it to the next monitor that way
                                                  (at the desktop edge: snap to that half)
     flick ↑ while holding                      : maximize
+    throw it down (fast flick ↓) while holding : close it
     drag it down against the screen's bottom   : the overlay says "let go to close";
                                                  open the hand there to close it (a bin)
     FIST → PALM                                : release where it is
@@ -187,6 +188,10 @@ class GrabWindowGesture(Gesture):
         elif vy <= -cfg.flick_speed and abs(vy) >= DOMINANCE * abs(vx):
             out.emit(GestureEvent.WINDOW_MAXIMIZED, WindowSendTo("up"))
             self.reset()                              # maximized: nothing left to drag
+            return True
+        elif vy >= cfg.close_speed and vy >= DOMINANCE * abs(vx):
+            out.emit(GestureEvent.CLOSE_WINDOW, WindowRelease("close"))   # thrown down: away with it
+            self.reset()
             return True
         else:
             return False

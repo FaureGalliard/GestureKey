@@ -150,6 +150,7 @@ class GrabWindowConfig:
     edge_zone:    float = 0.12   # hand within this fraction of the camera's left/right edge…
     edge_dwell:   float = 0.25   # …for this long = "keep going that way": next monitor
     throw_speed:  float = 1.4    # release velocity that counts as a throw for the glide
+    close_speed:  float = 1.8    # a downward flick this fast closes the window (destructive: higher)
     lost_timeout: float = 0.60   # release if the fist is lost this long (motion blur)
     cooldown:     float = 0.40
 
