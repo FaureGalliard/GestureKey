@@ -32,7 +32,7 @@ def test_grab_drag_and_release_in_place(clock):
 
 def test_grab_wide_throw_snaps(clock):
     clock.run(PALM, 0.3).run(FIST, 0.2)
-    clock.run(FIST, 0.3, wrist=(0.5, 0.7), to=(0.8, 0.7))
+    clock.run(FIST, 0.15, wrist=(0.5, 0.7), to=(0.8, 0.7))   # a throw: 2 image widths/s
     clock.run(PALM, 0.05, wrist=(0.8, 0.7))
     assert _release(clock.actions)[-1].snap == "right"
 
@@ -43,7 +43,13 @@ def test_dragging_down_does_not_close_window(clock):
     assert "CLOSE_WINDOW" not in clock.events
 
 
-def test_quick_blink_is_mute_not_grab(clock):
+def test_quick_blink_is_mute_not_grab():
+    from conftest import Clock
+    from gesturekey.config import GesturesConfig
+    from gesturekey.gestures.arbiter import GestureArbiter
+    cfg = GesturesConfig()
+    cfg.mute.enabled = True                     # off by default until it moves to 👎
+    clock = Clock(GestureArbiter(cfg))
     clock.run(PALM, 0.3)
     clock.run(FIST, 1 / 60)   # one stable frame
     clock.run(PALM, 1 / 60)
@@ -55,6 +61,8 @@ def test_quick_blink_is_mute_not_grab(clock):
 def test_grab_releases_when_hand_lost(clock):
     clock.run(PALM, 0.3).run(FIST, 0.2)
     assert owner(clock) == "GRAB_WINDOW"
+    clock.run(HandState.NO_HANDS, 0.3)
+    assert owner(clock) == "GRAB_WINDOW"          # a blur-length loss is tolerated
     clock.run(HandState.NO_HANDS, 0.5)
     assert clock.events[-1] == "GRAB_WINDOW_RELEASED"
     assert owner(clock) is None
@@ -124,3 +132,33 @@ def test_power_turns_back_on_while_disabled():
 def test_approaching_palms_are_task_view_not_power():
     events, _ = _run_power(_power(), 2.0, move=0.15)      # hands come together
     assert events == []
+
+
+# ── close window / task view (image space) ────────────────────────────────────
+
+def test_close_window_needs_a_still_fist_then_a_drop(clock):
+    clock.run(FIST, 0.4, wrist=(0.5, 0.5))                     # held still → armed
+    clock.run(FIST, 0.15, wrist=(0.5, 0.5), to=(0.5, 0.72))    # two palm lengths down, fast
+    assert "CLOSE_WINDOW" in clock.events
+
+
+def test_moving_fist_without_holding_does_not_close(clock):
+    clock.run(FIST, 0.3, wrist=(0.5, 0.3), to=(0.5, 0.9))      # never still
+    assert "CLOSE_WINDOW" not in clock.events
+
+
+def test_task_view_when_palms_come_together():
+    from conftest import make_frame, make_hand
+    from gesturekey.config import TaskViewConfig
+    from gesturekey.core.cooldown import CooldownManager
+    from gesturekey.gestures.base import Output
+    from gesturekey.gestures.task_view import TaskViewGesture
+    g, events, t = TaskViewGesture(CooldownManager(), TaskViewConfig()), [], 0.0
+    for i in range(60):                                         # 1 s: hold apart, then approach
+        k = max(0.0, (i - 20) / 40)
+        left, right = (0.2 + 0.15 * k, 0.6), (0.8 - 0.15 * k, 0.6)
+        out = Output()
+        g.update(make_frame(PALM, t, hands={"Left": make_hand(left, side="Left"), "Right": make_hand(right)}), out)
+        events += [e.value for e in out.events]
+        t += 1 / 60
+    assert events == ["TASK_VIEW"]

@@ -4,11 +4,11 @@ from typing import Optional
 from gesturekey.actions.types import Hotkey
 from gesturekey.config import TaskViewConfig
 from gesturekey.core.cooldown import CooldownManager
-from gesturekey.core.geometry import dist, hand_center
+from gesturekey.core.geometry import dist, palm_center
 from gesturekey.core.types import FrameData, GestureEvent, HandState, Point
 from gesturekey.gestures.base import Gesture, Output
 
-MIN_INITIAL_DISTANCE    = 0.30
+MIN_INITIAL_DISTANCE    = 0.25   # image width fraction; wider and MediaPipe tends to drop a hand
 MAX_APPROACH_SPEED      = 0.50
 MAX_POSITION_JUMP       = 0.20
 OUTLIER_RECOVERY_FRAMES = 2
@@ -17,7 +17,12 @@ STABILITY_FRAMES        = 3
 
 
 class TaskViewGesture(Gesture):
-    """Two open palms apart, then brought together → Win+Tab."""
+    """
+    Two open palms apart, then brought together → Win+Tab.
+
+    Distances are in image space (v2 compared each hand centre relative to
+    its own wrist, so the distance between hands was meaningless).
+    """
 
     NAME = "TASK_VIEW"
 
@@ -35,8 +40,8 @@ class TaskViewGesture(Gesture):
             self.reset()
             return
 
-        center_left  = hand_center(frame.hands["Left"].norm)
-        center_right = hand_center(frame.hands["Right"].norm)
+        center_left  = palm_center(frame.hands["Left"])     # image space: real distance between hands
+        center_right = palm_center(frame.hands["Right"])
         distance_raw = dist(center_left, center_right)
 
         if self._smoothed_distance is None:
