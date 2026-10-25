@@ -79,7 +79,7 @@ class GestureArbiter:
             self._release_if_done(now)
             return out
 
-        if frame.state == HandState.UNKNOWN or now < self._quiet_until:
+        if frame.state in (HandState.UNKNOWN, HandState.OTHER) or now < self._quiet_until:
             return out
 
         if self._mute_enabled:

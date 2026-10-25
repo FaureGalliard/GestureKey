@@ -56,18 +56,20 @@ class HandTracker:
             return {}
 
         raw = []
-        for lms, handed in zip(results.multi_hand_landmarks, results.multi_handedness):
+        worlds = results.multi_hand_world_landmarks or [None] * len(results.multi_hand_landmarks)
+        for lms, handed, world in zip(results.multi_hand_landmarks, results.multi_handedness, worlds):
             cls = handed.classification[0]
-            raw.append((cls.label, cls.score, [(lm.x, lm.y) for lm in lms.landmark], [lm.z for lm in lms.landmark]))
+            wl = tuple((p.x, p.y, p.z) for p in world.landmark) if world is not None else ()
+            raw.append((cls.label, cls.score, [(lm.x, lm.y) for lm in lms.landmark], [lm.z for lm in lms.landmark], wl))
 
-        sides = self._assign_sides([(label, img[0]) for label, _, img, _ in raw])
+        sides = self._assign_sides([(label, img[0]) for label, _, img, _, _ in raw])
 
         hands: Dict[str, Hand] = {}
-        for side, (_, score, img, z) in zip(sides, raw):
+        for side, (_, score, img, z, world) in zip(sides, raw):
             smoother = self._smoothers.get(side) or self._smoothers.setdefault(side, _HandSmoother(self._cfg))
             img_f, z_f = smoother(img, z, t)
             hands[side] = Hand(side=side, norm=_normalise([(x * w, y * h) for x, y in img_f]),
-                               img=img_f, z=z_f, score=score)
+                               img=img_f, z=z_f, score=score, world=world)
 
         for side in list(self._smoothers):
             if side not in hands:

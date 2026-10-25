@@ -71,43 +71,43 @@ def _segments(frames: List[Frame]) -> List[Tuple[int, int]]:
 def report(path: Path) -> None:
     frames, events, (w, h) = _load(path)
     if len(frames) < 2:
-        print("La grabación no tiene frames suficientes.")
+        print("Not enough frames in this recording.")
         return
 
     duration = frames[-1]["t"] - frames[0]["t"]
     dts = [b["t"] - a["t"] for a, b in zip(frames, frames[1:]) if b["t"] > a["t"]]
     with_hand = sum(1 for f in frames if f["hands"])
     print(f"\n== {path.name}")
-    print(f"duración {duration:.0f} s · {len(frames)} frames · cámara {w}×{h}")
-    print(f"fps medio {len(frames) / duration:.1f} · intervalo p50 {1000 * _pct(dts, .5):.0f} ms, "
-          f"p95 {1000 * _pct(dts, .95):.0f} ms, máx {1000 * max(dts):.0f} ms")
-    print(f"mano visible {100 * with_hand / len(frames):.0f} % del tiempo")
+    print(f"duration {duration:.0f} s · {len(frames)} frames · camera {w}×{h}")
+    print(f"mean fps {len(frames) / duration:.1f} · interval p50 {1000 * _pct(dts, .5):.0f} ms, "
+          f"p95 {1000 * _pct(dts, .95):.0f} ms, max {1000 * max(dts):.0f} ms")
+    print(f"hand visible {100 * with_hand / len(frames):.0f} % of the time")
 
     # ── states ────────────────────────────────────────────────────────────
     stable_changes = sum(1 for a, b in zip(frames, frames[1:]) if a["state"] != b["state"])
     raw_changes    = sum(1 for a, b in zip(frames, frames[1:]) if a["raw_state"] != b["raw_state"])
     minutes = duration / 60
-    print(f"\ncambios de estado: estable {stable_changes / minutes:.0f}/min · crudo {raw_changes / minutes:.0f}/min")
+    print(f"\nstate changes: filtered {stable_changes / minutes:.0f}/min · raw {raw_changes / minutes:.0f}/min")
     by_state: Dict[str, List[float]] = {}
     for f in frames:
         if f["hands"]:
             by_state.setdefault(f["raw_state"], []).append(f["confidence"])
-    print("confianza media del modelo por estado crudo:")
+    print("mean model confidence per raw state:")
     for s, confs in sorted(by_state.items(), key=lambda kv: -len(kv[1])):
         low = sum(1 for c in confs if c < 0.6) / len(confs)
-        print(f"  {s:<14} {len(confs):>5} frames · media {st.mean(confs):.2f} · bajo 0.60: {100 * low:.0f} %")
+        print(f"  {s:<14} {len(confs):>5} frames · mean {st.mean(confs):.2f} · below 0.60: {100 * low:.0f} %")
 
     # ── side flips ───────────────────────────────────────────────────────
     flips = 0
     for a, b in zip(frames, frames[1:]):
         if len(a["hands"]) == 1 and len(b["hands"]) == 1 and a["hands"][0]["side"] != b["hands"][0]["side"]:
             flips += 1
-    print(f"lateralidad (una mano): {flips} cambios Derecha↔Izquierda")
+    print(f"handedness (one hand): {flips} Right↔Left flips")
 
     # ── holds: jitter with the hand still ────────────────────────────────
-    print(f"\nposes sostenidas (≥ {STILL_MIN_S:.0f} s, muñeca dentro de {MOVE_LIMIT_PX:.0f} px):")
-    print(f"  {'estado':<14}{'dur':>6}{'jitter muñeca':>15}{'jitter índice':>15}"
-          f"{'parpadeos':>11}{'>scroll':>10}{'>grab dz':>10}")
+    print(f"\nheld poses (≥ {STILL_MIN_S:.0f} s, wrist within {MOVE_LIMIT_PX:.0f} px):")
+    print(f"  {'state':<14}{'dur':>6}{'wrist jitter':>15}{'index jitter':>15}"
+          f"{'flicker':>11}{'>scroll':>10}{'>grab dz':>10}")
     any_hold = False
     for a, b in _segments(frames):
         seg = [f for f in frames[a:b] if _main_hand(f)]
@@ -144,10 +144,10 @@ def report(path: Path) -> None:
               f"{rms_step(wrist):>12.1f} px{rms_step(tip):>12.1f} px"
               f"{flick:>11}{100 * over_scroll:>11.0f}%{100 * over_grab:>9.0f}%")
     if not any_hold:
-        print("  (ninguna — sostén cada pose quieta unos segundos)")
+        print("  (none — hold each pose still for a few seconds)")
 
     # ── events ──────────────────────────────────────────────────────────
-    print(f"\neventos ({len(events)}):")
+    print(f"\nevents ({len(events)}):")
     for name, n in Counter(e["event"] for e in events).most_common():
         print(f"  {name:<24}{n:>4}")
 
@@ -156,7 +156,7 @@ def _latest() -> Path:
     folder = settings_path().parent / "recordings"
     files = sorted(folder.glob("session-*.jsonl"))
     if not files:
-        raise SystemExit(f"No hay grabaciones en {folder}")
+        raise SystemExit(f"No recordings in {folder}")
     return files[-1]
 
 

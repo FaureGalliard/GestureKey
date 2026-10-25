@@ -45,7 +45,7 @@ def replay(path: Path, mirror: bool = True, trace: bool = False) -> list:
         out = arbiter.process(FrameData(state=state, hands=hands, timestamp=t,
                                         raw_state=_state(raw), raw_confidence=max(proba.values()) if proba else 1.0))
         if trace and state != last_state:
-            print(f"{t:6.2f}s  estado {state.value}")
+            print(f"{t:6.2f}s  state {state.value}")
         last_state = state
         for event in out.events:
             fired.append((round(t, 2), event.value, [type(a).__name__ + str(getattr(a, "direction", "")) for a in out.actions]))

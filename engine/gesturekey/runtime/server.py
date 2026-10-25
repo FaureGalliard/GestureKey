@@ -127,6 +127,6 @@ async def _bind(handler, host: str, port: int, wait_s: float = 6.0):
             return await serve(handler, host, port, origins=ALLOWED_ORIGINS, max_size=2**20)
         except OSError:
             if asyncio.get_running_loop().time() >= deadline:
-                log(f"[ENGINE] el puerto {port} sigue ocupado: ¿hay otro GestureKey abierto?")
+                log(f"[ENGINE] port {port} is still in use: is another GestureKey running?")
                 raise
             await asyncio.sleep(0.25)

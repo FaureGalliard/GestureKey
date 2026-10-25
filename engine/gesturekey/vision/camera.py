@@ -65,7 +65,7 @@ class Camera:
 
         if not self._opened.wait(self.OPEN_TIMEOUT):
             self._running = False
-            raise CameraError(f"La cámara {self.device} no respondió", "busy")
+            raise CameraError(f"Camera {self.device} did not respond", "busy")
         if self._error:
             raise self._error
 
@@ -98,8 +98,8 @@ class Camera:
                 time.sleep(0.05)
             busy = True          # opened but silent: someone else has it
             cap.release()
-        self._error = (CameraError(f"La cámara {self.device} está en uso por otra aplicación", "busy") if busy
-                       else CameraError(f"No se encontró la cámara {self.device}", "missing"))
+        self._error = (CameraError(f"Camera {self.device} is in use by another application", "busy") if busy
+                       else CameraError(f"Camera {self.device} not found", "missing"))
         return None
 
     def _loop(self) -> None:
@@ -178,11 +178,11 @@ def list_cameras(active: Optional[int] = None, max_index: int = 4) -> List[Dict[
     found: List[Dict[str, object]] = []
     for idx in range(max_index):
         if idx == active:
-            found.append({"index": idx, "name": f"Cámara {idx}"})
+            found.append({"index": idx, "name": f"Camera {idx}"})
             continue
         cap = cv2.VideoCapture(idx, BACKENDS[0][1])
         if cap.isOpened():
-            found.append({"index": idx, "name": f"Cámara {idx}"})
+            found.append({"index": idx, "name": f"Camera {idx}"})
         cap.release()
     return found
 

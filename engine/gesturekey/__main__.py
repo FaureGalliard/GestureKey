@@ -81,7 +81,7 @@ def _selftest() -> int:
 
     def cameras():
         from gesturekey.vision.camera import device_names
-        return ", ".join(device_names()) or "sin nombres"
+        return ", ".join(device_names()) or "no names"
 
     def volume():
         from gesturekey.actions.audio import MasterVolume
@@ -91,10 +91,10 @@ def _selftest() -> int:
         import websockets
         return websockets.__version__
 
-    check("modelo", model)
+    check("model", model)
     check("mediapipe", mediapipe)
-    check("nombres de cámaras", cameras)
-    check("volumen del sistema", volume)
+    check("camera names", cameras)
+    check("system volume", volume)
     check("websockets", websockets_)
     return 0 if all(checks) else 1
 

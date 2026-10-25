@@ -33,7 +33,7 @@ def test_recorder_and_analyzer(tmp_path, capsys):
 
     report(tmp_path / "s.jsonl")
     out = capsys.readouterr().out
-    assert "cámara 1280×720" in out
+    assert "camera 1280×720" in out
     assert "PALM" in out and " px" in out          # the hold was found and measured
     assert "SCROLL" in out
     assert "preview" not in (tmp_path / "s.jsonl").read_text()

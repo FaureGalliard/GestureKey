@@ -31,6 +31,7 @@ RETRY_GAP_S      = 0.75   # between attempts when opening
 STALL_S          = 2.5    # no frame for this long → reconnect
 LOW_FPS          = 15.0   # below this the camera is probably starved of light
 
+# User-facing copy: shown as-is by the (Spanish) app UI.
 _CAMERA_HELP = {
     "busy":    "Otra aplicación está usando la cámara (Zoom, Discord, Teams, OBS…). Ciérrala y se conectará sola.",
     "missing": "No encontramos la cámara. Conéctala y se conectará sola.",
@@ -127,14 +128,14 @@ class Engine:
             self._rebuild()
         except Exception as exc:
             traceback.print_exc()
-            self._status(f"No se pudo iniciar el motor: {exc}", "error")
+            self._status(f"Engine failed to start: {exc}", "error")
             self._running = False
             return
 
         self._open_camera()   # never raises; retries on its own if the camera isn't there
         self._status("Pipeline started")
         if self._recorder:
-            self._status(f"Grabando sesión en {self._recorder.path}")
+            self._status(f"Recording session to {self._recorder.path}")
         last_preview = 0.0
         fps, fps_t, fps_n = 0.0, time.time(), 0
 
@@ -153,7 +154,7 @@ class Engine:
             got = self._camera.read(timeout=0.5)
             if got is None:
                 if time.time() - self._camera.last_frame_at > STALL_S:
-                    self._status("La cámara dejó de enviar imagen; reconectando…", "warn")
+                    self._status("Camera stopped sending frames; reconnecting…", "warn")
                     self._open_camera(self._camera.device, attempts=2, reconnecting=True)
                 continue
             frame, stamp = got
@@ -229,7 +230,7 @@ class Engine:
                 self._handle(msg)
             except Exception as exc:
                 traceback.print_exc()
-                self._status(f"Comando {msg.get('cmd')!r} falló: {exc}", "error")
+                self._status(f"Command {msg.get('cmd')!r} failed: {exc}", "error")
 
     def _handle(self, msg: Message) -> None:
         cmd = msg.get("cmd")
@@ -254,7 +255,7 @@ class Engine:
         elif cmd == "reconnect_camera":
             self._open_camera(attempts=2, reconnecting=True)
         else:
-            self._status(f"Comando desconocido: {cmd!r}", "warn")
+            self._status(f"Unknown command: {cmd!r}", "warn")
 
     # ── helpers ───────────────────────────────────────────────────────────────
 
@@ -341,7 +342,7 @@ class Engine:
                 cam_cfg.name = names[device]
             w, h, fps = self._camera.actual
             self._low_light = False
-            self._status(f"Cámara {cam_cfg.name or device}: {w}×{h} @ {fps:.0f} fps ({self._camera.backend})")
+            self._status(f"Camera {cam_cfg.name or device}: {w}×{h} @ {fps:.0f} fps ({self._camera.backend})")
             self._camera_info = {"type": "camera", "device": device, "width": w, "height": h, "fps": fps}
             self._emit(self._camera_info)
             self._camera_status("ok", device, width=w, height=h, fps=fps, backend=self._camera.backend)

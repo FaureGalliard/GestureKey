@@ -43,7 +43,7 @@ def feature_vector(hands: Dict[str, Hand]) -> List[float]:
 class StateClassifier:
     def __init__(self, model_path: Path) -> None:
         if not model_path.exists():
-            raise FileNotFoundError(f"No se encontró el modelo en: {model_path.absolute()}")
+            raise FileNotFoundError(f"Model not found at: {model_path.absolute()}")
         self._model = joblib.load(model_path)
         self._model.verbose = 0
         self._classes = list(self._model.classes_)

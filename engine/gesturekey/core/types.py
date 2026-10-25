@@ -13,6 +13,13 @@ class HandState(str, Enum):
     TWO_FINGERS   = "TWO_FINGERS"
     THREE_FINGERS = "THREE_FINGERS"
     FOUR_FINGERS  = "FOUR_FINGERS"
+    # poses to train next (see engine/training/README.md)
+    POINT         = "POINT"          # ☝️ index only — cursor
+    THUMB_UP      = "THUMB_UP"       # 👍
+    THUMB_DOWN    = "THUMB_DOWN"     # 👎 — mute
+    ROCK          = "ROCK"           # 🤘 index + pinky — media
+    OK            = "OK"             # 👌
+    OTHER         = "OTHER"          # relaxed / in between: explicitly "no pose"
     UNKNOWN       = "UNKNOWN"
     NO_HANDS      = "NO HANDS"
 
@@ -52,6 +59,9 @@ class Hand:
     img:   List[Point]
     z:     List[float]
     score: float = 1.0
+    #: MediaPipe world landmarks: metres, centred on the hand, mostly camera- and
+    #: distance-independent. Unfiltered; for training data and future features.
+    world: Tuple[Tuple[float, float, float], ...] = ()
 
     @property
     def wrist(self) -> Point:
