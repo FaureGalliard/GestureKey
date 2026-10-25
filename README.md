@@ -13,8 +13,8 @@ move windows between monitors, task view and more.
 
 | Gesture | Action |
 |---|---|
-| ☝️ point with the index | Mouse — the cursor follows the hand, across all monitors |
-| …🤏 pinch thumb and index | Click (twice = double click); pinch and move = drag; hold = right click |
+| ☝️ point with the index | Mouse — the cursor follows the hand; a quick flick sideways jumps to the next monitor |
+| …🤏 touch the tips of thumb and index | Click (twice = double click); pinch and move = drag; hold = right click |
 | ✌️ two fingers, move the hand | Scroll whatever is under the cursor — point at it first, no click needed |
 | 🤟 three fingers, raise / lower | Volume — same height, same level |
 | 🤏 pinch, open / close | Zoom |
@@ -22,7 +22,7 @@ move windows between monitors, task view and more.
 | …open the hand **tilted** towards a side | Send it to that monitor and maximize it there |
 | …park the hand at the camera's edge | Push it on to the next monitor |
 | …flick up | Maximize |
-| …drag it down to the bottom edge, open | Close (the overlay warns first) |
+| …throw it down (or drag it to the bottom edge and open) | Close |
 | …open the hand upright | Let go where it is (taken to the top of a monitor = maximize) |
 | ✋✋ bring the palms together | Task view (Win+Tab) |
 | … then ☝️ point and 🤏 pinch | Open that window (a click) |

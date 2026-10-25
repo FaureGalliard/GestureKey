@@ -72,13 +72,13 @@ export const en = {
   },
 
   gestures: {
-    mouse:       { label: "Mouse", hint: "Point with your index: the cursor follows. Pinch thumb and index to click, pinch and move to drag, hold the pinch for a right click" },
+    mouse:       { label: "Mouse", hint: "Point with your index: the cursor follows. Pinch thumb and index to click, pinch and move to drag, hold the pinch for a right click. Flick it sideways to jump to the next monitor" },
     scroll:      { label: "Scroll", hint: "Two fingers and move your hand: the page follows; a quick flick goes further" },
     zoom:        { label: "Zoom", hint: "Pinch thumb and index, then open or close them" },
     task_view:   { label: "Task view", hint: "Two open palms apart, then bring them together. Inside: ☝️ point at a window and 🤏 pinch to open it, or move the palms apart to leave" },
     grab_window: {
       label: "Move windows",
-      hint: "Palm, close your fist and drag; open it to let go. Open it tilted towards a side to send the window to that monitor; flick up to maximize; drag it to the bottom edge and let go to close",
+      hint: "Palm, close your fist and drag; open it to let go. Open it tilted towards a side to send the window to that monitor; flick up to maximize; throw it down to close",
     },
     volume:      { label: "Volume", hint: "Three fingers, raise or lower your hand" },
     mute:        { label: "Mute", hint: "Palm, quick fist, palm again (clashes with moving windows)" },

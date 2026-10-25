@@ -73,13 +73,13 @@ export const fr: Dict = {
   },
 
   gestures: {
-    mouse:       { label: "Souris", hint: "Pointez avec l’index : le curseur suit. Pincez pouce et index pour cliquer, pincez et bougez pour glisser, maintenez pour un clic droit" },
+    mouse:       { label: "Souris", hint: "Pointez avec l’index : le curseur suit. Pincez pouce et index pour cliquer, pincez et bougez pour glisser, maintenez pour un clic droit. Un coup rapide sur le côté l’envoie sur l’autre écran" },
     scroll:      { label: "Défiler", hint: "Deux doigts et bougez la main : la page suit ; un geste rapide va plus loin" },
     zoom:        { label: "Zoom", hint: "Pincez le pouce et l’index, puis écartez-les ou rapprochez-les" },
     task_view:   { label: "Vue des tâches", hint: "Deux paumes ouvertes écartées, puis rapprochez-les. Ensuite : ☝️ pointez une fenêtre et 🤏 pincez pour l’ouvrir, ou écartez les paumes pour quitter" },
     grab_window: {
       label: "Déplacer les fenêtres",
-      hint: "Paume, fermez le poing et faites glisser ; ouvrez-le pour lâcher. Ouvrez la main inclinée vers un côté pour envoyer la fenêtre sur cet écran ; un coup vers le haut l’agrandit ; amenez-la au bord inférieur et lâchez pour la fermer",
+      hint: "Paume, fermez le poing et faites glisser ; ouvrez-le pour lâcher. Ouvrez la main inclinée vers un côté pour envoyer la fenêtre sur cet écran ; un coup vers le haut l’agrandit ; jetez-la vers le bas pour la fermer",
     },
     volume:      { label: "Volume", hint: "Trois doigts, levez ou baissez la main" },
     mute:        { label: "Couper le son", hint: "Paume, poing rapide, paume à nouveau (gêne le déplacement des fenêtres)" },
