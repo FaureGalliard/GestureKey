@@ -31,7 +31,15 @@ class WindowMove:
 
 @dataclass(frozen=True)
 class WindowRelease:
-    snap: Optional[Literal["left", "right", "maximize", "close"]] = None
+    """
+    Let go of the grabbed window. `vx, vy` (normalised units/s, already
+    accelerated) let it glide; where it lands decides monitor / snap / maximize
+    (actions.window_physics). `snap="close"` closes it instead.
+    """
+    snap: Optional[Literal["close"]] = None
+    vx: float = 0.0
+    vy: float = 0.0
+    throw: bool = False
 
 
 @dataclass(frozen=True)

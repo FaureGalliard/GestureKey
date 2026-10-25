@@ -1,6 +1,7 @@
 from __future__ import annotations
 import queue
 import threading
+import time
 from typing import Callable, Iterable, Optional
 
 from gesturekey.actions import win32
@@ -8,14 +9,20 @@ from gesturekey.actions.audio import MasterVolume
 from gesturekey.actions.types import (
     Action, Hotkey, Scroll, VolumeBegin, VolumeSet, WindowGrab, WindowMove, WindowRelease,
 )
+from gesturekey.actions.window_physics import WindowAnimator
 
 _STOP = object()
+FRAME_S = 1 / 120   # window animation rate, independent of the camera's ~30 fps
 
 
 class ActionExecutor:
     """
     Runs actions on its own thread so key presses and window sleeps never
     stall the vision pipeline. Consecutive WindowMove actions are coalesced.
+
+    While a window is being dragged or is gliding after a flick, the loop
+    also animates it at FRAME_S (see window_physics), so it moves at display
+    rate instead of stepping with each camera frame.
     """
 
     def __init__(self, on_error: Callable[[str], None] = print, speed: float = 1.0) -> None:
@@ -23,7 +30,7 @@ class ActionExecutor:
         self._on_error = on_error
         self.speed = speed
         self._hwnd: Optional[int] = None
-        self._screen = win32.screen_size()
+        self._anim: Optional[WindowAnimator] = None
         self._volume = MasterVolume()
         self._volume_ref = 0.0
         #: last level set by a volume gesture, read by the engine for the overlay
@@ -43,9 +50,16 @@ class ActionExecutor:
 
     def _loop(self) -> None:
         pending: Optional[object] = None
+        last = time.perf_counter()
         while True:
-            item = pending if pending is not None else self._queue.get()
-            pending = None
+            animating = self._anim is not None and self._anim.active
+            if pending is not None:
+                item, pending = pending, None
+            else:
+                try:
+                    item = self._queue.get(timeout=FRAME_S if animating else None)
+                except queue.Empty:
+                    item = None
             if item is _STOP:
                 return
             if isinstance(item, WindowMove):
@@ -61,10 +75,35 @@ class ActionExecutor:
                         pending = nxt
                         break
                 item = WindowMove(dx, dy)
-            try:
-                self._run(item)  # type: ignore[arg-type]
-            except Exception as exc:
-                self._on_error(f"[ACTION] {type(item).__name__} failed: {exc}")
+            if item is not None:
+                try:
+                    self._run(item)  # type: ignore[arg-type]
+                except Exception as exc:
+                    self._on_error(f"[ACTION] {type(item).__name__} failed: {exc}")
+
+            now = time.perf_counter()
+            if self._anim is not None and self._anim.active:
+                try:
+                    self._animate(now - last)
+                except Exception as exc:
+                    self._on_error(f"[ACTION] window animation failed: {exc}")
+                    self._anim = None
+            last = now
+
+    def _animate(self, dt: float) -> None:
+        anim, hwnd = self._anim, self._hwnd
+        if anim is None or hwnd is None:
+            return
+        pos = anim.step(min(dt, 0.05))
+        if pos:
+            win32.set_window_pos(hwnd, *pos)
+        if anim.settled:
+            landing = anim.finish()
+            self._hwnd = None
+            if landing and landing.action == "maximize":
+                win32.maximize(hwnd)
+            elif landing and landing.action in ("left", "right"):
+                win32.hotkey(("win", landing.action))
 
     def _run(self, action: Action) -> None:
         if not win32.AVAILABLE:
@@ -78,24 +117,25 @@ class ActionExecutor:
             self._hwnd = win32.foreground_window()
             if self._hwnd:
                 win32.restore_if_maximized(self._hwnd)
+                self._anim = WindowAnimator(win32.monitors())
+                self._anim.start(win32.window_rect(self._hwnd))
         elif isinstance(action, WindowMove):
-            if self._hwnd:
-                w, h = self._screen
-                win32.move_window_by(self._hwnd, round(action.dx * w * self.speed),
-                                     round(action.dy * h * self.speed))
+            if self._anim and self._anim.active:
+                (l, t, r, b), _work = self._anim.start_monitor
+                self._anim.move(action.dx * (r - l) * self.speed, action.dy * (b - t) * self.speed)
         elif isinstance(action, VolumeBegin):
             self._volume_ref = self.volume_level = self._volume.get()
         elif isinstance(action, VolumeSet):
             self.volume_level = self._volume.set(self._volume_ref + action.delta)
         elif isinstance(action, WindowRelease):
-            hwnd, self._hwnd = self._hwnd, None
-            if hwnd is None:
+            if self._hwnd is None or self._anim is None:
                 return
-            if action.snap == "left":
-                win32.hotkey(("win", "left"))
-            elif action.snap == "right":
-                win32.hotkey(("win", "right"))
-            elif action.snap == "maximize":
-                win32.maximize(hwnd)
-            elif action.snap == "close":
-                win32.close_window(hwnd)
+            if action.snap == "close":
+                win32.close_window(self._hwnd)
+                self._anim.finish()
+                self._hwnd = None
+                return
+            (l, t, r, b), _work = self._anim.start_monitor
+            self._anim.release(action.vx * (r - l) * self.speed, action.vy * (b - t) * self.speed,
+                               action.throw)
+            # the animation loop glides it to the landing spot and applies the result

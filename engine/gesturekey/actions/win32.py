@@ -4,7 +4,7 @@ import ctypes
 import sys
 import time
 from ctypes import wintypes
-from typing import Optional, Sequence, Tuple
+from typing import List, Optional, Sequence, Tuple
 
 AVAILABLE = sys.platform == "win32"
 
@@ -96,15 +96,35 @@ def virtual_screen() -> Tuple[int, int, int, int]:
     return (m(76), m(77), m(78), m(79))   # SM_X/YVIRTUALSCREEN, SM_CX/CYVIRTUALSCREEN
 
 
-KEEP_VISIBLE = 120   # px of a dragged window that always stay on some screen
+Rect = Tuple[int, int, int, int]   # left, top, right, bottom
 
 
-def move_window_by(hwnd: int, dx: int, dy: int) -> None:
-    """Move across all monitors, but never so far that the window is lost off-screen."""
-    left, top, right, bottom = window_rect(hwnd)
-    vx, vy, vw, vh = virtual_screen()
-    x = max(vx - (right - left) + KEEP_VISIBLE, min(vx + vw - KEEP_VISIBLE, left + dx))
-    y = max(vy, min(vy + vh - KEEP_VISIBLE, top + dy))   # title bar never above the top
+class _MONITORINFO(ctypes.Structure):
+    _fields_ = [("cbSize", wintypes.DWORD), ("rcMonitor", wintypes.RECT),
+                ("rcWork", wintypes.RECT), ("dwFlags", wintypes.DWORD)]
+
+
+def monitors() -> List[Tuple[Rect, Rect]]:
+    """(full rect, work area without the taskbar) of every monitor, in virtual-desktop pixels."""
+    if not AVAILABLE:
+        return [((0, 0, 1920, 1080), (0, 0, 1920, 1040))]
+    found: List[Tuple[Rect, Rect]] = []
+    proc = ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HMONITOR, wintypes.HDC,
+                              ctypes.POINTER(wintypes.RECT), wintypes.LPARAM)
+
+    def collect(hmon, _hdc, _rect, _data):
+        info = _MONITORINFO()
+        info.cbSize = ctypes.sizeof(_MONITORINFO)
+        if _user32.GetMonitorInfoW(hmon, ctypes.byref(info)):
+            m, w = info.rcMonitor, info.rcWork
+            found.append(((m.left, m.top, m.right, m.bottom), (w.left, w.top, w.right, w.bottom)))
+        return True
+
+    _user32.EnumDisplayMonitors(None, None, proc(collect), 0)
+    return found or [((0, 0, 1920, 1080), (0, 0, 1920, 1040))]
+
+
+def set_window_pos(hwnd: int, x: int, y: int) -> None:
     _user32.SetWindowPos(hwnd, None, x, y, 0, 0, _SWP_NOSIZE | _SWP_NOZORDER | _SWP_NOACTIVATE)
 
 

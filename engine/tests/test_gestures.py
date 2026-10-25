@@ -36,7 +36,8 @@ def test_grab_wide_throw_snaps(clock):
     clock.run(PALM, 0.3).run(FIST, 0.2)
     clock.run(FIST, 0.15, wrist=(0.5, 0.7), to=(0.8, 0.7))   # a throw: 2 image widths/s
     clock.run(PALM, 0.05, wrist=(0.8, 0.7))
-    assert _release(clock.actions)[-1].snap == "right"
+    release = _release(clock.actions)[-1]
+    assert release.throw and release.vx > 0 and release.snap is None   # physics decides where it lands
 
 
 def test_dragging_down_does_not_close_window(clock):

@@ -86,11 +86,11 @@ class GrabWindowGesture(Gesture):
         elif self._phase == _Phase.GRABBED:
             self._trail.append((now, wrist))
             if state == HandState.PALM:
-                return self._release(out, self._throw(now))
+                return self._let_go(now, out)
             if state == HandState.FIST:
                 self._last_seen = now
             elif now - self._last_seen > cfg.lost_timeout:
-                return self._release(out, None)
+                return self._drop(out)
             # keep following the wrist even through a blurred frame
             if self._last is not None:
                 dx, dy = wrist[0] - self._last[0], wrist[1] - self._last[1]
@@ -102,13 +102,13 @@ class GrabWindowGesture(Gesture):
     def on_lost(self, now: float, out: Output) -> None:
         if self._phase == _Phase.GRABBED:
             if now - self._last_seen > self._cfg.lost_timeout:
-                self._release(out, None)
+                self._drop(out)
         elif self._phase != _Phase.IDLE:
             self.reset()
 
-    def _throw(self, now: float):
+    def _throw(self, now: float) -> Tuple[float, float]:
         """
-        Peak velocity in the moments before the hand opened decides a snap.
+        Peak velocity (image units/s) in the moments before the hand opened.
         Peak, not average: the still frames before the throw and while the
         palm opens would otherwise dilute it.
         """
@@ -121,16 +121,20 @@ class GrabWindowGesture(Gesture):
                     if wx * wx + wy * wy > best:
                         best, vx, vy = wx * wx + wy * wy, wx, wy
                     break
-        if best == 0.0:
-            return None
-        fast = self._cfg.throw_speed
-        if abs(vx) >= fast and abs(vx) >= abs(vy):
-            return "right" if vx > 0 else "left"
-        if vy <= -fast:
-            return "maximize"
-        if vy >= self._cfg.close_speed and vy >= abs(vx):
-            return "close"                       # thrown away downwards
-        return None
+        return vx, vy
+
+    def _let_go(self, now: float, out: Output) -> None:
+        vx, vy = self._throw(now)
+        speed = math.hypot(vx, vy)
+        if vy >= self._cfg.close_speed and vy >= abs(vx):     # thrown away downwards
+            out.emit(GestureEvent.CLOSE_WINDOW, WindowRelease("close"))
+            return self.reset()
+        # the window glides with the (accelerated) release velocity; where it lands —
+        # another monitor, a desktop edge, the top — is decided by the window physics
+        gain = self._gain(speed, 1.0)
+        out.emit(GestureEvent.GRAB_WINDOW_RELEASED,
+                 WindowRelease(None, vx * gain, vy * gain, throw=speed >= self._cfg.throw_speed))
+        self.reset()
 
     def _gain(self, step: float, dt: float) -> float:
         """Pointer ballistics: slow = precise 1:1, fast = covers more screen (multi-monitor)."""
@@ -140,9 +144,9 @@ class GrabWindowGesture(Gesture):
         speed = step / dt
         return min(cfg.max_gain, 1.0 + cfg.accel * max(0.0, speed - cfg.accel_from))
 
-    def _release(self, out: Output, snap) -> None:
-        event = GestureEvent.CLOSE_WINDOW if snap == "close" else GestureEvent.GRAB_WINDOW_RELEASED
-        out.emit(event, WindowRelease(snap))
+    def _drop(self, out: Output) -> None:
+        """Fist lost for too long: let go where it is, no glide."""
+        out.emit(GestureEvent.GRAB_WINDOW_RELEASED, WindowRelease())
         self.reset()
 
     def reset(self) -> None:
