@@ -43,7 +43,9 @@ export function Home({ engine, toast, videoOn, onOpenSettings }: Props) {
       title={title}
       subtitle={subtitle}
       aside={
-        <div className="flex items-center gap-3">
+        // one 32 px row: switch + settings share height and weight
+        <div className="flex h-8 items-center gap-2 rounded-full bg-white/[0.04] pl-1.5 pr-1">
+          <span className="pl-1.5 text-[12px] font-medium text-fg-muted">{enabled ? "Activo" : "Apagado"}</span>
           <Switch
             size="lg"
             label="Activar gestos"
@@ -51,12 +53,14 @@ export function Home({ engine, toast, videoOn, onOpenSettings }: Props) {
             disabled={!connected}
             onChange={(on) => engine.send({ cmd: "set_enabled", enabled: on })}
           />
+          <span className="mx-0.5 h-4 w-px bg-white/10" />
           <button
             onClick={onOpenSettings}
             title="Ajustes"
-            className="grid h-9 w-9 place-items-center rounded-full text-fg-muted transition-colors hover:bg-white/10 hover:text-fg"
+            aria-label="Ajustes"
+            className="grid h-6 w-6 place-items-center rounded-full text-fg-muted transition-colors hover:bg-white/10 hover:text-fg"
           >
-            <Settings2 size={18} strokeWidth={1.75} />
+            <Settings2 size={15} strokeWidth={1.75} />
           </button>
         </div>
       }

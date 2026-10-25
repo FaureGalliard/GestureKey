@@ -24,13 +24,48 @@ ALLOWED_ORIGINS = [
 
 
 def _wait_for_stdin_eof(on_eof: Callable[[], None]) -> None:
-    """The app closes our stdin to ask for a clean shutdown."""
-    try:
-        while sys.stdin and sys.stdin.buffer.read(4096):
+    """
+    The app closes our stdin to ask for a clean shutdown.
+
+    Never *read* stdin on Windows: while a synchronous ReadFile is pending on a
+    pipe, GetFileInformationByHandle on it blocks, and so does loading a new DLL
+    (measured) — MSMF loads DLLs when the camera opens, so the camera hung until
+    the app quit. Instead poll the pipe without blocking.
+    """
+    if sys.platform == "win32":
+        _poll_pipe_closed()
+    else:
+        try:
+            while sys.stdin and sys.stdin.buffer.read(4096):
+                pass
+        except (OSError, ValueError):
             pass
-    except (OSError, ValueError):
-        pass
     on_eof()
+
+
+def _poll_pipe_closed(interval: float = 0.1) -> None:
+    import ctypes
+    import msvcrt
+    import time
+    from ctypes import wintypes
+
+    FILE_TYPE_PIPE = 3
+    try:
+        handle = msvcrt.get_osfhandle(sys.stdin.fileno())
+    except (AttributeError, OSError, ValueError):
+        handle = None
+    # safe here: nothing is reading the pipe, so GetFileType can't block
+    if handle is None or ctypes.windll.kernel32.GetFileType(wintypes.HANDLE(handle)) != FILE_TYPE_PIPE:
+        while True:                              # not launched by the app: never treat as EOF
+            time.sleep(3600)
+    peek = ctypes.windll.kernel32.PeekNamedPipe
+    peek.argtypes = [wintypes.HANDLE, ctypes.c_void_p, wintypes.DWORD, ctypes.c_void_p,
+                     ctypes.POINTER(wintypes.DWORD), ctypes.c_void_p]
+    available = wintypes.DWORD(0)
+    while True:
+        if not peek(handle, None, 0, None, ctypes.byref(available), None):
+            return                               # broken pipe: the app closed it (or it isn't a pipe)
+        time.sleep(interval)
 
 
 async def serve_engine(config: AppConfig, host: str = "127.0.0.1", port: int = 8765,

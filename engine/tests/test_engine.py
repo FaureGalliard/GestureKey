@@ -124,3 +124,22 @@ def test_listing_cameras_does_not_touch_the_active_one(fakes, monkeypatch):
         time.sleep(0.05)
     eng.stop()
     assert seen["active"] == 0              # the engine tells discovery which device to leave alone
+
+
+def test_on_off_answers_while_the_camera_is_still_opening(fakes, monkeypatch):
+    class SlowCamera(FakeCamera):
+        def __init__(self, cfg, device=None):
+            time.sleep(3)                      # e.g. a camera that takes long to open
+            super().__init__(cfg, device)
+    monkeypatch.setattr(engine_mod, "Camera", SlowCamera)
+    msgs = []
+    eng = engine_mod.Engine(AppConfig(), msgs.append, persist=False)
+    eng.start()
+    time.sleep(0.5)                            # pipeline thread is stuck opening
+    t = time.time()
+    eng.command({"cmd": "set_enabled", "enabled": False})
+    elapsed = time.time() - t
+    answered = [m for m in msgs if m["type"] == "enabled"]
+    eng.stop()
+    assert answered and answered[-1]["enabled"] is False
+    assert elapsed < 0.5

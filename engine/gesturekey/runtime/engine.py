@@ -59,6 +59,7 @@ class Engine:
         self._camera_info: Optional[Message] = None
         self._cam_status:  Optional[Message] = None
         self._next_attempt = 0.0
+        self._reset_gestures = False
         self._low_light    = False
         self._thread: Optional[threading.Thread] = None
         self._recorder = Recorder.from_env()
@@ -84,7 +85,17 @@ class Engine:
             self._thread.join(timeout=3.0)
 
     def command(self, msg: Message) -> None:
-        self._commands.put(msg)
+        """
+        Flags (on/off, preview) apply at once, even while the pipeline thread
+        is busy opening a camera; everything else is queued for that thread.
+        """
+        cmd = msg.get("cmd")
+        if cmd == "set_enabled":
+            self._set_enabled(bool(msg.get("enabled", True)))
+        elif cmd == "preview":
+            self._preview = bool(msg.get("on", False))
+        else:
+            self._commands.put(msg)
 
     def hello(self) -> Message:
         return {
@@ -129,6 +140,9 @@ class Engine:
 
         while self._running:
             self._drain_commands()
+            if self._reset_gestures and self._arbiter:
+                self._reset_gestures = False
+                self._arbiter.reset_all()
 
             if self._camera is None:
                 if time.time() >= self._next_attempt:
@@ -234,10 +248,6 @@ class Engine:
                     cam.name = names[cam.device]
                 self._open_camera(cam.device, fallback=old_cam[0])
             self._emit({"type": "config", "config": self._config.to_dict()})
-        elif cmd == "set_enabled":
-            self._set_enabled(bool(msg.get("enabled", True)))
-        elif cmd == "preview":
-            self._preview = bool(msg.get("on", False))
         elif cmd == "list_cameras":
             active = self._camera.device if self._camera else None
             self._emit({"type": "cameras", "devices": list_cameras(active=active), "active": self._config.camera.device})
@@ -249,9 +259,9 @@ class Engine:
     # ── helpers ───────────────────────────────────────────────────────────────
 
     def _set_enabled(self, enabled: bool) -> None:
+        """Any thread. The arbiter itself is reset on the pipeline thread."""
         self._enabled = enabled
-        if self._arbiter:
-            self._arbiter.reset_all()
+        self._reset_gestures = True
         self._emit({"type": "enabled", "enabled": self._enabled})
 
     def _owner_info(self, owner) -> Optional[Message]:

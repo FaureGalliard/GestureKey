@@ -94,14 +94,15 @@ fn forward(stream: impl Read + Send + 'static) {
     });
 }
 
-/// Graceful first (close stdin → the engine releases the camera and the recording),
+/// Graceful first (close stdin → the engine releases the camera and the recording;
+/// measured ~2.3 s including interpreter teardown),
 /// kill only if it hasn't exited in time.
 pub fn kill(app: &AppHandle) {
     let Some(mut child) = app.state::<EngineProcess>().0.lock().unwrap().take() else {
         return;
     };
     drop(child.stdin.take());
-    let deadline = Instant::now() + Duration::from_millis(2500);
+    let deadline = Instant::now() + Duration::from_millis(4000);
     while Instant::now() < deadline {
         match child.try_wait() {
             Ok(Some(_)) => return,

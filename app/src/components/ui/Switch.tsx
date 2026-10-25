@@ -9,13 +9,13 @@ interface Props {
 }
 
 const SIZES = {
-  md: { track: "h-[18px] w-8",  knob: 12, pad: 3 },
-  lg: { track: "h-7 w-12",      knob: 20, pad: 4 },
+  md: { track: "h-[18px] w-8",  knob: 12, pad: 3, width: 32 },
+  lg: { track: "h-6 w-[42px]",  knob: 18, pad: 3, width: 42 },   // pairs with a 32 px icon button
 };
 
 export function Switch({ on, disabled, onChange, label, size = "md" }: Props) {
   const s = SIZES[size];
-  const width = size === "md" ? 32 : 48;
+  const width = s.width;
   return (
     <button
       role="switch"
