@@ -1,17 +1,80 @@
 @import "tailwindcss";
+@import "@fontsource-variable/inter";
+@import "@fontsource/fira-code/400.css";
+@import "@fontsource/fira-code/500.css";
+
+/*
+ * Design tokens — shared language with angelcrispin.github.io and Vocal Teleprompter.
+ * Rule (same as the website): components use these classes, never raw hex.
+ * A new color starts here or not at all.
+ */
+@theme static {
+    --font-sans: "Inter Variable", system-ui, sans-serif;
+    --font-mono: "Fira Code", ui-monospace, monospace;
+
+    /* Chrome: the dark app shell (teleprompter title bar / toolbar, website menu) */
+    --color-ink: #0c0c0d;           /* app background, the stage */
+    --color-chrome: #1a1a1a;        /* title bar, side panel — same ink as the website's black */
+    --color-chrome-raised: #242424; /* menus and popovers, one step above */
+
+    /* Text on chrome: two inks, not five */
+    --color-fg: #f2f2f3;            /* primary text */
+    --color-fg-muted: #9a9ba1;      /* secondary text, 7:1 on chrome */
+    --color-fg-faint: #5c5d63;      /* labels' quiet half, decorative glyphs; never body text */
+
+    /* Lines: opaque, so they read the same on chrome and on the stage */
+    --color-line: #2a2a2c;
+    --color-line-strong: #3a3a3d;
+
+    /* Accent ramp, one hue: #445ade (website brand, teleprompter primary) */
+    --color-accent: #445ade;        /* fills: primary pill, toggles on, focus */
+    --color-accent-strong: #3448c5; /* hover / pressed */
+    --color-accent-light: #7698fe;  /* accent as text or line on dark — teleprompter text color */
+    --color-accent-tint: #445ade26; /* tinted surface (15 %) */
+
+    /* Feedback */
+    --color-live: #34d399;          /* engine connected, hand tracked */
+    --color-hold: #f87171;          /* a gesture owns the hand (grabbing) */
+    --color-warn: #fbbf24;
+    --color-danger: #ef4444;        /* close button hover, errors */
+
+    /* Motion: teleprompter's panel easing and the website's page easing */
+    --ease-panel: cubic-bezier(0.32, 0.72, 0, 1);
+    --ease-page: cubic-bezier(0.76, 0, 0.24, 1);
+}
 
 :root {
-  color-scheme: dark;
-  font-family: ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+    color-scheme: dark;
+    accent-color: var(--color-accent);
+}
+
+html,
+body,
+#root {
+    height: 100%;
 }
 
 body {
-  margin: 0;
-  background: #121212;
-  color: rgba(255, 255, 255, 0.85);
-  user-select: none;
+    margin: 0;
+    overflow: hidden;
+    background: var(--color-ink);
+    color: var(--color-fg);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    user-select: none;
 }
 
-select option {
-  background: #1a1a1a;
+::selection {
+    background-color: var(--color-accent-tint);
+    color: var(--color-fg);
+}
+
+:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+}
+
+/* Teleprompter: no visible scrollbars */
+::-webkit-scrollbar {
+    display: none;
 }

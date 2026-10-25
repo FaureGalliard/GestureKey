@@ -14,10 +14,12 @@
       {
         "label": "main",
         "title": "GestureKey",
-        "width": 980,
-        "height": 640,
-        "minWidth": 760,
-        "minHeight": 520
+        "width": 1040,
+        "height": 660,
+        "minWidth": 800,
+        "minHeight": 540,
+        "decorations": false,
+        "backgroundColor": "#0c0c0d"
       }
     ],
     "security": {

@@ -1,59 +1,48 @@
-import { useState } from "react";
-import { CameraPicker } from "./components/CameraPicker";
-import { EventLog } from "./components/EventLog";
-import { GestureList } from "./components/GestureList";
-import { HandCanvas } from "./components/HandCanvas";
-import { StatePanel } from "./components/StatePanel";
+import { useEffect, useState } from "react";
+import { Sidebar } from "./components/Sidebar";
+import { Stage } from "./components/Stage";
+import { TitleBar } from "./components/TitleBar";
+import type { LogEntry } from "./lib/useEngine";
 import { useEngine } from "./lib/useEngine";
+
+const TOAST_MS = 1400;
 
 export default function App() {
   const engine = useEngine();
-  const [preview, setPreview] = useState(false);
+  const [videoOn, setVideoOn] = useState(false);
+  const [toast, setToast] = useState<LogEntry | null>(null);
 
-  const togglePreview = (on: boolean) => {
-    setPreview(on);
-    engine.send({ cmd: "preview", on });
+  // newest gesture event → toast for a moment
+  const newest = engine.log.find((e) => e.kind === "event") ?? null;
+  useEffect(() => {
+    if (!newest) return;
+    setToast(newest);
+    const timer = window.setTimeout(() => setToast(null), TOAST_MS);
+    return () => window.clearTimeout(timer);
+  }, [newest?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const toggleVideo = () => {
+    engine.send({ cmd: "preview", on: !videoOn });
+    setVideoOn(!videoOn);
   };
 
   return (
-    <div className="flex h-screen flex-col gap-3 p-3">
-      <header className="flex items-center gap-3 px-1">
-        <h1 className="text-sm font-semibold tracking-wide">GestureKey</h1>
-        <span className="text-xs text-white/30">{engine.version ? `v${engine.version}` : ""}</span>
-        <span className={`ml-2 flex items-center gap-1.5 text-xs ${engine.connected ? "text-emerald-300" : "text-white/40"}`}>
-          <span className={`h-1.5 w-1.5 rounded-full ${engine.connected ? "bg-emerald-400" : "bg-white/30 animate-pulse"}`} />
-          {engine.connected ? "motor conectado" : "conectando al motor…"}
-        </span>
-        {engine.connected && engine.camera && (
-          <span className="text-xs text-white/30">
-            · {engine.camera.width}×{engine.camera.height} @ {Math.round(engine.camera.fps)} fps
-          </span>
-        )}
-        <button
-          className={`ml-auto rounded-full px-3 py-1 text-xs font-medium transition ${
-            engine.enabled ? "bg-emerald-400/15 text-emerald-300" : "bg-white/5 text-white/50"
-          }`}
-          disabled={!engine.connected}
-          onClick={() => engine.send({ cmd: "set_enabled", enabled: !engine.enabled })}
-        >
-          {engine.enabled ? "Gestos activos" : "Gestos apagados"}
-        </button>
-      </header>
-
-      <main className="grid min-h-0 flex-1 grid-cols-[1fr_300px] gap-3">
-        <div className="grid min-h-0 grid-rows-[1fr_180px] gap-3">
-          <HandCanvas frame={engine.frame} preview={preview ? engine.preview : null} />
-          <EventLog log={engine.log} />
-        </div>
-        <aside className="flex min-h-0 flex-col gap-3 overflow-y-auto">
-          <StatePanel frame={engine.frame} />
-          <CameraPicker config={engine.config} cameras={engine.cameras} preview={preview}
-                        send={engine.send} onPreview={togglePreview} />
-          <GestureList
-            config={engine.config}
-            onToggle={(key, enabled) => engine.send({ cmd: "set_config", patch: { gestures: { [key]: { enabled } } } })}
-          />
-        </aside>
+    // 1 px accent outline around the window: the teleprompter's signature frame
+    <div className="flex h-full flex-col outline outline-1 -outline-offset-1 outline-accent/40">
+      <TitleBar connected={engine.connected} version={engine.version} />
+      <main className="flex min-h-0 flex-1">
+        <Stage
+          connected={engine.connected}
+          enabled={engine.enabled}
+          frame={engine.frame}
+          camera={engine.camera}
+          preview={engine.preview}
+          videoOn={videoOn}
+          lastEvent={toast}
+          onToggleEnabled={() => engine.send({ cmd: "set_enabled", enabled: !engine.enabled })}
+          onToggleVideo={toggleVideo}
+        />
+        <Sidebar config={engine.config} cameras={engine.cameras} log={engine.log} send={engine.send} />
       </main>
     </div>
   );
