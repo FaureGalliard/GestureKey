@@ -73,7 +73,7 @@ export const fr: Dict = {
   },
 
   gestures: {
-    mouse:       { label: "Souris", hint: "Pointez avec l’index : le curseur suit. Pincez pouce et index pour cliquer, pincez et bougez pour glisser, maintenez pour un clic droit. Pointez vers un côté pour passer à cet écran" },
+    mouse:       { label: "Souris", hint: "Pointez avec l’index : le curseur suit. Pincez pouce et index pour cliquer, pincez et bougez pour glisser, maintenez pour un clic droit. Un coup rapide sur le côté l’envoie sur l’autre écran ; gardez la main au bord de la caméra pour atteindre les coins" },
     scroll:      { label: "Défiler", hint: "Deux doigts et bougez la main : la page suit ; un geste rapide va plus loin" },
     zoom:        { label: "Zoom", hint: "Pincez le pouce et l’index, puis écartez-les ou rapprochez-les" },
     task_view:   { label: "Vue des tâches", hint: "Deux paumes ouvertes écartées, puis rapprochez-les. Ensuite : ☝️ pointez une fenêtre et 🤏 pincez pour l’ouvrir, ou écartez les paumes pour quitter" },

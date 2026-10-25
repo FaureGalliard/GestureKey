@@ -15,7 +15,8 @@ move windows between monitors, task view and more.
 |---|---|
 | ☝️ point with the index | Mouse — the cursor follows the hand |
 | …🤏 touch the tips of thumb and index | Click (twice = double click); pinch and move = drag; hold = right click |
-| …point **towards a side** | Jump the cursor to that monitor |
+| …a quick flick sideways | Jump the cursor to the next monitor |
+| …park the hand at the camera's edge | The cursor keeps going that way (reach the corners) |
 | ✌️ two fingers, move the hand | Scroll whatever is under the cursor — point at it first, no click needed |
 | 🤟 three fingers, raise / lower | Volume — same height, same level |
 | 🤏 pinch, open / close | Zoom |
