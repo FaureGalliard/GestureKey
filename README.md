@@ -23,9 +23,8 @@ move windows between monitors, task view and more.
 | …flick down, then open | Close |
 | …open the hand upright | Let go where it is (taken to the top of a monitor = maximize) |
 | ✋✋ bring the palms together | Task view (Win+Tab) |
-| … then ✌️ and move the hand | Pick a window (arrow keys) |
-| … then ✊ | Open the picked window (Enter) |
-| … then ✋✋ move the palms apart | Leave task view (Esc) |
+| … then ☝️ point and 🤏 pinch | Open that window (a click) |
+| … then ✋✋ move the palms apart | Leave: the window under the cursor if you pointed, else back (Esc) |
 | 🖖 four fingers → ✊ | Play / pause media |
 | ✋ held steady, then pushed away | Screenshot (Win+PrintScreen) |
 | ✋✋ both palms still for 1 s | Turn GestureKey on / off (works while off) |

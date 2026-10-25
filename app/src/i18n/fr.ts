@@ -76,7 +76,7 @@ export const fr: Dict = {
     mouse:       { label: "Souris", hint: "Pointez avec l’index : le curseur suit. Pincez pouce et index pour cliquer, pincez et bougez pour glisser, maintenez pour un clic droit" },
     scroll:      { label: "Défiler", hint: "Deux doigts et bougez la main : la page suit ; un geste rapide va plus loin" },
     zoom:        { label: "Zoom", hint: "Pincez le pouce et l’index, puis écartez-les ou rapprochez-les" },
-    task_view:   { label: "Vue des tâches", hint: "Deux paumes ouvertes écartées, puis rapprochez-les. Ensuite : ✌️ bougez pour choisir, ✊ pour ouvrir, écartez les paumes pour quitter" },
+    task_view:   { label: "Vue des tâches", hint: "Deux paumes ouvertes écartées, puis rapprochez-les. Ensuite : ☝️ pointez une fenêtre et 🤏 pincez pour l’ouvrir, ou écartez les paumes pour quitter" },
     grab_window: {
       label: "Déplacer les fenêtres",
       hint: "Paume, fermez le poing et faites glisser ; ouvrez-le pour lâcher. Ouvrez la main inclinée vers un côté pour envoyer la fenêtre sur cet écran ; un coup vers le haut l’agrandit ; un coup vers le bas puis ouvrir la ferme",
@@ -112,7 +112,6 @@ export const fr: Dict = {
     CLOSE_WINDOW: "Fermer la fenêtre",
     MUTE_TOGGLE: "Couper le son",
     TASK_VIEW: "Vue des tâches",
-    TASK_VIEW_MOVE: "Vue des tâches : fenêtre suivante",
     TASK_VIEW_OPEN: "Vue des tâches : fenêtre ouverte",
     TASK_VIEW_CLOSED: "Vue des tâches fermée",
     MEDIA_PLAY_PAUSE: "Lecture / pause",
@@ -125,7 +124,7 @@ export const fr: Dict = {
   },
 
   overlay: {
-    live: { MOUSE: "Souris · 🤏 pour cliquer", SCROLL: "Défilement", VOLUME: "Volume", ZOOM: "Zoom", GRAB_WINDOW: "Déplacement de la fenêtre", TASK_VIEW: "✌️ choisir · ✊ ouvrir · ✋✋ écarter pour quitter" },
+    live: { MOUSE: "Souris · 🤏 pour cliquer", SCROLL: "Défilement", VOLUME: "Volume", ZOOM: "Zoom", GRAB_WINDOW: "Déplacement de la fenêtre", TASK_VIEW: "☝️ pointer · 🤏 ouvrir · ✋✋ écarter pour quitter" },
     toasts: {
       CLOSE_WINDOW: "Fenêtre fermée",
       WINDOW_TO_MONITOR: "Fenêtre envoyée sur l’autre écran",

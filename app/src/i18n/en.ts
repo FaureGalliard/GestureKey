@@ -75,7 +75,7 @@ export const en = {
     mouse:       { label: "Mouse", hint: "Point with your index: the cursor follows. Pinch thumb and index to click, pinch and move to drag, hold the pinch for a right click" },
     scroll:      { label: "Scroll", hint: "Two fingers and move your hand: the page follows; a quick flick goes further" },
     zoom:        { label: "Zoom", hint: "Pinch thumb and index, then open or close them" },
-    task_view:   { label: "Task view", hint: "Two open palms apart, then bring them together. Inside: ✌️ move to pick, ✊ to open, palms apart to leave" },
+    task_view:   { label: "Task view", hint: "Two open palms apart, then bring them together. Inside: ☝️ point at a window and 🤏 pinch to open it, or move the palms apart to leave" },
     grab_window: {
       label: "Move windows",
       hint: "Palm, close your fist and drag; open it to let go. Open it tilted towards a side to send the window to that monitor; flick up to maximize; flick down and open to close",
@@ -111,7 +111,6 @@ export const en = {
     CLOSE_WINDOW: "Close window",
     MUTE_TOGGLE: "Mute",
     TASK_VIEW: "Task view",
-    TASK_VIEW_MOVE: "Task view: next window",
     TASK_VIEW_OPEN: "Task view: window opened",
     TASK_VIEW_CLOSED: "Task view closed",
     MEDIA_PLAY_PAUSE: "Play / pause",
@@ -124,7 +123,7 @@ export const en = {
   } as Record<string, string>,
 
   overlay: {
-    live: { MOUSE: "Mouse · 🤏 to click", SCROLL: "Scrolling", VOLUME: "Volume", ZOOM: "Zoom", GRAB_WINDOW: "Moving window", TASK_VIEW: "✌️ move · ✊ open · ✋✋ apart to leave" } as Record<string, string>,
+    live: { MOUSE: "Mouse · 🤏 to click", SCROLL: "Scrolling", VOLUME: "Volume", ZOOM: "Zoom", GRAB_WINDOW: "Moving window", TASK_VIEW: "☝️ point · 🤏 open · ✋✋ apart to leave" } as Record<string, string>,
     toasts: {
       CLOSE_WINDOW: "Window closed",
       WINDOW_TO_MONITOR: "Window moved to the other monitor",
