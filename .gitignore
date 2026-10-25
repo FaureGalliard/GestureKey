@@ -1,11 +1,25 @@
+# Python
 .venv/
-
 __pycache__/
 *.py[cod]
+engine/build/
+engine/dist/
+.pytest_cache/
 
+# Node / Vite
+node_modules/
+app/dist/
+
+# Tauri
+app/src-tauri/target/
+app/src-tauri/gen/
+app/src-tauri/engine/*
+!app/src-tauri/engine/README.md
+
+# v2 leftovers
+/dist/
+/build/
 settings.json
-
-dist/
-build/
-
 arquitecture.txt
+*.tsbuildinfo
+*.log
