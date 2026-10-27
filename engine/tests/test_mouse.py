@@ -69,16 +69,22 @@ def _jumps(clock):
     return [a.direction for a in clock.actions if isinstance(a, CursorJump)]
 
 
-def test_quick_sideways_flick_jumps_to_the_next_monitor(clock):
+def test_opening_the_hand_tilted_sends_the_cursor_to_that_monitor(clock):
+    _point(clock, 0.3)
+    clock.run(PALM, 0.1, tilt=40)                                 # like sweeping a window
+    assert _jumps(clock) == ["right"]
+    assert "MOUSE_TO_MONITOR" in clock.events and clock.arbiter.owner is None
+
+
+def test_opening_the_hand_upright_just_lets_go(clock):
+    _point(clock, 0.3)
+    clock.run(PALM, 0.1, tilt=-8)
+    assert _jumps(clock) == [] and clock.arbiter.owner is None
+
+
+def test_moving_fast_never_jumps(clock):
     _point(clock, 0.3)
     _point(clock, 0.1, wrist=(0.5, 0.7), to=(0.75, 0.7))          # 2.5 image widths/s
-    assert _jumps(clock) == ["right"]
-    assert "MOUSE_TO_MONITOR" in clock.events
-
-
-def test_moving_at_a_normal_pace_never_jumps(clock):
-    _point(clock, 0.3)
-    _point(clock, 0.6, wrist=(0.5, 0.7), to=(0.8, 0.7))           # 0.5 image widths/s
     assert _jumps(clock) == []
 
 

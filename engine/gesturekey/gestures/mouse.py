@@ -5,14 +5,15 @@ from typing import Any, Deque, Dict, Optional, Tuple
 
 from gesturekey.actions.types import CursorBegin, CursorJump, CursorMove, MouseButton
 from gesturekey.config import ContinuousConfig, MouseConfig
-from gesturekey.core.geometry import dist, palm_center, palm_length
+from gesturekey.core.geometry import dist, hand_tilt, openness, palm_center, palm_length
 from gesturekey.core.types import GestureEvent, Hand, HandState, Point
 from gesturekey.gestures.base import Output
 from gesturekey.gestures.continuous import ContinuousGesture
 
-FLICK_SPAN  = 0.05   # s of motion that measure a flick's speed
-FLICK_BLOCK = 0.35   # s: the rest of that same motion does not move the cursor
-DOMINANCE   = 2.0    # a flick's sideways speed must beat the vertical one by this much
+OPEN_REACH  = 1.30   # openness() above this = an open hand (fist ~0.7, pointing ~1.1, palm ~1.8)
+OPEN_FRAMES = 2      # consecutive open-hand frames that agree before deciding
+OPEN_DECIDE = 0.25   # s: if they never agree, just let go
+JUMP_UNDO   = 0.30   # s of cursor motion taken back on a jump (opening the hand moves the palm)
 POINTING_REACH = 1.30   # index tip ↔ wrist (palm lengths) to count as ☝️: fists stay below ~0.95, pointing ~1.96
 
 
@@ -41,8 +42,7 @@ class Pointer:
       pinch and let go                 → left click (twice quickly = double click)
       pinch and move                   → drag (left button held)
       pinch held still `right_hold`    → right click
-    A quick sideways flick jumps the cursor to the monitor that way (same
-    relative spot there). Corners: the camera's view ends before the screens
+    Corners: the camera's view ends before the screens
     do, so a hand parked at the edge of the view keeps the cursor gliding
     that way, like pushing a joystick.
     """
@@ -70,7 +70,6 @@ class Pointer:
         here = palm_center(hand)
         dx, dy = here[0] - self._last[0], here[1] - self._last[1]
         self._last = here
-        self._trail.append((now, here))
 
         gap = pinch_gap(hand)
         pinching = self._pinch_at is not None
@@ -93,34 +92,16 @@ class Pointer:
                 return "right"
             else:
                 return None                                       # held still: the cursor stays put
-        if self._flick(now, out) or now < self._block_until:
-            return None
         self._move(dx, dy, dt, out)
         self._edge_glide(here, now, dt, out)
         return None
 
-    def _flick(self, now: float, out: Output) -> bool:
-        cfg = self._cfg
-        t1, p1 = self._trail[-1]
-        past = [(t, p) for t, p in self._trail if t1 - t >= FLICK_SPAN]
-        if not past:
-            return False
-        t0, p0 = past[-1]
-        vx, vy = (p1[0] - p0[0]) / (t1 - t0), (p1[1] - p0[1]) / (t1 - t0)
-        if not self._flick_ready:
-            self._flick_ready = abs(vx) < 0.5 * cfg.flick_speed     # the previous flick is over
-            return False
-        if abs(vx) < cfg.flick_speed or abs(vx) < DOMINANCE * abs(vy):
-            return False
-        # the start of the flick already moved the cursor: take that back, then jump
-        undo = [m for t, m in self._sent if now - t <= FLICK_SPAN * 3]
+    def jump(self, direction: str, now: float, out: Output) -> None:
+        """Hop to the monitor that way, after taking back the motion of opening the hand."""
+        undo = [m for t, m in self._sent if now - t <= JUMP_UNDO]
         out.emit(GestureEvent.MOUSE_TO_MONITOR,
-                 CursorJump("right" if vx > 0 else "left",
-                            -sum(m[0] for m in undo), -sum(m[1] for m in undo)))
+                 CursorJump(direction, -sum(m[0] for m in undo), -sum(m[1] for m in undo)))
         self._sent.clear()
-        self._flick_ready, self._block_until = False, now + FLICK_BLOCK
-        self._edge_ok = False                                       # landing at the edge is no push
-        return True
 
     def _edge_glide(self, here: Point, now: float, dt: float, out: Output) -> None:
         """Hand parked at the edge of the camera's view: keep the cursor going that way."""
@@ -175,9 +156,6 @@ class Pointer:
         self._dragging = False
         self._consumed = False
         self._closing = 0
-        self._flick_ready = True
-        self._block_until = 0.0
-        self._trail: Deque[Tuple[float, Point]] = deque(maxlen=12)
         self._edge_since: Optional[float] = None
         self._edge_ok = True
         self._sent: Deque[Tuple[float, Tuple[float, float]]] = deque(maxlen=120)
@@ -186,8 +164,11 @@ class Pointer:
 class MouseGesture(ContinuousGesture):
     """
     ☝️ point with the index → the hand is the mouse (see Pointer). It lasts
-    while the hand keeps pointing or pinching; open the hand, show another
-    pose or put it down to let go of the cursor.
+    while the hand keeps pointing or pinching. Opening the hand ends it, the
+    same way as letting go of a window:
+      open it upright             → let go of the cursor where it is
+      open it tilted to a side    → the cursor jumps to the monitor that way
+    Another pose, or putting the hand down, lets go too.
 
     Scrolling follows: point at the text on any monitor, then ✌️ — Windows
     scrolls whatever is under the cursor, no click needed.
@@ -201,6 +182,7 @@ class MouseGesture(ContinuousGesture):
 
     def __init__(self, cfg: MouseConfig, cc: ContinuousConfig) -> None:
         self.pointer = Pointer(cfg)
+        self._sweep_tilt = cfg.sweep_tilt
         super().__init__(cc)
 
     @property
@@ -221,7 +203,26 @@ class MouseGesture(ContinuousGesture):
         if not self._active and hand is not None and (index_reach(hand) < POINTING_REACH or frame.has_both_hands):
             self.reset()                       # a misread fist (grab's), or two hands (a frame, task view)
             return
+        if self._active and hand is not None and (
+                frame.state in (HandState.PALM, HandState.FOUR_FINGERS) or openness(hand) >= OPEN_REACH):
+            return self._opening(hand, frame.timestamp, out)
+        self._votes.clear()
         super().update(frame, out)
+
+    def _opening(self, hand: Hand, now: float, out: Output) -> None:
+        """Like letting go of a window: upright = stay, tilted = that monitor. Frames must agree."""
+        tilt = hand_tilt(hand)
+        vote = ("right" if tilt > 0 else "left") if abs(tilt) >= self._sweep_tilt else "here"
+        if not self._votes:
+            self._open_since = now
+        self._votes.append(vote)
+        recent = self._votes[-OPEN_FRAMES:]
+        if len(recent) == OPEN_FRAMES and len(set(recent)) == 1:
+            if vote != "here":
+                self.pointer.jump(vote, now, out)
+            return self._finish(now, "open", out)
+        if now - self._open_since >= OPEN_DECIDE:
+            self._finish(now, "open", out)
 
     def end(self, now: float, reason: str, out: Output) -> None:
         self.pointer.end(now, out)
@@ -229,3 +230,5 @@ class MouseGesture(ContinuousGesture):
     def reset(self) -> None:
         super().reset()
         self._state = HandState.UNKNOWN
+        self._votes: list = []
+        self._open_since = 0.0

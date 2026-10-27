@@ -171,7 +171,7 @@ class MouseConfig:
     drag_start:  float = 0.25    # palm lengths moved while pinching = drag instead of click
     right_hold:  float = 0.70    # still pinch this long = right click
     rollback:    float = 0.15    # s of cursor motion undone when the hand goes away
-    flick_speed: float = 1.8     # image units/s sideways: jump to the next monitor that way
+    sweep_tilt:  float = 28.0    # degrees: opening the hand tilted this far = cursor to that monitor
     # corners: hand parked at the edge of the camera's view → the cursor keeps going that way
     edge_zone:   float = 0.08    # fraction of the view at each side
     edge_dwell:  float = 0.20    # s at the edge before it glides
