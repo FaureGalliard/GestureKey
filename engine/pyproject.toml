@@ -1,6 +1,6 @@
 [project]
 name = "gesturekey"
-version = "3.1.0b1"
+version = "3.2.0b1"
 description = "GestureKey engine — hand-gesture recognition that drives keyboard shortcuts and windows"
 license = "MIT"
 requires-python = ">=3.11,<3.12"

@@ -1,6 +1,6 @@
 [package]
 name = "gesturekey"
-version = "3.1.0-beta.1"
+version = "3.2.0-beta.1"
 description = "GestureKey — hand gestures for your desktop"
 edition = "2021"
 

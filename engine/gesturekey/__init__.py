@@ -4,4 +4,4 @@ import os
 # Must be set before OpenCV's MSMF backend is first used (see vision/camera.py).
 os.environ.setdefault("OPENCV_VIDEOIO_MSMF_ENABLE_HW_TRANSFORMS", "0")
 
-__version__ = "3.1.0-beta.1"
+__version__ = "3.2.0-beta.1"
