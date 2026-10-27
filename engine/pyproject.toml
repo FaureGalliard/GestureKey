@@ -2,6 +2,7 @@
 name = "gesturekey"
 version = "3.1.0b1"
 description = "GestureKey engine — hand-gesture recognition that drives keyboard shortcuts and windows"
+license = "MIT"
 requires-python = ">=3.11,<3.12"
 dependencies = [
     "mediapipe==1.1.1",           # Tasks API (HandLandmarker); `solutions` was removed in 0.10.30

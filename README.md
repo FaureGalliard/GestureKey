@@ -10,6 +10,7 @@ Point to move the mouse, pinch to click, grab a window and throw it to another m
 ![Platform](https://img.shields.io/badge/platform-Windows%2010%20%7C%2011-0078d4)
 ![Runs locally](https://img.shields.io/badge/runs-100%25%20offline-2ea043)
 ![Languages](https://img.shields.io/badge/UI-EN%20%7C%20ES%20%7C%20FR%20%7C%20KO-445ade)
+[![License: MIT](https://img.shields.io/badge/license-MIT-yellow)](LICENSE)
 
 **[⬇️ Download the installer](https://github.com/FaureGalliard/GestureKey/releases)** · [Gestures](#-gestures) · [Development](#-development)
 
@@ -151,6 +152,10 @@ cd /d/GestureKey/app && pnpm release           # PyInstaller engine + NSIS insta
 > administrator too.
 
 ---
+
+## 📄 License
+
+[MIT](LICENSE)
 
 ## 👨‍💻 Author
 
