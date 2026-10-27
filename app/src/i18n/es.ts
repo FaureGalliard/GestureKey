@@ -73,7 +73,7 @@ export const es: Dict = {
   },
 
   gestures: {
-    mouse:       { label: "Ratón", hint: "Apunta con el índice: el cursor te sigue. Junta pulgar e índice para hacer clic, júntalos y mueve para arrastrar, mantén para clic derecho. Un golpe rápido a un lado lo lleva a la otra pantalla; deja la mano en el borde de la cámara para llegar a las esquinas" },
+    mouse:       { label: "Ratón", hint: "Apunta con el índice: el cursor te sigue. Junta pulgar e índice para hacer clic, júntalos y mueve para arrastrar, mantén para clic derecho. Abre la mano inclinada hacia un lado para mandar el cursor a esa pantalla; deja la mano en el borde de la cámara para llegar a las esquinas" },
     scroll:      { label: "Desplazar", hint: "Dos dedos y mueve la mano: la página la sigue; rápido llega más lejos" },
     zoom:        { label: "Zoom", hint: "Junta el pulgar y el índice, ábrelos o ciérralos" },
     task_view:   { label: "Vista de tareas", hint: "Dos palmas abiertas separadas, júntalas. Dentro: ☝️ apunta a una ventana y 🤏 pellizca para abrirla, o separa las palmas para salir" },

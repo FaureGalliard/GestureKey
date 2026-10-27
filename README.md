@@ -40,7 +40,7 @@ Point to move the mouse, pinch to click, grab a window and throw it to another m
 |---|---|
 | ☝️ point with the index | Mouse — the cursor follows the hand |
 | …🤏 touch the tips of thumb and index | Click (twice = double click); pinch and move = drag; hold = right click |
-| …a quick flick sideways | Jump the cursor to the next monitor |
+| …open the hand **tilted** towards a side | Send the cursor to that monitor (same as with windows) |
 | …park the hand at the camera's edge | The cursor keeps going that way (reach the corners) |
 | ✌️ two fingers, move the hand | Scroll whatever is under the cursor — point at it first, no click needed |
 | 🤟 three fingers, raise / lower | Volume — same height, same level |

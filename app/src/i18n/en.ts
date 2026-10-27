@@ -72,7 +72,7 @@ export const en = {
   },
 
   gestures: {
-    mouse:       { label: "Mouse", hint: "Point with your index: the cursor follows. Pinch thumb and index to click, pinch and move to drag, hold the pinch for a right click. Flick it sideways to jump to the next monitor; park your hand at the edge of the camera to reach corners" },
+    mouse:       { label: "Mouse", hint: "Point with your index: the cursor follows. Pinch thumb and index to click, pinch and move to drag, hold the pinch for a right click. Open your hand tilted towards a side to send the cursor to that monitor; park your hand at the edge of the camera to reach corners" },
     scroll:      { label: "Scroll", hint: "Two fingers and move your hand: the page follows; a quick flick goes further" },
     zoom:        { label: "Zoom", hint: "Pinch thumb and index, then open or close them" },
     task_view:   { label: "Task view", hint: "Two open palms apart, then bring them together. Inside: ☝️ point at a window and 🤏 pinch to open it, or move the palms apart to leave" },
